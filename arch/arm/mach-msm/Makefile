@@ -37,7 +37,6 @@ obj-$(CONFIG_MSM_FIQ_SUPPORT) += fiq_glue.o
 obj-$(CONFIG_MSM_SMD_LOGGING) += smem_log.o
 obj-$(CONFIG_MSM_SMD) += smd.o smd_debug.o remote_spinlock.o smd_private.o
 obj-y += socinfo.o
-obj-$(CONFIG_MSM_ONCRPCROUTER) += rpc_hsusb.o rpc_pmapp.o rpc_fsusb.o
 obj-y += nand_partitions.o
 obj-$(CONFIG_MSM_SMD_TTY) += smd_tty.o
 obj-$(CONFIG_MSM_SMD_QMI) += smd_qmi.o
@@ -74,3 +73,5 @@ obj-$(CONFIG_MSM_MODEM_RESTART) += restart_7k.o
 
 obj-$(CONFIG_MSM_PROC_COMM_REGULATOR) += proccomm-regulator.o
 obj-$(CONFIG_MSM_RPC_PMIC) += pmic.o
+obj-$(CONFIG_MSM_RPC_USB) += rpc_hsusb.o rpc_fsusb.o
+obj-$(CONFIG_MSM_RPC_PMAPP) += rpc_pmapp.o
