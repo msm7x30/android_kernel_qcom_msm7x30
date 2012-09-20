@@ -585,4 +585,13 @@ config MSM_MULTIMEDIA_USE_ION
 config HAVE_ARCH_HAS_CURRENT_TIMER
 	bool
 
+config MSM_RPC_PMIC
+	tristate "MSM RPC PMIC driver"
+	depends on MSM_ONCRPCROUTER
+	help
+	 This driver supports the PMIC functionality over RPC for those MSM's
+	 which do not have a direct access to PMIC. It supports ability to
+	 configure MPP, GPIO and all the other supported peripherals of the
+	 PMIC.
+
 endif
