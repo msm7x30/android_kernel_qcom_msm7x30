@@ -21,8 +21,6 @@
 #include <asm/idmap.h>
 #include <mach/proc_comm.h>
 
-#include "smd_rpcrouter.h"
-
 static uint32_t restart_reason = 0x776655AA;
 
 static void msm_pm_power_off(void)
