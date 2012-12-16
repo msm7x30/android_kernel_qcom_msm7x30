@@ -62,6 +62,7 @@ modules.builtin
 include/config
 include/generated
 arch/*/include/generated
+arch/arm/mach-msm/smd_rpc_sym.c
 
 # stgit generated dirs
 patches-*
