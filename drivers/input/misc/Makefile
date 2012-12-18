@@ -65,3 +65,4 @@ obj-$(CONFIG_INPUT_YEALINK)		+= yealink.o
 obj-$(CONFIG_PMIC8058_OTHC)		+= pmic8058-othc.o
 obj-$(CONFIG_APS_12D)			+= aps-12d.o
 obj-$(CONFIG_INPUT_LSM303DLH)		+= lsm303dlh_acc.o lsm303dlh_mag.o
+obj-$(CONFIG_INPUT_L3G4200D)		+= l3g4200d.o
