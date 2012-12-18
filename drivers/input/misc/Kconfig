@@ -687,4 +687,15 @@ config INPUT_LSM303DLH
 	  To compile these drivers as modules, choose M here: the
 	  modules will be called lsm303dlh_acc & lsm303dlh_mag.
 
+config INPUT_L3G4200D
+	tristate "ST L3G4200D 3-axis gyroscope"
+	depends on I2C
+	default n
+	help
+	  If you say yes here you get support for 3-axis gyroscope device
+	  L3g4200D.
+
+	  This driver can also be built as a module.  If so, the module
+	  will be called l3g4200d.
+
 endif
