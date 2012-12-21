@@ -2200,7 +2200,10 @@ static int mxt_suspend(struct device *dev)
 	mxt_release_all(data);
 
 	/* put regulators in low power mode */
-	error = mxt_regulator_lpm(data, true);
+	if (data->pdata->lpm_on)
+		error = data->pdata->lpm_on(true);
+	else
+		error = mxt_regulator_lpm(data, true);
 	if (error < 0) {
 		dev_err(dev, "failed to enter low power mode\n");
 		return error;
@@ -2217,7 +2220,10 @@ static int mxt_resume(struct device *dev)
 	int error;
 
 	/* put regulators in high power mode */
-	error = mxt_regulator_lpm(data, false);
+	if (data->pdata->lpm_on)
+		error = data->pdata->lpm_on(false);
+	else
+		error = mxt_regulator_lpm(data, false);
 	if (error < 0) {
 		dev_err(dev, "failed to enter high power mode\n");
 		return error;
