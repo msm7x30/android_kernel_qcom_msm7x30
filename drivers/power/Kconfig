@@ -369,6 +369,12 @@ config BATTERY_CHARGALG_ENABLE_STEP_CHARGING
 	  Say Y to enable step charging. Step charging controls the maximum
 	  charging current relative to the actual battery voltage.
 
+config BATTERY_ZEUS
+	tristate "Zeus Fuel-gauge"
+	depends on ARCH_MSM
+	help
+	  Say Y to enable support for the fuel-gauge in Zeus
+
 config CHARGER_SMB347
 	tristate "Summit Microelectronics SMB347 Battery Charger"
 	depends on I2C
