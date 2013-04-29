@@ -53,6 +53,7 @@ obj-$(CONFIG_CHARGER_BQ2415X)	+= bq2415x_charger.o
 obj-$(CONFIG_CHARGER_BQ24185)	+= bq24185_charger.o
 obj-$(CONFIG_BATTERY_BQ27520)	+= bq27520_battery.o
 obj-$(CONFIG_BATTERY_CHARGALG)	+= battery_chargalg.o
+obj-$(CONFIG_BATTERY_ZEUS)	+= max17040.o
 obj-$(CONFIG_POWER_AVS)		+= avs/
 obj-$(CONFIG_CHARGER_SMB347)	+= smb347-charger.o
 obj-$(CONFIG_CHARGER_TPS65090)	+= tps65090-charger.o
