@@ -130,6 +130,13 @@ config S5K3E2FX
 	---help---
 	  Samsung 5M with Autofocus
 
+config S5K4E1GX
+	bool "Sensor s5k4e1gx (Samsung 5M)"
+	depends on MSM_CAMERA
+	default n
+	---help---
+	  Samsung 5M GX with Autofocus
+
 config QS_S5K4E1
 	bool "Sensor qs_s5k4e1 (Samsung 5M)"
 	depends on MSM_CAMERA && ARCH_MSM8X60 && !MSM_CAMERA_V4L2
