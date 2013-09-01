@@ -571,6 +571,12 @@ config PMIC8XXX_VIBRATOR
 	  on the PM8XXX chips. The vibrator is controlled using the
 	  timed output class.
 
+config PMIC8XXX_VIBRATOR_VOLTAGE
+	int "PMIC8XXX vibrator default voltage"
+	depends on PMIC8XXX_VIBRATOR
+	help
+	  Set the default voltage value in millivolts(mV).
+
 config PMIC8058_XOADC
 	tristate "Qualcomm PM8058 XOADC driver"
 	depends on PMIC8058
