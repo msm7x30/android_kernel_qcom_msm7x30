@@ -1,6 +1,10 @@
 config MACH_SEMC
 	bool
 
+menu "SEMC Board Selection"
+source "arch/arm/mach-msm/semc/Kconfig.board"
+endmenu
+
 config BATTERY_SEMC_ARCH
 	bool "SEMC battery data handling"
 	depends on ARCH_MSM
@@ -67,3 +71,7 @@ config CRADLE_SUPPORT
 	help
 	  Provides support for docking cradle. Depends on simple remote
 	  HW specific driver.
+
+config FB_MSM_HDPI
+	bool "Increased memory allocation needed for HDPI devices"
+	default n

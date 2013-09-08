@@ -42,9 +42,23 @@
 #define ACDB_ID_I2S_TX					0x30
 #define ACDB_ID_HDMI					0x40
 #define ACDB_ID_FM_RX					0x4F
+#if defined(CONFIG_MACH_SEMC)
+#define ACDB_ID_HANDSET_SPKR_HAC			0x101
+#define ACDB_ID_HEADPHONE_MIC				0x103
+#define ACDB_ID_SPKR_PHONE_RINGTONE_MONO		0x107
+#define ACDB_ID_SPKR_PHONE_RINGTONE_STEREO		0x108
+#define ACDB_ID_BT_SCO_HFP_MIC				0x109
+#define ACDB_ID_BT_SCO_HFP_SPKR				0x10A
+#define ACDB_ID_BT_DSP_SCO_MIC				0x119
+#define ACDB_ID_BT_DSP_SCO_SPKR				0x11A
+#define ACDB_ID_HEADPHONE_MIC_ENDFIRE			0x12E
+/*Replace the max device ID,if any new device is added Specific to RTC only*/
+#define ACDB_ID_MAX                                 ACDB_ID_HEADPHONE_MIC_ENDFIRE
+#else
 #define ACDB_ID_SPKR_PHONE_MUSIC_MONO			0xF0
 /*Replace the max device ID,if any new device is added Specific to RTC only*/
 #define ACDB_ID_MAX                                ACDB_ID_SPKR_PHONE_MUSIC_MONO
+#endif
 
 /* ID used for virtual devices */
 #define PSEUDO_ACDB_ID 					0xFFFF

@@ -1,0 +1,22 @@
+obj-$(CONFIG_BOARD_SEMC_MOGAMI) += board-mogami.o board-semc7x30-devices.o board-semc7x30-gpiomux.o board-mogami-wifi.o board-mogami-bluetooth.o
+obj-$(CONFIG_MACH_SEMC_ANZU)     += charger-anzu.o     gpio-anzu.o     keypad-anzu.o     leds-anzu.o
+obj-$(CONFIG_MACH_SEMC_COCONUT)  += charger-coconut.o  gpio-coconut.o  keypad-coconut.o  leds-coconut.o  touch-coconut.o
+obj-$(CONFIG_MACH_SEMC_HAIDA)    += charger-haida.o    gpio-haida.o    keypad-haida.o    leds-haida.o
+obj-$(CONFIG_MACH_SEMC_HALLON)   += charger-hallon.o   gpio-hallon.o   keypad-hallon.o   leds-hallon.o
+obj-$(CONFIG_MACH_SEMC_IYOKAN)   += charger-iyokan.o   gpio-iyokan.o   keypad-iyokan.o   leds-iyokan.o   touch-iyokan.o
+obj-$(CONFIG_MACH_SEMC_MANGO)    += charger-mango.o    gpio-mango.o    keypad-mango.o    leds-mango.o    touch-mango.o
+obj-$(CONFIG_MACH_SEMC_SATSUMA)  += charger-satsuma.o  gpio-satsuma.o  keypad-satsuma.o  leds-satsuma.o  touch-satsuma.o
+obj-$(CONFIG_MACH_SEMC_SMULTRON) += charger-smultron.o gpio-smultron.o keypad-smultron.o leds-smultron.o touch-smultron.o
+obj-$(CONFIG_MACH_SEMC_URUSHI)   += charger-urushi.o   gpio-urushi.o   keypad-urushi.o   leds-urushi.o
+obj-$(CONFIG_BOARD_SEMC_ZEUS) += board-zeus.o board-semc7x30-devices.o board-semc7x30-gpiomux.o board-zeus-wifi.o gpio-zeus.o keypad-pmic.o leds-zeus.o
+obj-$(CONFIG_MACH_SEMC_PHOENIX)  += keypad-phoenix.o
+obj-$(CONFIG_MACH_SEMC_ZEUS)     += keypad-zeus.o
+
+ifdef CONFIG_MSM_PROC_COMM_REGULATOR
+obj-$(CONFIG_BOARD_SEMC_MOGAMI) += board-semc7x30-regulator.o
+obj-$(CONFIG_BOARD_SEMC_ZEUS) += board-semc7x30-regulator.o
+endif
+
+ifeq ($(CONFIG_MARIMBA_CODEC), y)
+obj-$(CONFIG_MACH_SEMC) += snddev_data_marimba_semc.o
+endif
