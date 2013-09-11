@@ -1,2 +1,21 @@
 config MACH_SEMC
 	bool
+
+config BATTERY_SEMC_ARCH
+	bool "SEMC battery data handling"
+	depends on ARCH_MSM
+	default n
+	help
+	  Say Y to enable support for SEMC battery data handling in the
+	  platform.
+
+config SEMC_BATTERY_SHOW_HEALTH
+	bool "Enable battery health support"
+	depends on BATTERY_SEMC_ARCH
+	default n if BATTERY_CHARGALG
+	default y if !BATTERY_CHARGALG
+	help
+	  Enable if battery health property is not supported
+	  in any other module besides this.
+	  This enables support for power supply class
+	  POWER_SUPPLY_PROP_HEALTH property.
