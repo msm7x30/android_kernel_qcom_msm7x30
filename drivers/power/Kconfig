@@ -334,6 +334,19 @@ config CHARGER_BQ2415X
 	  You'll need this driver to charge batteries on e.g. Nokia
 	  RX-51/N900.
 
+config BATTERY_BQ27520
+	tristate "BQ27520 battery driver"
+	depends on I2C
+	default n
+	help
+	  Say Y here to enable support for batteries with BQ27520 (I2C) chips.
+
+config BATTERY_BQ27520_SEAL_FW
+	tristate "Seal the frimware of BQ27520"
+	depends on BATTERY_BQ27520
+	help
+	  Say Y to seal the firmware of fuel gauge
+
 config CHARGER_SMB347
 	tristate "Summit Microelectronics SMB347 Battery Charger"
 	depends on I2C
