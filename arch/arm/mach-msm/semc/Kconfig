@@ -19,3 +19,9 @@ config SEMC_BATTERY_SHOW_HEALTH
 	  in any other module besides this.
 	  This enables support for power supply class
 	  POWER_SUPPLY_PROP_HEALTH property.
+
+config SEMC_CHARGER_USB_ARCH
+	bool "Support USB interface for charger"
+	default n
+	help
+	  This enables USB interface for charger.
