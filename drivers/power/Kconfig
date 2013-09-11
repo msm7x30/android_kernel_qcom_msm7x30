@@ -334,6 +334,14 @@ config CHARGER_BQ2415X
 	  You'll need this driver to charge batteries on e.g. Nokia
 	  RX-51/N900.
 
+config CHARGER_BQ24185
+	tristate "TI BQ24185 Switch-Mode One-Cell Li-Ion charger"
+	depends on I2C
+	default n
+	help
+	  Say Y here to enable Support for the TI BQ24185 Battery Charger.
+	  The driver is configured to operate with a single lithium cell.
+
 config BATTERY_BQ27520
 	tristate "BQ27520 battery driver"
 	depends on I2C
