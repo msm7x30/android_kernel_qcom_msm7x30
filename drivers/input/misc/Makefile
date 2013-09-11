@@ -67,3 +67,4 @@ obj-$(CONFIG_APS_12D)			+= aps-12d.o
 obj-$(CONFIG_INPUT_LSM303DLH)		+= lsm303dlh_acc.o lsm303dlh_mag.o
 obj-$(CONFIG_INPUT_L3G4200D)		+= l3g4200d.o
 obj-$(CONFIG_STM_LIS3DH)		+= lis3dh_acc.o
+obj-$(CONFIG_INPUT_APDS9702)		+= apds9702.o
