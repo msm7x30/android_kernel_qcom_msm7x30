@@ -68,3 +68,5 @@ endif
 obj-$(CONFIG_MSM_MEMORY_LOW_POWER_MODE_SUSPEND_DEEP_POWER_DOWN) \
 	+= msm_migrate_pages.o
 obj-$(CONFIG_SENSORS_AK8975)	+= akm8975.o
+obj-$(CONFIG_LM3560)		+= lm356x.o
+obj-$(CONFIG_LM3561)		+= lm356x.o
