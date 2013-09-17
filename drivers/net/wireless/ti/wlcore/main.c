@@ -6018,6 +6018,11 @@ int wlcore_free_hw(struct wl1271 *wl)
 }
 EXPORT_SYMBOL_GPL(wlcore_free_hw);
 
+static irqreturn_t wlcore_hardirq(int irq, void *cookie)
+{
+	return IRQ_WAKE_THREAD;
+}
+
 static void wlcore_nvs_cb(const struct firmware *fw, void *context)
 {
 	struct wl1271 *wl = context;
@@ -6026,6 +6031,7 @@ static void wlcore_nvs_cb(const struct firmware *fw, void *context)
 	struct wl12xx_platform_data *pdata = pdev_data->pdata;
 	unsigned long irqflags;
 	int ret;
+	irq_handler_t hardirq_fn = NULL;
 
 	if (fw) {
 		wl->nvs = kmemdup(fw->data, fw->size, GFP_KERNEL);
@@ -6054,12 +6060,14 @@ static void wlcore_nvs_cb(const struct firmware *fw, void *context)
 	wl->platform_quirks = pdata->platform_quirks;
 	wl->if_ops = pdev_data->if_ops;
 
-	if (wl->platform_quirks & WL12XX_PLATFORM_QUIRK_EDGE_IRQ)
+	if (wl->platform_quirks & WL12XX_PLATFORM_QUIRK_EDGE_IRQ) {
 		irqflags = IRQF_TRIGGER_RISING;
-	else
+		hardirq_fn = wlcore_hardirq;
+	} else {
 		irqflags = IRQF_TRIGGER_HIGH | IRQF_ONESHOT;
+	}
 
-	ret = request_threaded_irq(wl->irq, NULL, wlcore_irq,
+	ret = request_threaded_irq(wl->irq, hardirq_fn, wlcore_irq,
 				   irqflags, pdev->name, wl);
 	if (ret < 0) {
 		wl1271_error("request_irq() failed: %d", ret);
