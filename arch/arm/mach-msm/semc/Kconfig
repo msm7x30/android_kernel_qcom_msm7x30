@@ -34,3 +34,36 @@ config SEMC_RPC_SERVER_HANDSET
 	 This enables the SEMC version of rpc_server_handset message dispatcher.
 	 This cannot cooperate with MSM_RPCSERVER_HANDSET. If this is set,
 	 an error will be generated.
+
+config SIMPLE_REMOTE_PLATFORM
+	bool "Simple Remote platform specific driver"
+	default n
+	help
+	  Provides support for detecting 3.5mm audio jack, such as wired
+	  headset. This is the platform specific layer.
+
+config SIMPLE_REMOTE_INVERT_PLUG_DETECTION_STATE
+	bool "Invert state of plug detection"
+	depends on SIMPLE_REMOTE_PLATFORM
+	help
+	  This option enables to invert headphone plug detection state,
+	  currently the plug detection state was low state when headphone
+	  was inserted, but it is high state on some products, so that
+	  we need invert this state on these products.
+
+config ACC_CONVERTER_SUPPORT
+	bool "Enable support for acessory conversion"
+	depends on SIMPLE_REMOTE_PLATFORM
+	default n
+	help
+	  Enable support for special accessory that can convert
+	  CTIA connected headsets to OMTP connected headsets and
+	  vice versa.
+
+config CRADLE_SUPPORT
+	bool "This HW supports docking cradle"
+	depends on ACC_CONVERTER_SUPPORT
+	default n
+	help
+	  Provides support for docking cradle. Depends on simple remote
+	  HW specific driver.
