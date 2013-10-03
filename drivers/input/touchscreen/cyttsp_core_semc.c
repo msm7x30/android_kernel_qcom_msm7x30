@@ -259,6 +259,7 @@ enum mfg_command_status {
 };
 
 static const u8 CY_MFG_CMD_CLR_STATUS[] = {0x2f};
+static int bootloader_mode_done;
 
 /* TTSP Bootloader Register Map interface definition */
 #define CY_BL_CHKSUM_OK 0x01
@@ -1507,6 +1508,7 @@ static int cyttsp_set_bl_mode(struct cyttsp *ts)
 {
 	int retval;
 	u8 cmd = CY_SOFT_RESET_MODE;
+	bootloader_mode_done = 0;
 
 	dev_vdbg(ts->pdev, "%s.\n", __func__);
 
@@ -1535,6 +1537,7 @@ static int cyttsp_set_bl_mode(struct cyttsp *ts)
 		return 0;
 	}
 	dev_err(ts->pdev, "%s: failed.\n", __func__);
+	bootloader_mode_done = 1;
 	return -EAGAIN;
 }
 
@@ -1647,7 +1650,7 @@ static void cyttsp_reset_worker(struct work_struct *work)
 		goto reserve_next;
 	}
 
-	if (GET_BOOTLOADERMODE(xy_mode.tt_mode)) {
+	if (GET_BOOTLOADERMODE(xy_mode.tt_mode) && bootloader_mode_done == 1) {
 		atomic_set(&ts->mode, MODE_BL_IDLE);
 		(void)cyttsp_exit_bl_mode(ts);
 	}
