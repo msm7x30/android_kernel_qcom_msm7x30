@@ -70,4 +70,5 @@ obj-$(CONFIG_INPUT_L3G4200D)		+= l3g4200d.o
 obj-$(CONFIG_STM_LIS3DH)		+= lis3dh_acc.o
 obj-$(CONFIG_INPUT_BMA150_NG)		+= bma150_ng.o
 obj-$(CONFIG_INPUT_BMA250)		+= bma250.o
+obj-$(CONFIG_INPUT_BMP180)		+= bmp180.o
 obj-$(CONFIG_INPUT_APDS9702)		+= apds9702.o
