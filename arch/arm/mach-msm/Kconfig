@@ -614,4 +614,12 @@ config MSM_RPC_PMAPP
 	 interface. This support is required for MSMs on which the APPS
 	 does not have a direct access to the PMIC.
 
+config MSM_7X30_OVERCLOCK
+	bool "Allow MSM 7x30 to overclock"
+	help
+	  Allows MSM 7x30 devices to skip PLL_2 value, which sets a limit on
+	  maximum clock speed.
+
+	  If unsure, say 'N' here.
+
 endif
