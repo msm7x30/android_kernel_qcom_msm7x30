@@ -119,17 +119,6 @@ void __iomem *camifpadbase, *csibase;
 static uint32_t vpe_clk_rate;
 static uint32_t jpeg_clk_rate;
 
-static struct regulator_bulk_data regs[] = {
-	{ .supply = "gp2",  .min_uV = 2600000, .max_uV = 2600000 },
-	{ .supply = "lvsw1" },
-	{ .supply = "fs_vfe" },
-	/* sn12m0pz regulators */
-	{ .supply = "gp6",  .min_uV = 3050000, .max_uV = 3100000 },
-	{ .supply = "gp16", .min_uV = 1200000, .max_uV = 1200000 },
-};
-
-static int reg_count;
-
 void msm_io_w(u32 data, void __iomem *addr)
 {
 	CDBG("%s: %08x %08x\n", __func__, (int) (addr), (data));
@@ -204,58 +193,6 @@ void msm_io_memcpy(void __iomem *dest_addr, void __iomem *src_addr, u32 len)
 	CDBG("%s: %p %p %d\n", __func__, dest_addr, src_addr, len);
 	msm_io_memcpy_toio(dest_addr, src_addr, len / 4);
 	msm_io_dump(dest_addr, len);
-}
-
-static void msm_camera_vreg_enable(struct platform_device *pdev)
-{
-	int count, rc;
-
-	struct device *dev = &pdev->dev;
-
-	/* Use gp6 and gp16 if and only if dev name matches. */
-	if (!strncmp(pdev->name, "msm_camera_sn12m0pz", 20))
-		count = ARRAY_SIZE(regs);
-	else
-		count = ARRAY_SIZE(regs) - 2;
-
-	rc = regulator_bulk_get(dev, count, regs);
-
-	if (rc) {
-		dev_err(dev, "%s: could not get regulators: %d\n",
-				__func__, rc);
-		return;
-	}
-
-	rc = regulator_bulk_set_voltage(count, regs);
-
-	if (rc) {
-		dev_err(dev, "%s: could not set voltages: %d\n",
-				__func__, rc);
-		goto reg_free;
-	}
-
-	rc = regulator_bulk_enable(count, regs);
-
-	if (rc) {
-		dev_err(dev, "%s: could not enable regulators: %d\n",
-				__func__, rc);
-		goto reg_free;
-	}
-
-	reg_count = count;
-	return;
-
-reg_free:
-	regulator_bulk_free(count, regs);
-	return;
-}
-
-
-static void msm_camera_vreg_disable(void)
-{
-	regulator_bulk_disable(reg_count, regs);
-	regulator_bulk_free(reg_count, regs);
-	reg_count = 0;
 }
 
 int msm_camio_clk_enable(enum msm_camio_clk_type clktype)
@@ -628,7 +565,8 @@ int msm_camio_probe_on(struct platform_device *pdev)
 	camio_clk = camdev->ioclk;
 	camio_ext = camdev->ioext;
 	camdev->camera_gpio_on();
-	msm_camera_vreg_enable(pdev);
+	if (camdev->camera_power_on)
+		camdev->camera_power_on();
 	return msm_camio_clk_enable(CAMIO_CAM_MCLK_CLK);
 }
 
@@ -636,7 +574,8 @@ int msm_camio_probe_off(struct platform_device *pdev)
 {
 	struct msm_camera_sensor_info *sinfo = pdev->dev.platform_data;
 	struct msm_camera_device_platform_data *camdev = sinfo->pdata;
-	msm_camera_vreg_disable();
+	if (camdev->camera_power_off)
+		camdev->camera_power_off();
 	camdev->camera_gpio_off();
 	return msm_camio_clk_disable(CAMIO_CAM_MCLK_CLK);
 }
@@ -649,7 +588,8 @@ int msm_camio_sensor_clk_on(struct platform_device *pdev)
 	camio_clk = camdev->ioclk;
 	camio_ext = camdev->ioext;
 	camdev->camera_gpio_on();
-	msm_camera_vreg_enable(pdev);
+	if (camdev->camera_power_on)
+		camdev->camera_power_on();
 	msm_camio_clk_enable(CAMIO_CAM_MCLK_CLK);
 	msm_camio_clk_enable(CAMIO_CAMIF_PAD_PBDG_CLK);
 	if (!sinfo->csi_if) {
@@ -676,7 +616,8 @@ common_fail:
 	msm_camio_clk_disable(CAMIO_CAM_MCLK_CLK);
 	msm_camio_clk_disable(CAMIO_VFE_CLK);
 	msm_camio_clk_disable(CAMIO_CAMIF_PAD_PBDG_CLK);
-	msm_camera_vreg_disable();
+	if (camdev->camera_power_off)
+		camdev->camera_power_off();
 	camdev->camera_gpio_off();
 	return rc;
 }
@@ -686,8 +627,9 @@ int msm_camio_sensor_clk_off(struct platform_device *pdev)
 	uint32_t rc = 0;
 	struct msm_camera_sensor_info *sinfo = pdev->dev.platform_data;
 	struct msm_camera_device_platform_data *camdev = sinfo->pdata;
+	if (camdev->camera_power_off)
+		camdev->camera_power_off();
 	camdev->camera_gpio_off();
-	msm_camera_vreg_disable();
 	rc = msm_camio_clk_disable(CAMIO_CAM_MCLK_CLK);
 	rc = msm_camio_clk_disable(CAMIO_CAMIF_PAD_PBDG_CLK);
 	if (!sinfo->csi_if) {
