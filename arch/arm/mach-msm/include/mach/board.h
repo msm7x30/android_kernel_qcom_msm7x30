@@ -60,6 +60,8 @@ struct msm_cam_expander_info {
 struct msm_camera_device_platform_data {
 	int (*camera_gpio_on) (void);
 	void (*camera_gpio_off)(void);
+	int (*camera_power_on) (void);
+	void (*camera_power_off)(void);
 	struct msm_camera_io_ext ioext;
 	struct msm_camera_io_clk ioclk;
 	uint8_t csid_core;
