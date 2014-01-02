@@ -22,6 +22,7 @@
 #include <linux/input.h>
 #include <linux/usb.h>
 #include <linux/leds-pmic8058.h>
+#include <linux/leds-pm8xxx.h>
 #include <linux/clkdev.h>
 #include <linux/of_platform.h>
 #include <linux/msm_ssbi.h>
@@ -103,6 +104,7 @@ struct msm_camera_legacy_device_platform_data {
 #define MSM_CAMERA_FLASH_SRC_CURRENT_DRIVER	(0x00000001<<2)
 #define MSM_CAMERA_FLASH_SRC_EXT     (0x00000001<<3)
 #define MSM_CAMERA_FLASH_SRC_LED (0x00000001<<3)
+#define MSM_CAMERA_FLASH_SRC_PM  (0x00000001<<4)
 
 struct msm_camera_sensor_flash_pmic {
 	uint8_t num_of_src;
@@ -139,6 +141,12 @@ struct msm_camera_sensor_flash_led {
 	const int led_name_len;
 };
 
+struct msm_camera_sensor_flash_pm {
+	enum pm8xxx_leds id;
+	uint32_t low_brightness;
+	uint32_t high_brightness;
+};
+
 struct msm_camera_sensor_flash_src {
 	int flash_sr_type;
 
@@ -150,6 +158,7 @@ struct msm_camera_sensor_flash_src {
 		struct msm_camera_sensor_flash_external
 			ext_driver_src;
 		struct msm_camera_sensor_flash_led led_src;
+		struct msm_camera_sensor_flash_pm pm_src;
 	} _fsrc;
 };
 

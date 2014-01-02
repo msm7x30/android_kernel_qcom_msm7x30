@@ -14,6 +14,7 @@
 #include <linux/kernel.h>
 #include <linux/errno.h>
 #include <linux/leds-pmic8058.h>
+#include <linux/leds-pm8xxx.h>
 #include <linux/pwm.h>
 #include <linux/hrtimer.h>
 #include <linux/i2c.h>
@@ -365,6 +366,28 @@ static int msm_camera_flash_pwm(
 	return rc;
 }
 
+static int msm_camera_flash_pm(
+	struct msm_camera_sensor_flash_pm *pm,
+	unsigned led_state)
+{
+	switch (led_state) {
+	case MSM_CAMERA_LED_LOW:
+		pm8xxx_led_set_brightness(pm->id, pm->low_brightness);
+		break;
+	case MSM_CAMERA_LED_HIGH:
+		pm8xxx_led_set_brightness(pm->id, pm->high_brightness);
+		break;
+	case MSM_CAMERA_LED_OFF:
+		pm8xxx_led_set_brightness(pm->id, 0);
+		break;
+	case MSM_CAMERA_LED_INIT:
+	case MSM_CAMERA_LED_RELEASE:
+	default:
+		break;
+	}
+	return 0;
+}
+
 int msm_camera_flash_pmic(
 	struct msm_camera_sensor_flash_pmic *pmic,
 	unsigned led_state)
@@ -435,6 +458,12 @@ int32_t msm_camera_flash_set_led_state(
 	case MSM_CAMERA_FLASH_SRC_EXT:
 		rc = msm_camera_flash_external(
 			&fdata->flash_src->_fsrc.ext_driver_src,
+			led_state);
+		break;
+
+	case MSM_CAMERA_FLASH_SRC_PM:
+		rc = msm_camera_flash_pm(
+			&fdata->flash_src->_fsrc.pm_src,
 			led_state);
 		break;
 
