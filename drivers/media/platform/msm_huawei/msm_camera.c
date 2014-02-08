@@ -58,7 +58,9 @@ static int camera_node;
 static enum msm_camera_type camera_type[MSM_MAX_CAMERA_SENSORS];
 static uint32_t sensor_mount_angle[MSM_MAX_CAMERA_SENSORS];
 
+#ifdef CONFIG_MSM_MULTIMEDIA_USE_ION
 struct ion_client *client_for_ion;
+#endif
 
 static const char *vfe_config_cmd[] = {
 	"CMD_GENERAL",  /* 0 */
@@ -3778,7 +3780,9 @@ static int __msm_open(struct msm_cam_device *pmsm, const char *const apps_id,
 		sync->core_powered_on = 1;
 	}
 	sync->opencnt++;
+#ifdef CONFIG_MSM_MULTIMEDIA_USE_ION
 	client_for_ion = msm_ion_client_create(-1, "camera");
+#endif
 
 msm_open_done:
 	mutex_unlock(&sync->lock);
