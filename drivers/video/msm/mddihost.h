@@ -33,7 +33,7 @@
 
 #include "msm_fb_panel.h"
 
-#ifndef CONFIG_FB_MSM_MDDI_AUTO_DETECT
+#if defined(CONFIG_FB_MSM_MDDI_DISABLE_REVERSE) || !defined(CONFIG_FB_MSM_MDDI_AUTO_DETECT)
 #define FEATURE_MDDI_DISABLE_REVERSE
 #endif
 
