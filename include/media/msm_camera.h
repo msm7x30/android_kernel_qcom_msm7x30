@@ -14,6 +14,10 @@
 
 #include <uapi/linux/msm_camera_huawei.h>
 
+#elif defined(CONFIG_MSM_CAMERA_SEMC)
+
+#include <media/msm_camera_semc.h>
+
 #else
 
 #ifndef __LINUX_MSM_CAMERA_H

@@ -51,5 +51,6 @@ obj-y	+= davinci/
 obj-$(CONFIG_ARCH_OMAP)	+= omap/
 
 obj-$(CONFIG_MSM_CAMERA_HUAWEI)		+= msm_huawei/
+obj-$(CONFIG_MSM_CAMERA_SEMC)		+= msm_semc/
 
 ccflags-y += -I$(srctree)/drivers/media/i2c
