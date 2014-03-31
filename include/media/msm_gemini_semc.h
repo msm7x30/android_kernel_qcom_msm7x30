@@ -1,17 +1,37 @@
-#if defined(CONFIG_MSM_CAMERA_HUAWEI)
-
-#include <media/msm_gemini_huawei.h>
-
-#elif defined(CONFIG_MSM_CAMERA_SEMC)
-
-#include <media/msm_gemini_semc.h>
-
-#else
+/* Copyright (c) 2010, The Linux Foundation. All rights reserved.
+ * Copyright (C) 2010 Sony Ericsson Mobile Communications AB.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are
+ * met:
+ *     * Redistributions of source code must retain the above copyright
+ *       notice, this list of conditions and the following disclaimer.
+ *     * Redistributions in binary form must reproduce the above
+ *       copyright notice, this list of conditions and the following
+ *       disclaimer in the documentation and/or other materials provided
+ *       with the distribution.
+ *     * Neither the name of Code Aurora Forum, Inc. nor the names of its
+ *       contributors may be used to endorse or promote products derived
+ *       from this software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED "AS IS" AND ANY EXPRESS OR IMPLIED
+ * WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
+ * MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NON-INFRINGEMENT
+ * ARE DISCLAIMED.  IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS
+ * BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR
+ * BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
+ * WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE
+ * OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN
+ * IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ */
 
 #ifndef __LINUX_MSM_GEMINI_H
 #define __LINUX_MSM_GEMINI_H
 
 #include <linux/types.h>
+#include <asm/sizes.h>
 #include <linux/ioctl.h>
 
 #define MSM_GMN_IOCTL_MAGIC 'g'
@@ -58,19 +78,13 @@
 #define MSM_GMN_IOCTL_HW_CMDS \
 	_IOW(MSM_GMN_IOCTL_MAGIC, 14, struct msm_gemini_hw_cmds *)
 
-#define MSM_GMN_IOCTL_SET_MODE \
-	_IOW(MSM_GMN_IOCTL_MAGIC, 16, enum msm_gmn_out_mode)
+#define MSM_GMN_IOCTL_TEST_DUMP_REGION \
+	_IOW(MSM_GMN_IOCTL_MAGIC, 15, unsigned long)
 
 #define MSM_GEMINI_MODE_REALTIME_ENCODE 0
 #define MSM_GEMINI_MODE_OFFLINE_ENCODE 1
 #define MSM_GEMINI_MODE_REALTIME_ROTATION 2
 #define MSM_GEMINI_MODE_OFFLINE_ROTATION 3
-
-enum msm_gmn_out_mode {
-	MSM_GMN_OUTMODE_FRAGMENTED,
-	MSM_GMN_OUTMODE_SINGLE
-};
-
 struct msm_gemini_ctrl_cmd {
 	uint32_t type;
 	uint32_t len;
@@ -80,6 +94,7 @@ struct msm_gemini_ctrl_cmd {
 #define MSM_GEMINI_EVT_RESET 0
 #define MSM_GEMINI_EVT_FRAMEDONE	1
 #define MSM_GEMINI_EVT_ERR 2
+#define MSM_GEMINI_EVT_BUFFER_OVER 255
 
 struct msm_gemini_buf {
 	uint32_t type;
@@ -95,7 +110,6 @@ struct msm_gemini_buf {
 	uint32_t cbcr_len;
 
 	uint32_t num_of_mcu_rows;
-	uint32_t offset;
 };
 
 #define MSM_GEMINI_HW_CMD_TYPE_READ      0
@@ -128,5 +142,3 @@ struct msm_gemini_hw_cmds {
 };
 
 #endif /* __LINUX_MSM_GEMINI_H */
-
-#endif
