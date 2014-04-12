@@ -565,8 +565,14 @@ arch_initcall(socinfo_init_dev);
 
 static void * __init setup_dummy_socinfo(void)
 {
+#ifdef CONFIG_MACH_SEMC
+	dummy_socinfo.id = 74;
+	strlcpy(dummy_socinfo.build_id, "8x55A-AAABQOAZM-203028G-77",
+		sizeof(dummy_socinfo.build_id));
+#else
 	strlcat(dummy_socinfo.build_id, "Dummy socinfo",
 		sizeof(dummy_socinfo.build_id));
+#endif
 	return (void *) &dummy_socinfo;
 }
 
