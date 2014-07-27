@@ -96,12 +96,34 @@ typedef union {
 	char factory_info[100];
 } nv_cmd_item_type;
 
-
-extern int msm_nv_rpc_connect(void);
-extern int msm_nv_read(uint32_t item, nv_cmd_item_type *data);
-extern int msm_nv_write(uint32_t item, nv_cmd_item_type *data);
-extern int msm_nv_cmd_remote(
-	uint32_t cmd, uint32_t item, nv_cmd_item_type *data_ptr);
-extern int msm_nv_rpc_close(void);
+#ifdef CONFIG_MSM_ONCRPCROUTER
+int msm_nv_rpc_connect(void);
+int msm_nv_read(uint32_t item, nv_cmd_item_type *data);
+int msm_nv_write(uint32_t item, nv_cmd_item_type *data);
+int msm_nv_cmd_remote(uint32_t cmd, uint32_t item, nv_cmd_item_type *data_ptr);
+int msm_nv_rpc_close(void);
+#else
+static int msm_nv_rpc_connect(void)
+{
+	return -EPERM;
+}
+static int msm_nv_read(uint32_t item, nv_cmd_item_type *data)
+{
+	return -EPERM;
+}
+static int msm_nv_write(uint32_t item, nv_cmd_item_type *data)
+{
+	return -EPERM;
+}
+static int msm_nv_cmd_remote(uint32_t cmd, uint32_t item,
+	nv_cmd_item_type *data_ptr)
+{
+	return -EPERM;
+}
+static int msm_nv_rpc_close(void)
+{
+	return -EPERM;
+}
+#endif
 
 #endif
