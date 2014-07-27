@@ -61,7 +61,7 @@ static int msm_nv_init_rpc_ids(unsigned int vers)
 		nv_rpc_ids.cmd_remote	= 9;
 		return 0;
 	} else {
-		printk(KERN_INFO "%s: no matches found for version (0x%x)\n",
+		pr_err("%s: no matches found for version (0x%x)\n",
 			__func__, vers);
 		return -ENODATA;
 	}
@@ -70,14 +70,14 @@ static int msm_nv_init_rpc_ids(unsigned int vers)
 /* rpc connect for nv */
 int msm_nv_rpc_connect(void)
 {
-	if (nv_ep && !IS_ERR(nv_ep)) {
+	if (!IS_ERR_OR_NULL(nv_ep)) {
 		pr_debug("%s: nv_ep already connected\n", __func__);
 		return 0;
 	}
 
 	/* Initialize rpc ids */
 	if (msm_nv_init_rpc_ids(NV_VERS_9_2)) {
-		printk(KERN_ERR "%s: rpc ids(0x%x) initialization failed\n",
+		pr_err("%s: rpc ids(0x%x) initialization failed\n",
 			__func__, NV_VERS_9_2);
 		return -ENODATA;
 	}
@@ -85,12 +85,11 @@ int msm_nv_rpc_connect(void)
 	nv_ep = msm_rpc_connect_compatible(nv_rpc_ids.prog,
 		nv_rpc_ids.vers_comp, MSM_RPC_UNINTERRUPTIBLE);
 
-	if (IS_ERR(nv_ep)) {
-		printk(KERN_ERR "%s: connect compatible failed vers = %lx\n",
+	if (IS_ERR_OR_NULL(nv_ep)) {
+		pr_err("%s: connect compatible failed vers = %lx\n",
 			__func__, nv_rpc_ids.vers_comp);
 		if (msm_nv_init_rpc_ids(NV_VERS_1_1)) {
-			printk(KERN_ERR
-				"%s: rpc ids(0x%x) initialization failed\n",
+			pr_err("%s: rpc ids(0x%x) initialization failed\n",
 				__func__, NV_VERS_1_1);
 			return -ENODATA;
 		}
@@ -98,13 +97,13 @@ int msm_nv_rpc_connect(void)
 			nv_rpc_ids.vers_comp, MSM_RPC_UNINTERRUPTIBLE);
 	}
 
-	if (IS_ERR(nv_ep)) {
-		printk(KERN_ERR "%s: connect compatible failed vers = %lx\n",
-				__func__, nv_rpc_ids.vers_comp);
+	if (IS_ERR_OR_NULL(nv_ep)) {
+		pr_err("%s: connect compatible failed vers = %lx\n",
+			__func__, nv_rpc_ids.vers_comp);
 		return -EAGAIN;
 	} else
-		printk(KERN_INFO "%s: rpc connect success vers = %lx\n",
-				__func__, nv_rpc_ids.vers_comp);
+		pr_debug("%s: rpc connect success vers = %lx\n",
+			__func__, nv_rpc_ids.vers_comp);
 
 	return 0;
 }
@@ -145,6 +144,10 @@ static void msm_nv_set_req_data(int item, nv_cmd_generic_cmd *cmd,
 		*reqsz = req_hdr_sz + sizeof(ptr->wlan_mac_address);
 		*repsz = rep_hdr_sz + sizeof(ptr->wlan_mac_address);
 		break;
+	default:
+		pr_err("%s: no matches found for item (%d)\n",
+			__func__, item);
+		break;
 	}
 }
 
@@ -155,14 +158,18 @@ static void msm_nv_set_rep_data(int item, nv_cmd_generic_cmd *cmd,
 
 	switch (item) {
 	case NV_FACTORY_INFO_I:
-		memcpy(data->factory_info,
-			ptr->factory_info, sizeof(ptr->factory_info));
+		memcpy(data->factory_info, ptr->factory_info,
+			sizeof(ptr->factory_info));
 		break;
 	case NV_BD_ADDR_I:
 		data->integer = ptr->integer;
 		break;
 	case NV_WLAN_MAC_ADDRESS_I:
 		data->integer = ptr->integer;
+		break;
+	default:
+		pr_err("%s: no matches found for item (%d)\n",
+			__func__, item);
 		break;
 	}
 }
@@ -175,20 +182,20 @@ int msm_nv_cmd_remote(uint32_t cmd, uint32_t item, nv_cmd_item_type *data_ptr)
 	nv_cmd_generic_cmd *cmdptr;
 
 	if (msm_nv_check_validity(item) < 0) {
-		printk(KERN_ERR "%s : cmd(%d) is NOT supported!\n",
+		pr_err("%s : cmd(%d) is NOT supported!\n",
 			__func__, item);
 		return	-EINVAL;
 	}
 
-	if (!nv_ep || IS_ERR(nv_ep)) {
-		printk(KERN_ERR "%s: rpc connect failed: rc = %ld\n",
+	if (IS_ERR_OR_NULL(nv_ep)) {
+		pr_err("%s: rpc connect failed: rc = %ld\n",
 			__func__, PTR_ERR(nv_ep));
 		return -EAGAIN;
 	}
 
 	cmdptr = kmalloc(sizeof(nv_cmd_generic_cmd), GFP_KERNEL);
 	if (!cmdptr) {
-		printk(KERN_ERR "%s: malloc failed\n", __func__);
+		pr_err("%s: malloc failed\n", __func__);
 		return -EBUSY;
 	}
 
@@ -210,7 +217,7 @@ int msm_nv_cmd_remote(uint32_t cmd, uint32_t item, nv_cmd_item_type *data_ptr)
 	if (rc < 0) {
 		kfree(cmdptr);
 		pr_debug("%s: rpc call failed! error: %d\n", __func__, rc);
-		return	rc;
+		return rc;
 	} else {
 		pr_debug("%s: rpc call success\n" , __func__);
 	}
@@ -242,8 +249,8 @@ int msm_nv_rpc_close(void)
 {
 	int rc = 0;
 
-	if (IS_ERR(nv_ep)) {
-		printk(KERN_ERR "%s: rpc_close failed before call, rc = %ld\n",
+	if (IS_ERR_OR_NULL(nv_ep)) {
+		pr_err("%s: rpc_close failed before call, rc = %ld\n",
 			__func__, PTR_ERR(nv_ep));
 		return -EAGAIN;
 	}
@@ -252,11 +259,11 @@ int msm_nv_rpc_close(void)
 	nv_ep = NULL;
 
 	if (rc < 0) {
-		printk(KERN_ERR "%s: close rpc failed! rc = %d\n",
+		pr_err("%s: close rpc failed! rc = %d\n",
 			__func__, rc);
 		return -EAGAIN;
 	} else
-		printk(KERN_INFO "rpc close success\n");
+		pr_debug("rpc close success\n");
 
 	return rc;
 }
