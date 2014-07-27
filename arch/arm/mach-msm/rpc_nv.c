@@ -40,31 +40,22 @@ static struct msm_nv_rpc_ids nv_rpc_ids;
 
 static int msm_nv_init_rpc_ids(unsigned int vers)
 {
-	if (vers == NV_VERS_6_1) {
+	switch (vers) {
+	case NV_VERS_6_1:
+	case NV_VERS_2_1:
+	case NV_VERS_1_1:
+	case NV_VERS_9_2:
 		nv_rpc_ids.prog		= 0x3000000e;
-		nv_rpc_ids.vers_comp	= NV_VERS_6_1;
+		nv_rpc_ids.vers_comp	= vers;
 		nv_rpc_ids.cmd_remote	= 9;
-		return 0;
-	} else if (vers == NV_VERS_2_1) {
-		nv_rpc_ids.prog		= 0x3000000e;
-		nv_rpc_ids.vers_comp	= NV_VERS_2_1;
-		nv_rpc_ids.cmd_remote	= 9;
-		return 0;
-	} else if (vers == NV_VERS_1_1) {
-		nv_rpc_ids.prog		= 0x3000000e;
-		nv_rpc_ids.vers_comp	= NV_VERS_1_1;
-		nv_rpc_ids.cmd_remote	= 9;
-		return 0;
-	} else if (vers == NV_VERS_9_2) {
-		nv_rpc_ids.prog		= 0x3000000e;
-		nv_rpc_ids.vers_comp	= NV_VERS_9_2;
-		nv_rpc_ids.cmd_remote	= 9;
-		return 0;
-	} else {
+		break;
+	default:
 		pr_err("%s: no matches found for version (0x%x)\n",
 			__func__, vers);
 		return -ENODATA;
 	}
+
+	return 0;
 }
 
 /* rpc connect for nv */
