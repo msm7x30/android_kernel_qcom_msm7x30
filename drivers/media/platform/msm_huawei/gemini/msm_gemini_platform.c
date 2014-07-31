@@ -10,6 +10,10 @@
  * GNU General Public License for more details.
  */
 
+#ifdef CONFIG_MSM_CAMERA_PMEM
+#undef CONFIG_MSM_MULTIMEDIA_USE_ION
+#endif
+
 #include <linux/module.h>
 #include <linux/pm_qos.h>
 #include <linux/clk.h>

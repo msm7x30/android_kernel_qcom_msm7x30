@@ -244,3 +244,11 @@ config S5K3L1YX
 		4 mipi lanes, preview config = 1984 * 1508 at 30 fps,
 		snapshot config = 4000 * 3000 at 20 fps,
 		hfr video at 60, 90 and 120 fps.
+
+config MSM_CAMERA_PMEM
+	bool "PMEM camera support"
+	depends on ANDROID_PMEM
+	default y if ANDROID_PMEM
+	--help---
+	  This conditionally disables ION support in the MSM camera drivers, in
+	  order to support older proprietary camera drivers.

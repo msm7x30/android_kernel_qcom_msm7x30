@@ -18,6 +18,10 @@
 /* FIXME: check limits on command lenghts passed from userspace */
 /* FIXME: __msm_release: which queues should we flush when opencnt != 0 */
 
+#ifdef CONFIG_MSM_CAMERA_PMEM
+#undef CONFIG_MSM_MULTIMEDIA_USE_ION
+#endif
+
 #include <linux/slab.h>
 #include <linux/kernel.h>
 #include <linux/module.h>
