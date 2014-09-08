@@ -55,6 +55,8 @@ obj-$(CONFIG_LEDS_LM355x)		+= leds-lm355x.o
 obj-$(CONFIG_LEDS_BLINKM)		+= leds-blinkm.o
 obj-$(CONFIG_LEDS_PM8XXX)		+= leds-pm8xxx.o
 obj-$(CONFIG_LEDS_PMIC8058)		+= leds-pmic8058.o
+obj-$(CONFIG_LEDS_AS3676)		+= leds-as3676.o
+obj-$(CONFIG_LEDS_AS3676_SEMC)		+= leds-as3676_semc.o
 
 # LED SPI Drivers
 obj-$(CONFIG_LEDS_DAC124S085)		+= leds-dac124s085.o
