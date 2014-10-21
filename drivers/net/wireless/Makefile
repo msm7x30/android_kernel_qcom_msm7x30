@@ -59,3 +59,5 @@ obj-$(CONFIG_BRCMFMAC)	+= brcm80211/
 obj-$(CONFIG_BRCMSMAC)	+= brcm80211/
 
 obj-$(CONFIG_LIBRA_CORE)	+= libra/
+
+obj-$(CONFIG_BCMDHD)	+= bcmdhd/
