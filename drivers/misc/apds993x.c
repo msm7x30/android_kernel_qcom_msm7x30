@@ -291,7 +291,7 @@ static struct sensors_classdev sensors_light_cdev = {
 	.max_range = "60000",
 	.resolution = "0.0125",
 	.sensor_power = "0.20",
-	.min_delay = 0, /* in microseconds */
+	.min_delay = 1000, /* in microseconds */
 	.fifo_reserved_event_count = 0,
 	.fifo_max_event_count = 0,
 	.enabled = 0,
@@ -312,7 +312,7 @@ static struct sensors_classdev sensors_proximity_cdev = {
 	.max_range = "5",
 	.resolution = "5.0",
 	.sensor_power = "3",
-	.min_delay = 0, /* in microseconds */
+	.min_delay = 1000, /* in microseconds */
 	.fifo_reserved_event_count = 0,
 	.fifo_max_event_count = 0,
 	.enabled = 0,
@@ -1236,10 +1236,12 @@ static int apds993x_set_als_poll_delay(struct i2c_client *client,
 	pr_debug("%s: val=%d\n", __func__, val);
 	mutex_lock(&data->op_mutex);
 
-	/* minimum 3ms */
-	if (val < 3)
-		val = 3;
-	data->als_poll_delay = val;
+	/* minimum 5ms */
+	if (val < 3000)
+		val = 3000;
+
+	/* convert us => ms */
+	data->als_poll_delay = val / 1000;
 
 	if (data->als_poll_delay >= 100)
 		atime_index = APDS993X_ALS_RES_37888;
@@ -1918,7 +1920,7 @@ static ssize_t apds993x_show_als_poll_delay(struct device *dev,
 	struct apds993x_data *data = i2c_get_clientdata(client);
 
 	/* return in micro-second */
-	return snprintf(buf, PAGE_SIZE, "%d\n", data->als_poll_delay);
+	return sprintf(buf, "%d\n", data->als_poll_delay * 1000);
 }
 
 static ssize_t apds993x_store_als_poll_delay(struct device *dev,
@@ -1933,23 +1935,6 @@ static ssize_t apds993x_store_als_poll_delay(struct device *dev,
 
 	return count;
 }
-
-#ifdef ALS_POLLING_ENABLED
-static int apds993x_als_poll_delay(struct sensors_classdev *sensors_cdev,
-		unsigned int delay_msec)
-{
-	struct apds993x_data *data = container_of(sensors_cdev,
-			struct apds993x_data, als_cdev);
-	apds993x_set_als_poll_delay(data->client, delay_msec);
-	return 0;
-}
-#else
-static int apds993x_als_poll_delay(struct sensors_classdev *sensors_cdev,
-		unsigned int delay_msec)
-{
-	return 0;
-}
-#endif
 
 static DEVICE_ATTR(als_poll_delay, S_IWUSR | S_IRUGO,
 		apds993x_show_als_poll_delay, apds993x_store_als_poll_delay);
@@ -2683,7 +2668,7 @@ static int apds993x_probe(struct i2c_client *client,
 	/* Register to sensors class */
 	data->als_cdev = sensors_light_cdev;
 	data->als_cdev.sensors_enable = apds993x_als_set_enable;
-	data->als_cdev.sensors_poll_delay = apds993x_als_poll_delay;
+	data->als_cdev.sensors_poll_delay = NULL;
 	memset(&data->als_cdev.cal_result, 0,
 			sizeof(data->als_cdev.cal_result));
 	data->ps_cdev = sensors_proximity_cdev;
