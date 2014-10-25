@@ -35,7 +35,6 @@
 #include <linux/i2c/apds993x.h>
 #include <linux/regulator/consumer.h>
 #include <linux/of_gpio.h>
-#include <linux/sensors.h>
 
 #define APDS993X_HAL_USE_SYS_ENABLE
 
@@ -216,8 +215,6 @@ struct apds993x_data {
 	struct delayed_work	als_dwork;	/* for ALS polling */
 	struct input_dev *input_dev_als;
 	struct input_dev *input_dev_ps;
-	struct sensors_classdev als_cdev;
-	struct sensors_classdev ps_cdev;
 
 	/* pinctrl data*/
 	struct pinctrl *pinctrl;
@@ -282,48 +279,6 @@ struct apds993x_data {
 	unsigned int als_reduce;	/* flag indicate ALS 6x reduction */
 };
 
-static struct sensors_classdev sensors_light_cdev = {
-	.name = "apds9930-light",
-	.vendor = "avago",
-	.version = 1,
-	.handle = SENSORS_LIGHT_HANDLE,
-	.type = SENSOR_TYPE_LIGHT,
-	.max_range = "60000",
-	.resolution = "0.0125",
-	.sensor_power = "0.20",
-	.min_delay = 1000, /* in microseconds */
-	.fifo_reserved_event_count = 0,
-	.fifo_max_event_count = 0,
-	.enabled = 0,
-	.delay_msec = 100,
-	.sensors_enable = NULL,
-	.sensors_poll_delay = NULL,
-	.sensors_write_cal_params = NULL,
-	.params = NULL,
-	.sensors_calibrate = NULL,
-};
-
-static struct sensors_classdev sensors_proximity_cdev = {
-	.name = "apds9930-proximity",
-	.vendor = "avago",
-	.version = 1,
-	.handle = SENSORS_PROXIMITY_HANDLE,
-	.type = SENSOR_TYPE_PROXIMITY,
-	.max_range = "5",
-	.resolution = "5.0",
-	.sensor_power = "3",
-	.min_delay = 1000, /* in microseconds */
-	.fifo_reserved_event_count = 0,
-	.fifo_max_event_count = 0,
-	.enabled = 0,
-	.delay_msec = 100,
-	.sensors_enable = NULL,
-	.sensors_poll_delay = NULL,
-	.sensors_write_cal_params = NULL,
-	.params = NULL,
-	.sensors_calibrate = NULL,
-};
-
 /*
  * Global data
  */
@@ -354,7 +309,6 @@ static int apds993x_set_als_poll_delay(struct i2c_client *client, unsigned int v
 
 static int sensor_regulator_power_on(struct apds993x_data *data, bool on);
 static int apds993x_init_device(struct i2c_client *client);
-static int apds9930_ps_get_calibrate_data(struct apds993x_data *data);
 
 /*
  * Management functions
@@ -1809,106 +1763,6 @@ static ssize_t apds993x_store_enable_als_sensor(struct device *dev,
 	return count;
 }
 
-static int apds993x_als_set_enable(struct sensors_classdev *sensors_cdev,
-		unsigned int enable)
-{
-	struct apds993x_data *data = container_of(sensors_cdev,
-			struct apds993x_data, als_cdev);
-
-	if ((enable != 0) && (enable != 1)) {
-		pr_err("%s: invalid value(%d)\n", __func__, enable);
-		return -EINVAL;
-	}
-
-	return apds993x_enable_als_sensor(data->client, enable);
-}
-
-static int apds993x_ps_set_enable(struct sensors_classdev *sensors_cdev,
-		unsigned int enable)
-{
-	struct apds993x_data *data = container_of(sensors_cdev,
-			struct apds993x_data, ps_cdev);
-
-	if ((enable != 0) && (enable != 1)) {
-		pr_err("%s: invalid value(%d)\n", __func__, enable);
-		return -EINVAL;
-	}
-
-	return apds993x_enable_ps_sensor(data->client, enable);
-}
-
-static int apds993x_ps_calibrate(struct sensors_classdev *sensors_cdev,
-		int axis, int apply_now)
-{
-	int i, arry = 0;
-	int temp[3] = { 0 };
-	struct apds993x_data *data = container_of(sensors_cdev,
-			struct apds993x_data, ps_cdev);
-	data->pre_enable_ps = data->enable_ps_sensor;
-	if (!data->enable_ps_sensor)
-		apds993x_enable_ps_sensor(data->client, 1);
-	for (i = 0; i < APDS_MAX_CAL; i++) {
-		msleep(100);
-		data->ps_cal_data = i2c_smbus_read_word_data(
-			data->client, CMD_WORD|APDS993X_PDATAL_REG);
-		if (i < APDS_CAL_SKIP_COUNT)
-			continue;
-		dev_dbg(&data->client->dev, "ps_cal data = %d\n",
-				data->ps_cal_data);
-		arry = arry + data->ps_cal_data;
-	}
-	arry = arry / (APDS_MAX_CAL - APDS_CAL_SKIP_COUNT);
-	if (axis == AXIS_THRESHOLD_H)
-		temp[0] = arry;
-	else if (axis == AXIS_THRESHOLD_L)
-		temp[1] = arry;
-	else if (axis == AXIS_BIAS)
-		temp[2] = arry;
-
-	if (apply_now) {
-		data->ps_cal_params[0] = temp[0];
-		data->ps_cal_params[1] = temp[1];
-		data->ps_cal_params[2] = temp[2];
-		apds9930_ps_get_calibrate_data(data);
-	}
-	memset(data->calibrate_buf, 0 , sizeof(data->calibrate_buf));
-	snprintf(data->calibrate_buf, sizeof(data->calibrate_buf),
-			"%d,%d,%d", temp[0], temp[1], temp[2]);
-	sensors_cdev->params = data->calibrate_buf;
-	if (!data->pre_enable_ps)
-		apds993x_enable_ps_sensor(data->client, 0);
-	return 0;
-}
-
-static int apds993x_ps_write_calibrate(struct sensors_classdev *sensors_cdev,
-		struct cal_result_t *cal_result)
-{
-	struct apds993x_data *data = container_of(sensors_cdev,
-			struct apds993x_data, ps_cdev);
-	data->ps_cal_params[0] = cal_result->threshold_h;
-	data->ps_cal_params[1] = cal_result->threshold_l;
-	data->ps_cal_params[2] = cal_result->bias;
-	apds9930_ps_get_calibrate_data(data);
-	return 0;
-}
-
-static int apds9930_ps_get_calibrate_data(struct apds993x_data *data)
-{
-	if (data->ps_cal_params[2]) {
-		data->ps_hysteresis_threshold =
-			apds993x_ps_hsyteresis_threshold
-			+ data->ps_cal_params[2];
-		data->ps_threshold = apds993x_ps_detection_threshold
-				+ data->ps_cal_params[2];
-	} else if (data->ps_cal_params[0] && data->ps_cal_params[1]) {
-		apds993x_ps_detection_threshold = data->ps_cal_params[0];
-		data->ps_threshold = data->ps_cal_params[0];
-		apds993x_ps_hsyteresis_threshold = data->ps_cal_params[1];
-		data->ps_hysteresis_threshold = data->ps_cal_params[1];
-	}
-	return 0;
-}
-
 static DEVICE_ATTR(enable_als_sensor, S_IWUSR | S_IWGRP | S_IRUGO,
 		apds993x_show_enable_als_sensor,
 		apds993x_store_enable_als_sensor);
@@ -2665,39 +2519,6 @@ static int apds993x_probe(struct i2c_client *client,
 		goto exit_unregister_ps_ioctl;
 	}
 
-	/* Register to sensors class */
-	data->als_cdev = sensors_light_cdev;
-	data->als_cdev.sensors_enable = apds993x_als_set_enable;
-	data->als_cdev.sensors_poll_delay = NULL;
-	memset(&data->als_cdev.cal_result, 0,
-			sizeof(data->als_cdev.cal_result));
-	data->ps_cdev = sensors_proximity_cdev;
-	data->ps_cdev.sensors_enable = apds993x_ps_set_enable;
-	data->ps_cdev.sensors_poll_delay = NULL;
-	if (pdata->default_cal) {
-		data->ps_cdev.sensors_calibrate = NULL;
-		data->ps_cdev.sensors_write_cal_params = NULL;
-	} else {
-		data->ps_cdev.sensors_calibrate = apds993x_ps_calibrate;
-		data->ps_cdev.sensors_write_cal_params =
-					apds993x_ps_write_calibrate;
-	}
-	memset(&data->ps_cdev.cal_result, 0 , sizeof(data->ps_cdev.cal_result));
-
-	err = sensors_classdev_register(&client->dev, &data->als_cdev);
-	if (err) {
-		pr_err("%s: Unable to register to sensors class: %d\n",
-				__func__, err);
-		goto exit_unregister_als_ioctl;
-	}
-
-	err = sensors_classdev_register(&client->dev, &data->ps_cdev);
-	if (err) {
-		pr_err("%s: Unable to register to sensors class: %d\n",
-			       __func__, err);
-		goto exit_unregister_als_class;
-	}
-
 	if (pdata->power_on)
 		err = pdata->power_on(false);
 
@@ -2705,10 +2526,6 @@ static int apds993x_probe(struct i2c_client *client,
 
 	return 0;
 
-exit_unregister_als_class:
-	sensors_classdev_unregister(&data->als_cdev);
-exit_unregister_als_ioctl:
-	misc_deregister(&apds993x_als_device);
 exit_unregister_ps_ioctl:
 	misc_deregister(&apds993x_ps_device);
 exit_remove_sysfs_group:
