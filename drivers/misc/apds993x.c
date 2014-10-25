@@ -1210,7 +1210,13 @@ static int apds993x_set_als_poll_delay(struct i2c_client *client,
 	}
 
 	if (data->enable_als_sensor) {
-		mod_delayed_work(apds993x_workqueue,
+		/*
+		 * If work is already scheduled then subsequent schedules will not
+		 * change the scheduled time that's why we have to cancel it first.
+		 */
+		cancel_delayed_work(&data->als_dwork);
+		flush_delayed_work(&data->als_dwork);
+		queue_delayed_work(apds993x_workqueue,
 				&data->als_dwork,
 				msecs_to_jiffies(data->als_poll_delay));
 	}
