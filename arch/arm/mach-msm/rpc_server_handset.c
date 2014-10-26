@@ -354,10 +354,22 @@ static struct msm_rpc_server hs_rpc_server = {
 	.rpc_call	= handle_hs_rpc_call,
 };
 
+#ifdef CONFIG_MSM_HUAWEI_RMT_OEMINFO
+#define HS_OEMINFO_K 0xFE
+extern int rmt_oeminfo_handle_key(uint32_t key_parm);
+#endif
+
 static int process_subs_srvc_callback(struct hs_event_cb_recv *recv)
 {
 	if (!recv)
 		return -ENODATA;
+
+#ifdef CONFIG_MSM_HUAWEI_RMT_OEMINFO
+	if (be32_to_cpu(recv->key.code) == HS_OEMINFO_K) {
+		rmt_oeminfo_handle_key(be32_to_cpu(recv->key.ver));
+		return 0;
+	}
+#endif
 
 	report_hs_key(be32_to_cpu(recv->key.code), be32_to_cpu(recv->key.parm));
 

@@ -13,3 +13,10 @@ config MSM_HUAWEI_HWPROPS
 	  addresses, serial number.
 
 	  Exported to userspace under /sys/hwprops.
+
+config MSM_HUAWEI_RMT_OEMINFO
+	bool "Huawei Remote Oeminfo RPC client"
+	depends on (MACH_HUAWEI && ARCH_MSM && MSM_ONCRPCROUTER)
+	help
+	  Provide RPC mechanism for remote processors to access oeminfo storage
+	  device on apps processor.
