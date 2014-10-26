@@ -2332,6 +2332,11 @@ static int apds993x_probe(struct i2c_client *client,
 	apds993x_coe_d = pdata->als_D;
 	apds993x_ga = pdata->ga_value;
 
+	/* set functions of platform data */
+	pdata->init = sensor_platform_hw_init;
+	pdata->exit = sensor_platform_hw_exit;
+	pdata->power_on = sensor_platform_hw_power_on;
+
 	data = kzalloc(sizeof(struct apds993x_data), GFP_KERNEL);
 	if (!data) {
 		dev_err(&client->dev, "Failed to allocate memory\n");
