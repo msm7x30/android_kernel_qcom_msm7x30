@@ -37,6 +37,7 @@
 * 1.1.4+	| 2012/10/25	| Pierluigi Passaro	| added OUT_TEMP support
 *******************************************************************************/
 
+#include <linux/module.h>
 #include <linux/i2c.h>
 #include <linux/mutex.h>
 #include <linux/input-polldev.h>
@@ -988,8 +989,6 @@ static int l3g4200d_remove(struct i2c_client *client)
 static int l3g4200d_suspend(struct device *dev)
 {
 #ifdef CONFIG_SUSPEND
-	struct i2c_client *client = to_i2c_client(dev);
-	struct l3g4200d_data *gyro = i2c_get_clientdata(client);
 #ifdef DEBUG
 	pr_info(KERN_INFO "l3g4200d_suspend\n");
 #endif /* DEBUG */
@@ -1001,8 +1000,6 @@ static int l3g4200d_suspend(struct device *dev)
 static int l3g4200d_resume(struct device *dev)
 {
 #ifdef CONFIG_SUSPEND
-	struct i2c_client *client = to_i2c_client(dev);
-	struct l3g4200d_data *gyro = i2c_get_clientdata(client);
 #ifdef DEBUG
 	pr_info(KERN_INFO "l3g4200d_resume\n");
 #endif /*DEBUG */
