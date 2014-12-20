@@ -80,4 +80,7 @@ int libra_sdio_notify_card_removal(
 		notify_card_removal_t *libra_sdio_notify_card_removal_hdlr);
 int libra_sdio_register_shutdown_hdlr(
 		shutdown_handler_t *libra_shutdown_hdlr);
+
+void *libra_prealloc_get(unsigned int size);
+int libra_prealloc_put(void *ptr);
 #endif /* __LIBRA_SDIOIF_H__ */
