@@ -1089,7 +1089,10 @@ static int mt9e013_sensor_probe(const struct msm_camera_sensor_info *info,
 	s->s_release = mt9e013_sensor_release;
 	s->s_config  = mt9e013_sensor_config;
 	s->s_camera_type = BACK_CAMERA_2D;
-	s->s_mount_angle = 0;
+	if (info->sensor_platform_info)
+		s->s_mount_angle = info->sensor_platform_info->mount_angle;
+	else
+		s->s_mount_angle = 0;
 	mt9e013_sensor_init_done(info);
 
 	return 0;
