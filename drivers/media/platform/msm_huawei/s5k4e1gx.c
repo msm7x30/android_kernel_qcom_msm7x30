@@ -2332,6 +2332,7 @@ static int s5k4e1gx_sensor_probe(const struct msm_camera_sensor_info *info,
 	s->s_init = s5k4e1gx_sensor_open_init;
 	s->s_release = s5k4e1gx_sensor_release;
 	s->s_config = s5k4e1gx_sensor_config;
+	s->s_camera_type = BACK_CAMERA_2D;
 	if (info->sensor_platform_info)
 		s->s_mount_angle = info->sensor_platform_info->mount_angle;
 	else
