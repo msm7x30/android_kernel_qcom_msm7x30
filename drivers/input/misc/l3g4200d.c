@@ -40,7 +40,7 @@
 #include <linux/module.h>
 #include <linux/i2c.h>
 #include <linux/mutex.h>
-#include <linux/input-polldev.h>
+#include <linux/input.h>
 #include <linux/slab.h>
 
 #include <linux/l3g4200d.h>
@@ -135,7 +135,9 @@ struct l3g4200d_data {
 
 	struct mutex lock;
 
-	struct input_polled_dev *input_poll_dev;
+	struct delayed_work input_work;
+	struct input_dev *input_dev;
+
 	int hw_initialized;
 	int selftest_enabled;
 	atomic_t enabled;
@@ -362,12 +364,11 @@ static int l3g4200d_get_data(struct l3g4200d_data *gyro,
 static void l3g4200d_report_values(struct l3g4200d_data *l3g,
 						struct l3g4200d_output *data)
 {
-	struct input_dev *input = l3g->input_poll_dev->input;
-	input_report_abs(input, ABS_MISC, data->temp);
-	input_report_abs(input, ABS_X, data->x);
-	input_report_abs(input, ABS_Y, data->y);
-	input_report_abs(input, ABS_Z, data->z);
-	input_sync(input);
+	input_report_abs(l3g->input_dev, ABS_MISC, data->temp);
+	input_report_abs(l3g->input_dev, ABS_X, data->x);
+	input_report_abs(l3g->input_dev, ABS_Y, data->y);
+	input_report_abs(l3g->input_dev, ABS_Z, data->z);
+	input_sync(l3g->input_dev);
 }
 
 static int l3g4200d_hw_init(struct l3g4200d_data *gyro)
@@ -451,6 +452,8 @@ static int l3g4200d_enable(struct l3g4200d_data *dev_data)
 			atomic_set(&dev_data->enabled, 0);
 			return err;
 		}
+		schedule_delayed_work(&dev_data->input_work,
+			msecs_to_jiffies(dev_data->pdata->poll_interval));
 	}
 
 	return 0;
@@ -458,8 +461,10 @@ static int l3g4200d_enable(struct l3g4200d_data *dev_data)
 
 static int l3g4200d_disable(struct l3g4200d_data *dev_data)
 {
-	if (atomic_cmpxchg(&dev_data->enabled, 1, 0))
+	if (atomic_cmpxchg(&dev_data->enabled, 1, 0)) {
+		cancel_delayed_work_sync(&dev_data->input_work);
 		l3g4200d_device_power_off(dev_data);
+	}
 
 	return 0;
 }
@@ -471,7 +476,7 @@ static ssize_t attr_polling_rate_show(struct device *dev,
 	int val;
 	struct l3g4200d_data *gyro = dev_get_drvdata(dev);
 	mutex_lock(&gyro->lock);
-	val = gyro->input_poll_dev->poll_interval;
+	val = gyro->pdata->poll_interval;
 	mutex_unlock(&gyro->lock);
 	return sprintf(buf, "%d\n", val);
 }
@@ -489,7 +494,6 @@ static ssize_t attr_polling_rate_store(struct device *dev,
 		return -EINVAL;
 	interval_ms = max((unsigned int)interval_ms,gyro->pdata->min_interval);
 	mutex_lock(&gyro->lock);
-	gyro->input_poll_dev->poll_interval = interval_ms;
 	gyro->pdata->poll_interval = interval_ms;
 	l3g4200d_update_odr(gyro, interval_ms);
 	mutex_unlock(&gyro->lock);
@@ -705,16 +709,15 @@ static int remove_sysfs_interfaces(struct device *dev)
 	return 0;
 }
 
-static void l3g4200d_input_poll_func(struct input_polled_dev *dev)
+static void l3g4200d_input_work_func(struct work_struct *work)
 {
-	struct l3g4200d_data *gyro = dev->private;
+	struct l3g4200d_data *gyro;
 
 	struct l3g4200d_output data_out;
-
 	int err;
 
-	/* dev_data = container_of((struct delayed_work *)work,
-				 struct l3g4200d_data, input_work); */
+	gyro = container_of((struct delayed_work *)work,
+			struct l3g4200d_data, input_work);
 
 	mutex_lock(&gyro->lock);
 	err = l3g4200d_get_data(gyro, &data_out);
@@ -723,6 +726,8 @@ static void l3g4200d_input_poll_func(struct input_polled_dev *dev)
 	else
 		l3g4200d_report_values(gyro, &data_out);
 
+	schedule_delayed_work(&gyro->input_work, msecs_to_jiffies(
+			gyro->pdata->poll_interval));
 	mutex_unlock(&gyro->lock);
 
 }
@@ -786,60 +791,51 @@ static int l3g4200d_validate_pdata(struct l3g4200d_data *gyro)
 static int l3g4200d_input_init(struct l3g4200d_data *gyro)
 {
 	int err = -1;
-	struct input_dev *input;
 
-
-	gyro->input_poll_dev = input_allocate_polled_device();
-	if (!gyro->input_poll_dev) {
+	INIT_DELAYED_WORK(&gyro->input_work, l3g4200d_input_work_func);
+	gyro->input_dev = input_allocate_device();
+	if (!gyro->input_dev) {
 		err = -ENOMEM;
-		dev_err(&gyro->client->dev,
-			"input device allocate failed\n");
+		dev_err(&gyro->client->dev, "input device allocate failed\n");
 		goto err0;
 	}
 
-	gyro->input_poll_dev->private = gyro;
-	gyro->input_poll_dev->poll = l3g4200d_input_poll_func;
-	gyro->input_poll_dev->poll_interval = gyro->pdata->poll_interval;
+	gyro->input_dev->name = L3G4200D_DEV_NAME;
+	gyro->input_dev->id.bustype = BUS_I2C;
+	gyro->input_dev->dev.parent = &gyro->client->dev;
 
-	input = gyro->input_poll_dev->input;
+	input_set_drvdata(gyro->input_dev, gyro);
 
-	input->open = l3g4200d_input_open;
-	input->close = l3g4200d_input_close;
+	set_bit(EV_ABS, gyro->input_dev->evbit);
 
-	input->id.bustype = BUS_I2C;
-	input->dev.parent = &gyro->client->dev;
+	input_set_abs_params(gyro->input_dev, ABS_MISC, 0, 255, FUZZ, FLAT);
+	input_set_abs_params(
+		gyro->input_dev, ABS_X, -FS_MAX+1, FS_MAX, FUZZ, FLAT);
+	input_set_abs_params(
+		gyro->input_dev, ABS_Y, -FS_MAX+1, FS_MAX, FUZZ, FLAT);
+	input_set_abs_params(
+		gyro->input_dev, ABS_Z, -FS_MAX+1, FS_MAX, FUZZ, FLAT);
 
-	input_set_drvdata(gyro->input_poll_dev->input, gyro);
-
-	set_bit(EV_ABS, input->evbit);
-
-	input_set_abs_params(input, ABS_MISC, 0, 255, FUZZ, FLAT);
-	input_set_abs_params(input, ABS_X, -FS_MAX+1, FS_MAX, FUZZ, FLAT);
-	input_set_abs_params(input, ABS_Y, -FS_MAX+1, FS_MAX, FUZZ, FLAT);
-	input_set_abs_params(input, ABS_Z, -FS_MAX+1, FS_MAX, FUZZ, FLAT);
-
-	input->name = L3G4200D_DEV_NAME;
-
-	err = input_register_polled_device(gyro->input_poll_dev);
+	err = input_register_device(gyro->input_dev);
 	if (err) {
 		dev_err(&gyro->client->dev,
-			"unable to register input polled device %s\n",
-			gyro->input_poll_dev->input->name);
+			"unable to register input device %s\n",
+			gyro->input_dev->name);
 		goto err1;
 	}
 
 	return 0;
 
 err1:
-	input_free_polled_device(gyro->input_poll_dev);
+	input_free_device(gyro->input_dev);
 err0:
 	return err;
 }
 
 static void l3g4200d_input_cleanup(struct l3g4200d_data *gyro)
 {
-	input_unregister_polled_device(gyro->input_poll_dev);
-	input_free_polled_device(gyro->input_poll_dev);
+	input_unregister_device(gyro->input_dev);
+	input_free_device(gyro->input_dev);
 }
 
 static int l3g4200d_probe(struct i2c_client *client,
