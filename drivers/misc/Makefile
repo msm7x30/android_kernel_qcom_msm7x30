@@ -66,3 +66,4 @@ obj-$(CONFIG_ANDROID_PMEM)	+= pmem.o
 endif
 obj-$(CONFIG_MSM_MEMORY_LOW_POWER_MODE_SUSPEND_DEEP_POWER_DOWN) \
 	+= msm_migrate_pages.o
+obj-$(CONFIG_SENSORS_AK8975)	+= akm8975.o
