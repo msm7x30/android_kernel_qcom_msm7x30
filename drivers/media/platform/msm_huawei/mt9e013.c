@@ -1085,6 +1085,10 @@ static int mt9e013_sensor_probe(const struct msm_camera_sensor_info *info,
 		return rc;
 	}
 
+	/* Read model ID */
+	if (mt9e013_i2c_read(0x3806, &mt9e013_model_id, 2) < 0)
+		mt9e013_model_id = (mt9e013_model_id & 0xF000) >> 12;
+
 	s->s_init = mt9e013_sensor_open_init;
 	s->s_release = mt9e013_sensor_release;
 	s->s_config  = mt9e013_sensor_config;
