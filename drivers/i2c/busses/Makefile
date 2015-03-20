@@ -92,6 +92,7 @@ obj-$(CONFIG_I2C_SIBYTE)	+= i2c-sibyte.o
 obj-$(CONFIG_SCx200_ACB)	+= scx200_acb.o
 obj-$(CONFIG_SCx200_I2C)	+= scx200_i2c.o
 obj-$(CONFIG_I2C_MSM)		+= i2c-msm.o
+obj-$(CONFIG_I2C_QUP)		+= i2c-qup.o
 obj-$(CONFIG_I2C_SSBI)		+= i2c-ssbi.o
 
 ccflags-$(CONFIG_I2C_DEBUG_BUS) := -DDEBUG
