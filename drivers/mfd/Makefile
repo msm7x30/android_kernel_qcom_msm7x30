@@ -160,3 +160,12 @@ obj-$(CONFIG_MFD_LM3533)	+= lm3533-core.o lm3533-ctrlbank.o
 obj-$(CONFIG_VEXPRESS_CONFIG)	+= vexpress-config.o vexpress-sysreg.o
 obj-$(CONFIG_MFD_RETU)		+= retu-mfd.o
 obj-$(CONFIG_MFD_AS3711)	+= as3711.o
+obj-$(CONFIG_MARIMBA_CORE)	+= marimba-core.o
+obj-$(CONFIG_MARIMBA_TSADC)	+= marimba-tsadc.o
+obj-$(CONFIG_MARIMBA_CODEC)	+= marimba-codec.o
+obj-$(CONFIG_TIMPANI_CODEC)	+= timpani-codec.o
+ifdef CONFIG_TIMPANI_CODEC
+obj-$(CONFIG_TIMPANI_CODEC)	+= msm-adie-codec.o
+else ifdef CONFIG_MARIMBA_CODEC
+obj-$(CONFIG_MARIMBA_CODEC)	+= msm-adie-codec.o
+endif

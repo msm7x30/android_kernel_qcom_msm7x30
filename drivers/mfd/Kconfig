@@ -1162,6 +1162,41 @@ config MFD_WM8994
 	  core support for the WM8994, in order to use the actual
 	  functionaltiy of the device other drivers must be enabled.
 
+config MARIMBA_CORE
+	tristate "Marimba Core"
+	depends on I2C && (ARCH_MSM7X30 || ARCH_MSM8X60 || ARCH_MSM7X27A)
+	default n
+	help
+	  Enables the Marimba Core driver. The core driver provides
+	  read/write capability to registers which are part of the
+	  marimba core.
+	  This driver dynamically detects the SoC and works for both
+	  Marimba and Bahama Chip.
+
+config MARIMBA_CODEC
+	tristate "Marimba Codec"
+	depends on MARIMBA_CORE
+	default n
+	help
+	  This driver programs Marimba Wideband Codec for input/output of
+	  audio signal.
+
+config TIMPANI_CODEC
+	tristate "Timpani Codec"
+	depends on MARIMBA_CORE
+	default n
+	help
+	  This driver programs Timpani Wideband Codec for input/output of
+	  audio signal.
+
+config MARIMBA_TSADC
+	tristate "Support for Marimba Touchscreen ADC"
+	depends on MARIMBA_CORE && ARCH_MSM7X30
+	default y if MARIMBA_CORE
+	help
+	  Say yes here if you want to include support for TSADC in the
+	  Qualcomm Marimba chip.
+
 endmenu
 endif
 
