@@ -457,6 +457,18 @@ config USB_EG20T
 	  ML7213/ML7831 is companion chip for Intel Atom E6xx series.
 	  ML7213/ML7831 is completely compatible for Intel EG20T PCH.
 
+config USB_MSM_72K
+	tristate "MSM 72K Device Controller"
+	depends on ARCH_MSM
+	select USB_GADGET_DUALSPEED
+	select USB_MSM_OTG_72K
+	help
+	  USB gadget driver for Qualcomm MSM 72K architecture.
+
+	  Say "y" to link the driver statically, or "m" to build a
+	  dynamically linked module called "msm72k" and force all
+	  gadget drivers to also be dynamically linked.
+
 #
 # LAST -- dummy/emulated controller
 #

@@ -34,6 +34,7 @@ obj-$(CONFIG_USB_MV_UDC)	+= mv_udc.o
 mv_udc-y			:= mv_udc_core.o
 obj-$(CONFIG_USB_FUSB300)	+= fusb300_udc.o
 obj-$(CONFIG_USB_MV_U3D)	+= mv_u3d_core.o
+obj-$(CONFIG_USB_MSM_72K)	+= msm72k_udc.o
 
 # USB Functions
 usb_f_acm-y			:= f_acm.o
