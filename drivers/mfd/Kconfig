@@ -440,6 +440,16 @@ config MFD_PM8921_CORE
 	  Say M here if you want to include support for PM8921 chip as a module.
 	  This will build a module called "pm8921-core".
 
+config MFD_PM8XXX_BATT_ALARM
+	tristate "Support for Qualcomm PM8xxx battery voltage alarm"
+	depends on MFD_PM8XXX
+	help
+	  This driver provides a means monitor battery under and over-voltage
+	  conditions.  An upper and/or lower threshold can be specified for
+	  normal operation.  A wakeable interrupt is triggered when the battery
+	  voltage leaves the accepatable range which then calls a notifier call
+	  chain.
+
 config MFD_PM8XXX_IRQ
 	bool "Qualcomm PM8xxx IRQ features"
 	depends on MFD_PM8XXX
