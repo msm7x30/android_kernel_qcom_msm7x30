@@ -27,7 +27,9 @@
 #include <linux/dma-mapping.h>
 #include <linux/debugfs.h>
 #include <linux/delay.h>
+#ifdef CONFIG_HAS_EARLYSUSPEND
 #include <linux/earlysuspend.h>
+#endif
 #include <linux/list.h>
 #include <linux/slab.h>
 #include <linux/msm_audio.h>

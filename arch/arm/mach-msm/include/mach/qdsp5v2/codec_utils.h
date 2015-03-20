@@ -13,7 +13,9 @@
 #ifndef CODEC_UTILS_H
 #define CODEC_UTILS_H
 
+#ifdef CONFIG_HAS_EARLYSUSPEND
 #include <linux/earlysuspend.h>
+#endif
 
 #define ADRV_STATUS_AIO_INTF 0x00000001
 #define ADRV_STATUS_OBUF_GIVEN 0x00000002

@@ -31,7 +31,9 @@
 #include <linux/debugfs.h>
 #include <linux/delay.h>
 #include <linux/list.h>
+#ifdef CONFIG_HAS_EARLYSUSPEND
 #include <linux/earlysuspend.h>
+#endif
 #include <linux/slab.h>
 #include <linux/msm_audio.h>
 #include <linux/memory_alloc.h>
