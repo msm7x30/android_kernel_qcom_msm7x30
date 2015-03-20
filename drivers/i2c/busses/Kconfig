@@ -952,6 +952,14 @@ config SCx200_ACB
 	  This support is also available as a module.  If so, the module
 	  will be called scx200_acb.
 
+config I2C_MSM
+	tristate "MSM"
+	depends on I2C && (ARCH_MSM || ARCH_QSD)
+	default y
+	help
+	  If you say yes to this option, support will be included for the
+	  built-in I2C interface on the MSM or QSD family processors.
+
 config I2C_SSBI
 	tristate "Qualcomm Single-wire Serial Bus Interface (SSBI)"
 	depends on I2C && (ARCH_MSM7X30 || ARCH_MSM8X60 || ARCH_FSM9XXX)
