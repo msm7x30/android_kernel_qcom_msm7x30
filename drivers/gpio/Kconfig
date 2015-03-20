@@ -704,6 +704,14 @@ config GPIO_MSIC
 	  Enable support for GPIO on intel MSIC controllers found in
 	  intel MID devices
 
+config GPIO_PM8XXX
+	tristate "Qualcomm PM8xxx GPIO support"
+	depends on MFD_PM8XXX
+	default y if MFD_PM8XXX
+	help
+	  This option enables support for on-chip GPIO found on Qualcomm PM8xxx
+	  PMICs.
+
 comment "USB GPIO expanders:"
 
 config GPIO_VIPERBOARD
