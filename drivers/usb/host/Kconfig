@@ -199,6 +199,14 @@ config USB_EHCI_MSM
 	  This driver is not supported on boards like trout which
 	  has an external PHY.
 
+config USB_EHCI_MSM_72K
+	bool "Support for Legacy Qualcomm on-chip EHCI USB controller"
+	depends on USB_EHCI_HCD && ARCH_MSM
+	select USB_MSM_OTG_72K
+	---help---
+	  This driver enables support for USB host controller
+	  in pre 8660 qualcomm chipsets(8660, 7X30, 8X50 and 7X27).
+
 config USB_EHCI_TEGRA
        boolean "NVIDIA Tegra HCD support"
        depends on ARCH_TEGRA
@@ -588,7 +596,7 @@ config USB_SL811_HCD
 	help
 	  The SL811HS is a single-port USB controller that supports either
 	  host side or peripheral side roles.  Enable this option if your
-	  board has this chip, and you want to use it as a host controller. 
+	  board has this chip, and you want to use it as a host controller.
 	  If unsure, say N.
 
 	  To compile this driver as a module, choose M here: the
