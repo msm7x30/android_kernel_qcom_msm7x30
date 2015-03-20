@@ -419,44 +419,6 @@ static void msm_otg_init_timer(struct msm_otg *dev)
 	dev->timer.function = msm_otg_timer_func;
 }
 
-static const char *event_string(enum usb_otg_event event)
-{
-	switch (event) {
-	case OTG_EVENT_DEV_CONN_TMOUT:
-		return "DEV_CONN_TMOUT";
-	case OTG_EVENT_NO_RESP_FOR_HNP_ENABLE:
-		return "NO_RESP_FOR_HNP_ENABLE";
-	case OTG_EVENT_HUB_NOT_SUPPORTED:
-		return "HUB_NOT_SUPPORTED";
-	case OTG_EVENT_DEV_NOT_SUPPORTED:
-		return "DEV_NOT_SUPPORTED,";
-	case OTG_EVENT_HNP_FAILED:
-		return "HNP_FAILED";
-	case OTG_EVENT_NO_RESP_FOR_SRP:
-		return "NO_RESP_FOR_SRP";
-	default:
-		return "UNDEFINED";
-	}
-}
-
-static int msm_otg_send_event(struct usb_otg *otg,
-				enum usb_otg_event event)
-{
-	char module_name[16];
-	char udev_event[128];
-	char *envp[] = { module_name, udev_event, NULL };
-	int ret;
-
-	pr_debug("sending %s event\n", event_string(event));
-
-	snprintf(module_name, 16, "MODULE=%s", DRIVER_NAME);
-	snprintf(udev_event, 128, "EVENT=%s", event_string(event));
-	ret = kobject_uevent_env(&otg->phy->dev->kobj, KOBJ_CHANGE, envp);
-	if (ret < 0)
-		pr_info("uevent sending failed with ret = %d\n", ret);
-	return ret;
-}
-
 static int msm_otg_start_hnp(struct usb_otg *otg)
 {
 	struct msm_otg *dev = container_of(otg->phy, struct msm_otg, phy);
@@ -1795,9 +1757,6 @@ static void msm_otg_sm_work(struct work_struct *w)
 			work = 1;
 		} else if (test_bit(B_SRP_FAIL, &dev->tmouts)) {
 			pr_debug("b_srp_fail\n");
-			/* notify user space */
-			msm_otg_send_event(dev->phy.otg,
-				OTG_EVENT_NO_RESP_FOR_SRP);
 			clear_bit(B_BUS_REQ, &dev->inputs);
 			clear_bit(B_SRP_FAIL, &dev->tmouts);
 			spin_lock_irqsave(&dev->lock, flags);
@@ -1892,8 +1851,6 @@ static void msm_otg_sm_work(struct work_struct *w)
 			 * not handled for now.
 			 */
 			pr_debug("b_ase0_brst_tmout\n");
-			msm_otg_send_event(dev->phy.otg,
-				OTG_EVENT_HNP_FAILED);
 			msm_otg_start_host(dev->phy.otg, REQUEST_STOP);
 			dev->phy.otg->host->is_b_host = 0;
 			clear_bit(B_ASE0_BRST, &dev->tmouts);
@@ -2009,9 +1966,6 @@ static void msm_otg_sm_work(struct work_struct *w)
 				test_bit(A_WAIT_BCON, &dev->tmouts)) {
 			pr_debug("id_f/b/c || a_bus_drop ||"
 					"a_wait_bcon_tmout\n");
-			if (test_bit(A_WAIT_BCON, &dev->tmouts))
-				msm_otg_send_event(dev->phy.otg,
-					OTG_EVENT_DEV_CONN_TMOUT);
 			msm_otg_del_timer(dev);
 			clear_bit(A_BUS_REQ, &dev->inputs);
 			msm_otg_start_host(dev->phy.otg, REQUEST_STOP);
@@ -2128,9 +2082,6 @@ static void msm_otg_sm_work(struct work_struct *w)
 				test_bit(A_AIDL_BDIS, &dev->tmouts)) {
 			pr_debug("id_f/b/c || a_bus_drop ||"
 					"a_aidl_bdis_tmout\n");
-			if (test_bit(A_AIDL_BDIS, &dev->tmouts))
-				msm_otg_send_event(dev->phy.otg,
-					OTG_EVENT_HNP_FAILED);
 			msm_otg_del_timer(dev);
 			clear_bit(B_CONN, &dev->inputs);
 			spin_lock_irqsave(&dev->lock, flags);
@@ -2825,7 +2776,6 @@ static int __init msm_otg_probe(struct platform_device *pdev)
 	dev->phy.otg->set_host = msm_otg_set_host;
 #endif
 	dev->phy.otg->start_hnp = msm_otg_start_hnp;
-	dev->phy.otg->send_event = msm_otg_send_event;
 	dev->set_clk = msm_otg_set_clk;
 	dev->reset = otg_reset;
 	dev->phy.io_ops = &msm_otg_io_ops;
