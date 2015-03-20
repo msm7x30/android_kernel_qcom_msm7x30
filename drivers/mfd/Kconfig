@@ -470,6 +470,14 @@ config MFD_PM8XXX_IRQ
 	  This is required to use certain other PM 8xxx features, such as GPIO
 	  and MPP.
 
+config MFD_PM8XXX_MISC
+	tristate "Support for Qualcomm PM8xxx miscellaneous APIs"
+	depends on MFD_PM8XXX
+	default y if MFD_PM8XXX
+	help
+	  This driver implements several miscellaneous APIs that may be needed
+	  in order to control the PM8XXX PMIC chip.
+
 config MFD_PM8XXX_PWM
 	tristate "Support for Qualcomm PM8xxx PWM feature"
 	depends on MFD_PM8XXX
