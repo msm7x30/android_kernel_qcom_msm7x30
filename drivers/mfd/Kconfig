@@ -417,6 +417,14 @@ config UCB1400_CORE
 config MFD_PM8XXX
 	tristate
 
+config PMIC8058
+	tristate "PMIC8058 Power Management chip"
+	depends on MSM_SSBI
+	select MFD_CORE
+	select MFD_PM8XXX
+	help
+	  Say yes here for Qualcomm PM8058 chip.
+
 config MFD_PM8921_CORE
 	tristate "Qualcomm PM8921 PMIC chip"
 	depends on SSBI && BROKEN
