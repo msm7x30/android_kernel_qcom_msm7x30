@@ -537,6 +537,15 @@ config UID_CPUTIME
 	help
 	  Per UID based cpu time statistics exported to /proc/uid_cputime
 
+config PMIC8XXX_UPL
+	tristate "Qualcomm PM8XXX support for User Programmable Logic"
+	depends on MFD_PM8XXX
+	help
+	  This option enables device driver support for User Programmable Logic
+	  on Qualcomm PM8XXX chips. The UPL module provides a means to implement
+	  simple truth table based logic via a set of control registers. I/O may
+	  be routed in and out of the UPL module via GPIO or DTEST pins.
+
 config PMIC8XXX_VIBRATOR
 	tristate "Qualcomm Vibrator support for PMIC8XXX"
 	depends on MFD_PM8XXX && ANDROID_TIMED_OUTPUT
