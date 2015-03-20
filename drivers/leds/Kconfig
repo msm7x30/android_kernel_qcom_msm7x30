@@ -479,6 +479,17 @@ config LEDS_BLINKM
 	  This option enables support for the BlinkM RGB LED connected
 	  through I2C. Say Y to enable support for the BlinkM LED.
 
+config LEDS_PM8XXX
+	tristate "LED Support for Qualcomm PMIC8XXX"
+	depends on MFD_PM8XXX
+	help
+	  This option enables support for LEDs connected over PMIC8XXX
+	  (Power Management IC) chip on Qualcomm reference boards,
+	  for example SURF and FFAs.
+
+	  To compile this driver as a module, choose M here: the module will
+	  be called leds-pmic8xxx.
+
 comment "LED Triggers"
 source "drivers/leds/trigger/Kconfig"
 
