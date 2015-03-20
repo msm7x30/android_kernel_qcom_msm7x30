@@ -58,3 +58,4 @@ obj-$(CONFIG_UID_CPUTIME) += uid_cputime.o
 obj-$(CONFIG_PMIC8XXX_NFC)	+= pm8xxx-nfc.o
 obj-$(CONFIG_PMIC8XXX_UPL)	+= pm8xxx-upl.o
 obj-$(CONFIG_PMIC8XXX_VIBRATOR)	+= pm8xxx-vibrator.o
+obj-$(CONFIG_PMIC8058_XOADC)	+= pmic8058-xoadc.o
