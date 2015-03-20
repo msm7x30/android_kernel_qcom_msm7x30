@@ -44,7 +44,6 @@
 #include <mach/msm_memtypes.h>
 #include <mach/cpuidle.h>
 #include <linux/msm_ion.h>
-#include <mach/htc_pwrsink.h>
 #include <mach/debug_mm.h>
 
 #define BUFSZ (960 * 5)
@@ -194,7 +193,6 @@ static int audio_enable(struct audio *audio)
 	}
 
 	audio->enabled = 1;
-	htc_pwrsink_set(PWRSINK_AUDIO, 100);
 	return 0;
 }
 
@@ -620,7 +618,6 @@ static int audio_release(struct inode *inode, struct file *file)
 	audio_flush(audio);
 	audio->opened = 0;
 	mutex_unlock(&audio->lock);
-	htc_pwrsink_set(PWRSINK_AUDIO, 0);
 	return 0;
 }
 
