@@ -1,0 +1,34 @@
+menu "MSM SoC Audio support"
+
+#7630 Variants
+config SND_MSM7KV2_DAI_SOC
+	tristate
+
+config SND_MSM_SOC_MSM7KV2
+	tristate
+
+config SND_MSM7KV2_SOC
+	tristate "SoC Audio for the MSM7KV2 chip"
+	depends on ARCH_MSM7X30 && SND_SOC && MSM7KV2_AUDIO
+	select SND_MSM_SOC_MSM7KV2
+	select SND_MSM7KV2_DAI_SOC
+	default n
+	help
+	  To add support for ALSA PCM driver for QSD8k board.
+
+config SND_MSM_MVS7x30_SOC
+	tristate
+
+config SND_MSM_MVS_DAI_SOC
+	tristate
+
+config SND_MVS_SOC
+	tristate "SoC Mvs support for MSM7X30"
+	depends on SND_MSM7KV2_SOC
+	select SND_MSM_MVS7x30_SOC
+	select SND_MSM_MVS_DAI_SOC
+	default n
+	help
+	  To support Mvs packet capture/playback
+
+endmenu
