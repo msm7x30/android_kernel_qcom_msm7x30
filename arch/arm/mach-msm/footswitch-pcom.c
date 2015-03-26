@@ -246,6 +246,7 @@ static int footswitch_probe(struct platform_device *pdev)
 {
 	struct footswitch *fs;
 	struct regulator_init_data *init_data;
+	struct regulator_config config = { };
 	int rc;
 
 	if (pdev == NULL)
@@ -272,8 +273,10 @@ static int footswitch_probe(struct platform_device *pdev)
 	if (rc)
 		return rc;
 
-	fs->rdev = regulator_register(&fs->desc, &pdev->dev,
-							init_data, fs, NULL);
+	config.dev = pdev->dev.parent;
+	config.init_data = init_data;
+	config.driver_data = fs;
+	fs->rdev = regulator_register(&fs->desc, &config);
 	if (IS_ERR(fs->rdev)) {
 		pr_err("regulator_register(%s) failed\n", fs->desc.name);
 		rc = PTR_ERR(fs->rdev);
