@@ -25,8 +25,7 @@
 #include <sound/soc.h>
 #include "msm_audio_mvs.h"
 
-static struct snd_soc_dai_driver msm_mvs_codec_dais[] = {
-{
+static struct snd_soc_dai_driver msm_mvs_codec_dais = {
 	.name = "mvs-codec-dai",
 	.playback = {
 		.channels_max = 2,
@@ -42,10 +41,9 @@ static struct snd_soc_dai_driver msm_mvs_codec_dais[] = {
 		.rate_max = 8000,
 		.formats = SNDRV_PCM_FMTBIT_S16_LE,
 	},
-},
 };
-static struct snd_soc_dai_driver msm_mvs_cpu_dais[] = {
-{
+
+static struct snd_soc_dai_driver msm_mvs_cpu_dais = {
 	.name = "mvs-cpu-dai",
 	.playback = {
 		.channels_max = 2,
@@ -61,35 +59,39 @@ static struct snd_soc_dai_driver msm_mvs_cpu_dais[] = {
 		.rate_max = 8000,
 		.formats = SNDRV_PCM_FMTBIT_S16_LE,
 	},
-},
 };
 
 static struct snd_soc_codec_driver soc_codec_dev_msm = {
-        .compress_type = SND_SOC_FLAT_COMPRESSION,
+	.compress_type = SND_SOC_FLAT_COMPRESSION,
+};
+
+static const struct snd_soc_component_driver soc_component_dev_msm = {
+	.name = "mvs-cpu",
 };
 
 static __devinit int asoc_mvs_codec_probe(struct platform_device *pdev)
 {
 	dev_info(&pdev->dev, "%s: dev name %s\n", __func__, dev_name(&pdev->dev));
 	return snd_soc_register_codec(&pdev->dev, &soc_codec_dev_msm,
-                        msm_mvs_codec_dais, ARRAY_SIZE(msm_mvs_codec_dais));
+			&msm_mvs_codec_dais, 1);
 }
 
 static int __devexit asoc_mvs_codec_remove(struct platform_device *pdev)
 {
-	snd_soc_unregister_dai(&pdev->dev);
+	snd_soc_unregister_codec(&pdev->dev);
 	return 0;
 }
 
 static __devinit int asoc_mvs_cpu_probe(struct platform_device *pdev)
 {
 	dev_info(&pdev->dev, "%s: dev name %s\n", __func__, dev_name(&pdev->dev));
-	return snd_soc_register_dai(&pdev->dev, msm_mvs_cpu_dais);
+	return snd_soc_register_component(&pdev->dev, &soc_component_dev_msm,
+			&msm_mvs_cpu_dais, 1);
 }
 
 static int __devexit asoc_mvs_cpu_remove(struct platform_device *pdev)
 {
-	snd_soc_unregister_dai(&pdev->dev);
+	snd_soc_unregister_component(&pdev->dev);
 	return 0;
 }
 

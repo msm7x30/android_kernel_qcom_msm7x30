@@ -33,8 +33,7 @@
 #include <linux/slab.h>
 #include "msm7kv2-pcm.h"
 
-static struct snd_soc_dai_driver msm_pcm_codec_dais[] = {
-{
+static struct snd_soc_dai_driver msm_pcm_codec_dais = {
 	.name = "msm-codec-dai",
 	.playback = {
 		.channels_max = USE_CHANNELS_MAX,
@@ -50,10 +49,9 @@ static struct snd_soc_dai_driver msm_pcm_codec_dais[] = {
 		.rates = SNDRV_PCM_RATE_8000_48000,
 		.formats = SNDRV_PCM_FMTBIT_S16_LE,
 	},
-},
 };
-static struct snd_soc_dai_driver msm_pcm_cpu_dais[] = {
-{
+
+static struct snd_soc_dai_driver msm_pcm_cpu_dais = {
 	.name = "msm-cpu-dai",
 	.playback = {
 		.channels_max = USE_CHANNELS_MAX,
@@ -69,35 +67,39 @@ static struct snd_soc_dai_driver msm_pcm_cpu_dais[] = {
 		.rates = SNDRV_PCM_RATE_8000_48000,
 		.formats = SNDRV_PCM_FMTBIT_S16_LE,
 	},
-},
 };
 
 static struct snd_soc_codec_driver soc_codec_dev_msm = {
-        .compress_type = SND_SOC_FLAT_COMPRESSION,
+	.compress_type = SND_SOC_FLAT_COMPRESSION,
+};
+
+static const struct snd_soc_component_driver soc_component_dev_msm = {
+	.name = "msm-cpu",
 };
 
 static __devinit int asoc_msm_codec_probe(struct platform_device *pdev)
 {
 	dev_info(&pdev->dev, "%s: dev name %s\n", __func__, dev_name(&pdev->dev));
 	return snd_soc_register_codec(&pdev->dev, &soc_codec_dev_msm,
-                        msm_pcm_codec_dais, ARRAY_SIZE(msm_pcm_codec_dais));
+			&msm_pcm_codec_dais, 1);
 }
 
 static int __devexit asoc_msm_codec_remove(struct platform_device *pdev)
 {
-	snd_soc_unregister_dai(&pdev->dev);
+	snd_soc_unregister_codec(&pdev->dev);
 	return 0;
 }
 
 static __devinit int asoc_msm_cpu_probe(struct platform_device *pdev)
 {
 	dev_info(&pdev->dev, "%s: dev name %s\n", __func__, dev_name(&pdev->dev));
-	return snd_soc_register_dai(&pdev->dev, msm_pcm_cpu_dais);
+	return snd_soc_register_component(&pdev->dev, &soc_component_dev_msm,
+			&msm_pcm_cpu_dais, 1);
 }
 
 static int __devexit asoc_msm_cpu_remove(struct platform_device *pdev)
 {
-	snd_soc_unregister_dai(&pdev->dev);
+	snd_soc_unregister_component(&pdev->dev);
 	return 0;
 }
 
