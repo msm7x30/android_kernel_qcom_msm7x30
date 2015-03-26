@@ -199,6 +199,7 @@ static struct regulator_dev *create_proccomm_rdev(
 	const char *name;
 	struct proccomm_regulator_drvdata *d;
 	struct regulator_dev *rdev;
+	struct regulator_config config = { };
 	int rc = 0;
 
 	if (info->id < 0) {
@@ -247,7 +248,11 @@ static struct regulator_dev *create_proccomm_rdev(
 	d->negative	= info->negative;
 	d->rdesc.n_voltages = info->n_voltages;
 
-	rdev = regulator_register(&d->rdesc, parent, &info->init_data, d, NULL);
+	config.dev = parent;
+	config.init_data = &info->init_data;
+	config.driver_data = d;
+
+	rdev = regulator_register(&d->rdesc, &config);
 
 	if (IS_ERR(rdev)) {
 		rc = PTR_ERR(rdev);
