@@ -142,6 +142,11 @@ int rmt_oeminfo_handle_key(uint32_t key_parm)
 
 	pr_debug("%s: key_parm 0x%x\n", __func__, key_parm);
 
+	if (!data) {
+		pr_err("%s: Invalid driver data\n", __func__);
+		return -EINVAL;
+	}
+
 	kevent = kmalloc(sizeof(*kevent), GFP_KERNEL);
 	if (!kevent) {
 		pr_err("%s: Failed to allocate kevent memory\n", __func__);
