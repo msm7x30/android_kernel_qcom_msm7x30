@@ -2836,23 +2836,12 @@ static int __exit msm72k_remove(struct platform_device *pdev)
 }
 
 static struct platform_driver usb_driver = {
-	.probe = msm72k_probe,
 	.remove = msm72k_remove,
 	.driver = { .name = "msm_hsusb",
 		    .pm = &msm72k_udc_dev_pm_ops, },
 };
 
-static int __init init(void)
-{
-	return platform_driver_register(&usb_driver);
-}
-module_init(init);
-
-static void __exit cleanup(void)
-{
-	platform_driver_unregister(&usb_driver);
-}
-module_exit(cleanup);
+module_platform_driver_probe(usb_driver, msm72k_probe);
 
 MODULE_DESCRIPTION(DRIVER_DESC);
 MODULE_AUTHOR("Mike Lockwood, Brian Swetland");
