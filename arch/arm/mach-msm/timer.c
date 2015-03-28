@@ -1004,7 +1004,7 @@ static struct local_timer_ops msm_lt_ops = {
 };
 #endif /* CONFIG_LOCAL_TIMERS */
 
-static void __init msm_timer_init(void)
+void __init msm_timer_init(void)
 {
 	int i;
 	int res;
@@ -1096,7 +1096,3 @@ static void __init msm_timer_init(void)
 	local_timer_register(&msm_lt_ops);
 #endif
 }
-
-struct sys_timer msm_timer = {
-	.init = msm_timer_init
-};
