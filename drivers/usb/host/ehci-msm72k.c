@@ -371,7 +371,6 @@ static int ehci_msm_run(struct usb_hcd *hcd)
 	struct msmusb_hcd *mhcd = hcd_to_mhcd(hcd);
 	int             retval = 0;
 	int     	port   = HCS_N_PORTS(ehci->hcs_params);
-	u32 __iomem     *reg_ptr;
 	u32             hcc_params;
 	struct msm_usb_host_platform_data *pdata = mhcd->pdata;
 
@@ -379,8 +378,7 @@ static int ehci_msm_run(struct usb_hcd *hcd)
 	set_bit(HCD_FLAG_POLL_RH, &hcd->flags);
 
 	/* set hostmode */
-	reg_ptr = (u32 __iomem *)(((u8 __iomem *)ehci->regs) + USBMODE);
-	ehci_writel(ehci, (USBMODE_VBUS | USBMODE_SDIS), reg_ptr);
+	ehci_writel(ehci, (USBMODE_VBUS | USBMODE_SDIS), &ehci->regs->usbmode);
 
 	/* port configuration - phy, port speed, port power, port enable */
 	while (port--)
