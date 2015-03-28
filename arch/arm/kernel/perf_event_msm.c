@@ -21,6 +21,8 @@
 #define SCORPION_EVT_PREFIX 1
 #define SCORPION_MAX_L1_REG 4
 
+#define COUNT_MASK 0xffffffff
+
 #define SCORPION_EVTYPE_EVENT 0xfffff
 
 static u32 scorpion_evt_type_base[] = {0x4c, 0x50, 0x54, 0x58, 0x5c};
@@ -132,7 +134,7 @@ static const unsigned armv7_scorpion_perf_map[PERF_COUNT_HW_MAX] = {
 	[PERF_COUNT_HW_BUS_CYCLES]	    = ARMV7_PERFCTR_CLOCK_CYCLES,
 };
 
-static unsigned armv7_scorpion_perf_cache_map[PERF_COUNT_HW_CACHE_MAX]
+static const unsigned armv7_scorpion_perf_cache_map[PERF_COUNT_HW_CACHE_MAX]
 					  [PERF_COUNT_HW_CACHE_OP_MAX]
 					  [PERF_COUNT_HW_CACHE_RESULT_MAX] = {
 	[C(L1D)] = {
@@ -242,7 +244,7 @@ static unsigned armv7_scorpion_perf_cache_map[PERF_COUNT_HW_CACHE_MAX]
 
 static int msm_scorpion_map_event(struct perf_event *event)
 {
-	return map_cpu_event(event, &armv7_scorpion_perf_map,
+	return armpmu_map_event(event, &armv7_scorpion_perf_map,
 			&armv7_scorpion_perf_cache_map, 0xfffff);
 }
 
@@ -585,15 +587,16 @@ static void scorpion_clearpmu(u32 grp, u32 val, u32 evt_code)
 		scorpion_functions[grp].post();
 }
 
-static void scorpion_pmu_disable_event(struct hw_perf_event *hwc, int idx)
+static void scorpion_pmu_disable_event(struct perf_event *event)
 {
 	unsigned long flags;
 	u32 val = 0;
 	u32 gr;
-	unsigned long event;
+	unsigned long event_info;
 	struct scorpion_evt evtinfo;
+	struct hw_perf_event *hwc = &event->hw;
 	struct pmu_hw_events *events = cpu_pmu->get_hw_events();
-
+	int idx = hwc->idx;
 
 	/* Disable counter and interrupt */
 	raw_spin_lock_irqsave(&events->pmu_lock, flags);
@@ -610,8 +613,8 @@ static void scorpion_pmu_disable_event(struct hw_perf_event *hwc, int idx)
 		val &= SCORPION_EVTYPE_EVENT;
 
 		if (val > 0x40) {
-			event = get_scorpion_evtinfo(val, &evtinfo);
-			if (event == -EINVAL)
+			event_info = get_scorpion_evtinfo(val, &evtinfo);
+			if (event_info == -EINVAL)
 				goto scorpion_dis_out;
 			val = evtinfo.group_setval;
 			gr = evtinfo.groupcode;
@@ -625,16 +628,17 @@ scorpion_dis_out:
 	raw_spin_unlock_irqrestore(&events->pmu_lock, flags);
 }
 
-static void scorpion_pmu_enable_event(struct hw_perf_event *hwc,
-		int idx, int cpu)
+static void scorpion_pmu_enable_event(struct perf_event *event)
 {
 	unsigned long flags;
 	u32 val = 0;
 	u32 gr;
-	unsigned long event;
+	unsigned long event_info;
 	struct scorpion_evt evtinfo;
+	struct hw_perf_event *hwc = &event->hw;
 	unsigned long long prev_count = local64_read(&hwc->prev_count);
 	struct pmu_hw_events *events = cpu_pmu->get_hw_events();
+	int idx = hwc->idx;
 
 	/*
 	 * Enable counter and interrupt, and set the counter to count
@@ -656,15 +660,15 @@ static void scorpion_pmu_enable_event(struct hw_perf_event *hwc,
 		if (val < 0x40) {
 			armv7_pmnc_write_evtsel(idx, hwc->config_base);
 		} else {
-			event = get_scorpion_evtinfo(val, &evtinfo);
+			event_info = get_scorpion_evtinfo(val, &evtinfo);
 
-			if (event == -EINVAL)
+			if (event_info == -EINVAL)
 				goto scorpion_out;
 			/*
 			 * Set event (if destined for PMNx counters)
 			 * We don't need to set the event if it's a cycle count
 			 */
-			armv7_pmnc_write_evtsel(idx, event);
+			armv7_pmnc_write_evtsel(idx, event_info);
 			val = 0x0;
 			asm volatile("mcr p15, 0, %0, c9, c15, 0" : :
 				"r" (val));
@@ -678,7 +682,7 @@ static void scorpion_pmu_enable_event(struct hw_perf_event *hwc,
 	armv7_pmnc_enable_intens(idx);
 
 	/* Restore prev val */
-	armv7pmu_write_counter(idx, prev_count & COUNT_MASK);
+	armv7pmu_write_counter(event, prev_count & COUNT_MASK);
 
 	/* Enable counter */
 	armv7_pmnc_enable_counter(idx);
@@ -707,48 +711,44 @@ static void scorpion_pmu_reset(void *info)
 	armv7_pmnc_write(ARMV7_PMNC_P | ARMV7_PMNC_C);
 }
 
-static struct arm_pmu scorpion_pmu = {
-	.handle_irq		= armv7pmu_handle_irq,
-	.enable			= scorpion_pmu_enable_event,
-	.disable		= scorpion_pmu_disable_event,
-	.read_counter		= armv7pmu_read_counter,
-	.write_counter		= armv7pmu_write_counter,
-	.map_event		= msm_scorpion_map_event,
-	.get_event_idx		= armv7pmu_get_event_idx,
-	.start			= armv7pmu_start,
-	.stop			= armv7pmu_stop,
-	.reset			= scorpion_pmu_reset,
-	.test_set_event_constraints	= msm_test_set_ev_constraint,
-	.clear_event_constraints	= msm_clear_ev_constraint,
-	.max_period		= (1LLU << 32) - 1,
-};
-
-static struct arm_pmu *__init armv7_scorpion_pmu_init(void)
+static void armv7pmu_scorpion_init(struct arm_pmu *cpu_pmu)
 {
-	scorpion_pmu.id		= ARM_PERF_PMU_ID_SCORPION;
-	scorpion_pmu.name	= "ARMv7 Scorpion";
-	scorpion_pmu.num_events	= armv7_read_num_pmnc_events();
-	scorpion_pmu.pmu.attr_groups	= msm_l1_pmu_attr_grps;
-	scorpion_clear_pmuregs();
-	return &scorpion_pmu;
+	cpu_pmu->handle_irq			= armv7pmu_handle_irq;
+	cpu_pmu->enable				= scorpion_pmu_enable_event;
+	cpu_pmu->disable			= scorpion_pmu_disable_event;
+	cpu_pmu->read_counter			= armv7pmu_read_counter;
+	cpu_pmu->write_counter			= armv7pmu_write_counter;
+	cpu_pmu->map_event			= msm_scorpion_map_event;
+	cpu_pmu->get_event_idx			= armv7pmu_get_event_idx;
+	cpu_pmu->num_events			= armv7_read_num_pmnc_events();
+	cpu_pmu->start				= armv7pmu_start;
+	cpu_pmu->stop				= armv7pmu_stop;
+	cpu_pmu->reset				= scorpion_pmu_reset;
+	cpu_pmu->max_period			= (1LLU << 32) - 1;
 }
 
-static struct arm_pmu *__init armv7_scorpionmp_pmu_init(void)
+static int armv7_scorpion_pmu_init(struct arm_pmu *cpu_pmu)
 {
-	scorpion_pmu.id		= ARM_PERF_PMU_ID_SCORPIONMP;
-	scorpion_pmu.name	= "ARMv7 Scorpion-MP";
-	scorpion_pmu.num_events	= armv7_read_num_pmnc_events();
-	scorpion_pmu.pmu.attr_groups	= msm_l1_pmu_attr_grps;
+	armv7pmu_scorpion_init(cpu_pmu);
+	cpu_pmu->name = "ARMv7 Scorpion";
 	scorpion_clear_pmuregs();
-	return &scorpion_pmu;
+	return 0;
+}
+
+static int armv7_scorpionmp_pmu_init(struct arm_pmu *cpu_pmu)
+{
+	armv7pmu_scorpion_init(cpu_pmu);
+	cpu_pmu->name = "ARMv7 Scorpion-MP";
+	scorpion_clear_pmuregs();
+	return 0;
 }
 #else
-static struct arm_pmu *__init armv7_scorpion_pmu_init(void)
+static inline int armv7_scorpion_pmu_init(struct arm_pmu *cpu_pmu)
 {
-	return NULL;
+	return -ENODEV;
 }
-static struct arm_pmu *__init armv7_scorpionmp_pmu_init(void)
+static inline int armv7_scorpionmp_pmu_init(struct arm_pmu *cpu_pmu)
 {
-	return NULL;
+	return -ENODEV;
 }
 #endif	/* CONFIG_CPU_V7 */

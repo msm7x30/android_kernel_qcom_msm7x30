@@ -65,6 +65,7 @@ EXPORT_SYMBOL_GPL(perf_num_counters);
 #include "perf_event_xscale.c"
 #include "perf_event_v6.c"
 #include "perf_event_v7.c"
+#include "perf_event_msm.c"
 
 static struct pmu_hw_events *cpu_pmu_get_cpu_events(void)
 {
@@ -242,6 +243,16 @@ static int probe_current_pmu(struct arm_pmu *pmu)
 			break;
 		case ARM_CPU_XSCALE_ARCH_V2:
 			ret = xscale2pmu_init(pmu);
+			break;
+		}
+	/* Qualcomm CPUs */
+	} else if (0x51 == implementor) {
+		switch (part_number) {
+		case 0x00F0: /* 8x50 & 7x30*/
+			ret = armv7_scorpion_pmu_init(pmu);
+			break;
+		case 0x02D0: /* 8x60 */
+			ret = armv7_scorpionmp_pmu_init(pmu);
 			break;
 		}
 	}
