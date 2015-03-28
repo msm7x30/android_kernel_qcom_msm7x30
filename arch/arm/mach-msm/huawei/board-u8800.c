@@ -4085,7 +4085,7 @@ MACHINE_START(HUAWEI_U8800, "HUAWEI U8800")
 	.reserve = msm7x30_reserve,
 	.init_irq = msm7x30_init_irq,
 	.init_machine = msm7x30_init,
-	.timer = &msm_timer,
+	.init_time = msm_timer_init,
 	.init_early = msm7x30_init_early,
 	.handle_irq = vic_handle_irq,
 	.fixup = msm7x30_fixup,
