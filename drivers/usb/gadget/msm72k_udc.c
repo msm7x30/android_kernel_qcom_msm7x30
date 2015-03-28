@@ -1413,6 +1413,7 @@ static irqreturn_t usb_interrupt(int irq, void *data)
 
 static void usb_prepare(struct usb_info *ui)
 {
+	int n;
 	spin_lock_init(&ui->lock);
 
 	memset(ui->buf, 0, 4096);
@@ -1437,6 +1438,23 @@ static void usb_prepare(struct usb_info *ui)
 	INIT_DELAYED_WORK(&ui->rw_work, usb_do_remote_wakeup);
 	if (ui->pdata && ui->pdata->is_phy_status_timer_on)
 		INIT_WORK(&ui->phy_status_check, usb_phy_stuck_recover);
+
+	INIT_LIST_HEAD(&ui->gadget.ep_list);
+	ui->gadget.ep0 = &ui->ep0in.ep;
+	INIT_LIST_HEAD(&ui->gadget.ep0->ep_list);
+	ui->gadget.speed = USB_SPEED_UNKNOWN;
+	atomic_set(&ui->softconnect, 1);
+
+	for (n = 1; n < 16; n++) {
+		struct msm_endpoint *ept = ui->ept + n;
+		list_add_tail(&ept->ep.ep_list, &ui->gadget.ep_list);
+		ept->ep.maxpacket = 512;
+	}
+	for (n = 17; n < 32; n++) {
+		struct msm_endpoint *ept = ui->ept + n;
+		list_add_tail(&ept->ep.ep_list, &ui->gadget.ep_list);
+		ept->ep.maxpacket = 512;
+	}
 }
 
 static void usb_reset(struct usb_info *ui)
@@ -2650,14 +2668,12 @@ static int msm72k_probe(struct platform_device *pdev)
 
 	ui->gadget.ops = &msm72k_ops;
 	ui->gadget.max_speed = USB_SPEED_HIGH;
-	device_initialize(&ui->gadget.dev);
-	dev_set_name(&ui->gadget.dev, "gadget");
-	ui->gadget.dev.parent = &pdev->dev;
-	ui->gadget.dev.dma_mask = pdev->dev.dma_mask;
 
 #ifdef CONFIG_USB_OTG
 	ui->gadget.is_otg = 1;
 #endif
+
+	usb_prepare(ui);
 
 	retval = usb_add_gadget_udc(&pdev->dev, &ui->gadget);
 	if (retval)
@@ -2677,8 +2693,6 @@ static int msm72k_probe(struct platform_device *pdev)
 			WAKE_LOCK_SUSPEND, "usb_bus_active");
 
 	usb_debugfs_init(ui);
-
-	usb_prepare(ui);
 
 #ifdef CONFIG_USB_OTG
 	retval = sysfs_create_group(&pdev->dev.kobj, &otg_attr_grp);
@@ -2711,32 +2725,11 @@ static int msm72k_udc_start(struct usb_gadget *g,
 		struct usb_gadget_driver *driver)
 {
 	struct usb_info *ui = the_usb_info;
-	int			retval, n;
+	int retval;
 
 	/* first hook up the driver ... */
 	ui->driver = driver;
-	ui->gadget.dev.driver = &driver->driver;
 	ui->gadget.name = driver_name;
-	INIT_LIST_HEAD(&ui->gadget.ep_list);
-	ui->gadget.ep0 = &ui->ep0in.ep;
-	INIT_LIST_HEAD(&ui->gadget.ep0->ep_list);
-	ui->gadget.speed = USB_SPEED_UNKNOWN;
-	atomic_set(&ui->softconnect, 1);
-
-	for (n = 1; n < 16; n++) {
-		struct msm_endpoint *ept = ui->ept + n;
-		list_add_tail(&ept->ep.ep_list, &ui->gadget.ep_list);
-		ept->ep.maxpacket = 512;
-	}
-	for (n = 17; n < 32; n++) {
-		struct msm_endpoint *ept = ui->ept + n;
-		list_add_tail(&ept->ep.ep_list, &ui->gadget.ep_list);
-		ept->ep.maxpacket = 512;
-	}
-
-	retval = device_add(&ui->gadget.dev);
-	if (retval)
-		goto fail;
 
 	retval = device_create_file(&ui->gadget.dev, &dev_attr_wakeup);
 	if (retval != 0)
@@ -2766,11 +2759,6 @@ static int msm72k_udc_start(struct usb_gadget *g,
 	usb_start(ui);
 
 	return 0;
-
-fail:
-	ui->driver = NULL;
-	ui->gadget.dev.driver = NULL;
-	return retval;
 }
 
 static int msm72k_udc_stop(struct usb_gadget *g,
@@ -2795,10 +2783,9 @@ static int msm72k_udc_stop(struct usb_gadget *g,
 	device_remove_file(&dev->gadget.dev, &dev_attr_usb_speed);
 	device_remove_file(&dev->gadget.dev, &dev_attr_chg_type);
 	device_remove_file(&dev->gadget.dev, &dev_attr_chg_current);
-	dev->gadget.dev.driver = NULL;
+	if (driver)
+		driver->disconnect(&dev->gadget);
 	dev->driver = NULL;
-
-	device_del(&dev->gadget.dev);
 
 	return 0;
 }
