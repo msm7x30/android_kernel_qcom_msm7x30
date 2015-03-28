@@ -609,7 +609,6 @@ static int msm_xusb_init_host(struct platform_device *pdev,
 	int ret = 0;
 	struct msm_otg *otg;
 	struct usb_hcd *hcd = mhcd_to_hcd(mhcd);
-	struct ehci_hcd *ehci = hcd_to_ehci(hcd);
 	struct msm_usb_host_platform_data *pdata = mhcd->pdata;
 
 	switch (PHY_TYPE(pdata->phy_info)) {
@@ -624,15 +623,17 @@ static int msm_xusb_init_host(struct platform_device *pdev,
 			pdata->vbus_power(pdata->phy_info, 0);
 
 		INIT_WORK(&mhcd->otg_work, msm_hsusb_otg_work);
-		mhcd->xceiv = usb_get_transceiver();
-		if (!mhcd->xceiv)
+		mhcd->xceiv = devm_usb_get_phy(&pdev->dev, USB_PHY_TYPE_USB2);
+		if (IS_ERR(mhcd->xceiv)) {
+			dev_err(&pdev->dev, "unable to find transceiver\n");
+			mhcd->xceiv = NULL;
 			return -ENODEV;
+		}
 		otg = container_of(mhcd->xceiv, struct msm_otg, phy);
 		hcd->regs = otg->regs;
 		otg->start_host = msm_hsusb_start_host;
 
 		ret = otg_set_host(mhcd->xceiv->otg, &hcd->self);
-		ehci->transceiver = mhcd->xceiv;
 		break;
 	case USB_PHY_SERIAL_PMIC:
 		hcd->regs = ioremap(hcd->rsrc_start, hcd->rsrc_len);
@@ -738,9 +739,9 @@ static void msm_xusb_uninit_host(struct msmusb_hcd *mhcd)
 	case USB_PHY_INTEGRATED:
 		if (pdata->vbus_init)
 			pdata->vbus_init(0);
-		hcd_to_ehci(hcd)->transceiver = NULL;
 		otg_set_host(mhcd->xceiv->otg, NULL);
-		usb_put_transceiver(mhcd->xceiv);
+		usb_put_phy(mhcd->xceiv);
+		mhcd->xceiv = NULL;
 		cancel_work_sync(&mhcd->otg_work);
 		break;
 	case USB_PHY_SERIAL_PMIC:
