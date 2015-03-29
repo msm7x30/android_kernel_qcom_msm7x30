@@ -1863,7 +1863,7 @@ static int audio_open(struct inode *inode, struct file *file)
 	}
 	audio->dec_id = decid & MSM_AUD_DECODER_MASK;
 
-	client = msm_ion_client_create(UINT_MAX, "Audio_AAC_client");
+	client = msm_ion_client_create("Audio_AAC_client");
 	if (IS_ERR_OR_NULL(client)) {
 		MM_ERR("Unable to create ION client\n");
 		rc = -ENOMEM;

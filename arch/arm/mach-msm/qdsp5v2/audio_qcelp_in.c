@@ -1359,7 +1359,7 @@ static int audqcelp_in_open(struct inode *inode, struct file *file)
 		rc = -EBUSY;
 		goto done;
 	}
-	client = msm_ion_client_create(UINT_MAX, "Audio_EVRC_in_client");
+	client = msm_ion_client_create("Audio_EVRC_in_client");
 	if (IS_ERR_OR_NULL(client)) {
 		MM_ERR("Unable to create ION client\n");
 		rc = -ENOMEM;

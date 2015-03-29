@@ -707,7 +707,7 @@ static int __init audio_init(void)
 	struct ion_handle *handle = NULL;
 	struct ion_client *client = NULL;
 
-	client = msm_ion_client_create(UINT_MAX, "HostPCM");
+	client = msm_ion_client_create("HostPCM");
 	if (IS_ERR_OR_NULL(client)) {
 		MM_ERR("Unable to create ION client\n");
 		rc = -ENOMEM;
