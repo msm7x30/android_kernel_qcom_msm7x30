@@ -869,7 +869,7 @@ static int audpcm_in_open(struct inode *inode, struct file *file)
 		goto done;
 	}
 
-	client = msm_ion_client_create(UINT_MAX, "Audio_PCM_in_client");
+	client = msm_ion_client_create("Audio_PCM_in_client");
 	if (IS_ERR_OR_NULL(client)) {
 		MM_ERR("Unable to create ION client\n");
 			rc = -ENOMEM;

@@ -1393,7 +1393,7 @@ static int audaac_in_open(struct inode *inode, struct file *file)
 	audaac_out_flush(audio);
 
 
-	client = msm_ion_client_create(UINT_MAX, "Audio_AAC_in_client");
+	client = msm_ion_client_create("Audio_AAC_in_client");
 	if (IS_ERR_OR_NULL(client)) {
 		MM_ERR("Unable to create ION client\n");
 		rc = -ENOMEM;
