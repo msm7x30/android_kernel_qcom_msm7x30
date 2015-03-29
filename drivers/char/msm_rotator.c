@@ -37,7 +37,6 @@
 #include <mach/msm_bus_board.h>
 #endif
 #include <mach/msm_subsystem_map.h>
-#include <mach/iommu_domains.h>
 
 #define DRIVER_NAME "msm_rotator"
 
@@ -109,7 +108,6 @@
 					((dst_height & 0x3f) * dstp0_ystride))
 
 uint32_t rotator_hw_revision;
-static char rot_iommu_split_domain;
 
 /*
  * rotator_hw_revision:
@@ -277,38 +275,11 @@ u32 rotator_allocate_2pass_buf(struct rot_buf_type *rot_buf, int s_ndx)
 			mrd->rot_session[s_ndx]->mem_hid,
 			mrd->rot_session[s_ndx]->mem_hid & ION_SECURE);
 		if (!IS_ERR_OR_NULL(rot_buf->ihdl)) {
-			if (rot_iommu_split_domain) {
-				if (ion_map_iommu(mrd->client, rot_buf->ihdl,
-					ROTATOR_SRC_DOMAIN, GEN_POOL, SZ_4K,
-					0, &read_addr, &len, 0, 0)) {
-					pr_err("ion_map_iommu() read failed\n");
+			if (ion_phys(mrd->client, rot_buf->ihdl,
+				&addr, (size_t *)&len)) {
+				pr_err("%s:%d: ion_phys map failed\n",
+					__func__, __LINE__);
 					return -ENOMEM;
-				}
-				if (mrd->rot_session[s_ndx]->mem_hid &
-								ION_SECURE) {
-					if (ion_phys(mrd->client, rot_buf->ihdl,
-						&addr, (size_t *)&len)) {
-						pr_err(
-						"%s:%d: ion_phys map failed\n",
-							 __func__, __LINE__);
-						return -ENOMEM;
-					}
-				} else {
-					if (ion_map_iommu(mrd->client,
-					    rot_buf->ihdl, ROTATOR_DST_DOMAIN,
-					    GEN_POOL, SZ_4K, 0, &addr, &len,
-					    0, 0)) {
-						pr_err("ion_map_iommu() failed\n");
-						return -ENOMEM;
-					}
-				}
-			} else {
-				if (ion_map_iommu(mrd->client, rot_buf->ihdl,
-					ROTATOR_SRC_DOMAIN, GEN_POOL, SZ_4K,
-					0, &addr, &len, 0, 0)) {
-					pr_err("ion_map_iommu() write failed\n");
-					return -ENOMEM;
-				}
 			}
 		} else {
 			pr_err("%s:%d: ion_alloc failed\n", __func__,
@@ -350,18 +321,6 @@ void rotator_free_2pass_buf(struct rot_buf_type *rot_buf, int s_ndx)
 
 	if (!IS_ERR_OR_NULL(mrd->client)) {
 		if (!IS_ERR_OR_NULL(rot_buf->ihdl)) {
-			if (rot_iommu_split_domain) {
-				if (!(mrd->rot_session[s_ndx]->mem_hid &
-								ION_SECURE))
-					ion_unmap_iommu(mrd->client,
-					rot_buf->ihdl, ROTATOR_DST_DOMAIN,
-								GEN_POOL);
-				ion_unmap_iommu(mrd->client, rot_buf->ihdl,
-					ROTATOR_SRC_DOMAIN, GEN_POOL);
-			} else {
-				ion_unmap_iommu(mrd->client, rot_buf->ihdl,
-					ROTATOR_SRC_DOMAIN, GEN_POOL);
-			}
 			ion_free(mrd->client, rot_buf->ihdl);
 			rot_buf->ihdl = NULL;
 			pr_info("%s:%d Free rotator 2pass memory",
@@ -392,30 +351,10 @@ int msm_rotator_iommu_map_buf(int mem_id, int domain,
 	}
 	pr_debug("%s(): ion_hdl %p, ion_fd %d\n", __func__, *pihdl, mem_id);
 
-	if (rot_iommu_split_domain) {
-		if (secure) {
-			if (ion_phys(msm_rotator_dev->client,
-				*pihdl, start, (unsigned *)len)) {
-				pr_err("%s:%d: ion_phys map failed\n",
-					 __func__, __LINE__);
-				return -ENOMEM;
-			}
-		} else {
-			if (ion_map_iommu(msm_rotator_dev->client,
-				*pihdl,	domain, GEN_POOL,
-				SZ_4K, 0, start, len, 0,
-				ION_IOMMU_UNMAP_DELAYED)) {
-				pr_err("ion_map_iommu() failed\n");
-				return -EINVAL;
-			}
-		}
-	} else {
-		if (ion_map_iommu(msm_rotator_dev->client,
-			*pihdl,	ROTATOR_SRC_DOMAIN, GEN_POOL,
-			SZ_4K, 0, start, len, 0, ION_IOMMU_UNMAP_DELAYED)) {
-			pr_err("ion_map_iommu() failed\n");
-			return -EINVAL;
-		}
+	if (ion_phys(msm_rotator_dev->client, *pihdl, (dma_addr_t *)start, (unsigned *)len)) {
+		pr_err("%s:%d: ion_phys map failed\n",
+			__func__, __LINE__);
+		return -ENOMEM;
 	}
 
 	pr_debug("%s(): mem_id %d, start 0x%lx, len 0x%lx\n",
@@ -1752,15 +1691,6 @@ static void put_img(struct file *p_file, struct ion_handle *p_ihdl,
 #ifdef CONFIG_MSM_MULTIMEDIA_USE_ION
 	if (!IS_ERR_OR_NULL(p_ihdl)) {
 		pr_debug("%s(): p_ihdl %p\n", __func__, p_ihdl);
-		if (rot_iommu_split_domain) {
-			if (!secure)
-				ion_unmap_iommu(msm_rotator_dev->client,
-					p_ihdl, domain, GEN_POOL);
-		} else {
-			ion_unmap_iommu(msm_rotator_dev->client,
-				p_ihdl, ROTATOR_SRC_DOMAIN, GEN_POOL);
-		}
-
 		ion_free(msm_rotator_dev->client, p_ihdl);
 	}
 #endif
@@ -2357,12 +2287,7 @@ static int map_sec_resource(struct msm_rotator_dev *rot_dev)
 		pr_err("IOMMU clock enabled failed while open");
 		return ret;
 	}
-	ret = msm_ion_secure_heap(ION_HEAP(ION_CP_MM_HEAP_ID));
-	if (ret)
-		pr_err("ION heap secure failed heap id %d ret %d\n",
-			   ION_CP_MM_HEAP_ID, ret);
-	else
-		rot_dev->sec_mapped = 1;
+	rot_dev->sec_mapped = 1;
 	rot_disable_iommu_clocks(rot_dev);
 	return ret;
 }
@@ -2375,7 +2300,6 @@ static int unmap_sec_resource(struct msm_rotator_dev *rot_dev)
 		pr_err("IOMMU clock enabled failed while close\n");
 		return ret;
 	}
-	msm_ion_unsecure_heap(ION_HEAP(ION_CP_MM_HEAP_ID));
 	rot_dev->sec_mapped = 0;
 	rot_disable_iommu_clocks(rot_dev);
 	return ret;
@@ -2812,7 +2736,6 @@ static int __devinit msm_rotator_probe(struct platform_device *pdev)
 
 	pdata = pdev->dev.platform_data;
 	number_of_clks = pdata->number_of_clocks;
-	rot_iommu_split_domain = pdata->rot_iommu_split_domain;
 
 	msm_rotator_dev->imem_owner = IMEM_NO_OWNER;
 	mutex_init(&msm_rotator_dev->imem_lock);
@@ -2909,7 +2832,7 @@ static int __devinit msm_rotator_probe(struct platform_device *pdev)
 
 	mutex_init(&msm_rotator_dev->rotator_lock);
 #ifdef CONFIG_MSM_MULTIMEDIA_USE_ION
-	msm_rotator_dev->client = msm_ion_client_create(-1, pdev->name);
+	msm_rotator_dev->client = msm_ion_client_create(pdev->name);
 #endif
 	platform_set_drvdata(pdev, msm_rotator_dev);
 
