@@ -193,9 +193,9 @@ struct adsp_rtos_mp_mtoa_s_type {
 };
 
 struct adsp_info {
-	uint32_t send_irq;
-	uint32_t read_ctrl;
-	uint32_t write_ctrl;
+	void __iomem *send_irq;
+	void __iomem *read_ctrl;
+	void __iomem *write_ctrl;
 
 	uint32_t max_msg16_size;
 	uint32_t max_msg32_size;

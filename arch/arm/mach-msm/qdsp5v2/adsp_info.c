@@ -95,9 +95,9 @@ int adsp_init_info(struct adsp_info *info)
 {
 	uint32_t img_num;
 
-	info->send_irq =   0x00c00200;
-	info->read_ctrl =  0x00400038;
-	info->write_ctrl = 0x00400034;
+	info->send_irq =   IOMEM(0x00c00200);
+	info->read_ctrl =  IOMEM(0x00400038);
+	info->write_ctrl = IOMEM(0x00400034);
 
 	info->max_msg16_size = 193;
 	info->max_msg32_size = 8;
