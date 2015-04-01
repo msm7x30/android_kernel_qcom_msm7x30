@@ -31,9 +31,9 @@ static inline void notify_other_proc_comm(void)
 	/* Make sure the write completes before interrupt */
 	wmb();
 #if defined(CONFIG_ARCH_MSM7X30)
-	__raw_writel(1 << 6, MSM_APCS_GCC_BASE + 0x8);
+	__raw_writel(1 << 6, IOMEM(MSM_APCS_GCC_BASE + 0x8));
 #else
-	__raw_writel(1, MSM_CSR_BASE + 0x400 + (6) * 4);
+	__raw_writel(1, IOMEM(MSM_CSR_BASE + 0x400 + (6) * 4));
 #endif
 }
 
@@ -63,7 +63,7 @@ static int proc_comm_wait_for(unsigned addr, unsigned value)
 	while (1) {
 		/* Barrier here prevents excessive spinning */
 		mb();
-		if (readl_relaxed(addr) == value)
+		if (readl_relaxed(IOMEM(addr)) == value)
 			return 0;
 
 		if (smsm_check_for_modem_crash())
@@ -84,9 +84,9 @@ again:
 	if (proc_comm_wait_for(base + MDM_STATUS, PCOM_READY))
 		goto again;
 
-	writel_relaxed(PCOM_RESET_MODEM, base + APP_COMMAND);
-	writel_relaxed(0, base + APP_DATA1);
-	writel_relaxed(0, base + APP_DATA2);
+	writel_relaxed(PCOM_RESET_MODEM, IOMEM(base + APP_COMMAND));
+	writel_relaxed(0, IOMEM(base + APP_DATA1));
+	writel_relaxed(0, IOMEM(base + APP_DATA2));
 
 	spin_unlock_irqrestore(&proc_comm_lock, flags);
 
@@ -116,9 +116,9 @@ again:
 	if (proc_comm_wait_for(base + MDM_STATUS, PCOM_READY))
 		goto again;
 
-	writel_relaxed(cmd, base + APP_COMMAND);
-	writel_relaxed(data1 ? *data1 : 0, base + APP_DATA1);
-	writel_relaxed(data2 ? *data2 : 0, base + APP_DATA2);
+	writel_relaxed(cmd, IOMEM(base + APP_COMMAND));
+	writel_relaxed(data1 ? *data1 : 0, IOMEM(base + APP_DATA1));
+	writel_relaxed(data2 ? *data2 : 0, IOMEM(base + APP_DATA2));
 
 	/* Make sure the writes complete before notifying the other side */
 	wmb();
@@ -127,17 +127,17 @@ again:
 	if (proc_comm_wait_for(base + APP_COMMAND, PCOM_CMD_DONE))
 		goto again;
 
-	if (readl_relaxed(base + APP_STATUS) == PCOM_CMD_SUCCESS) {
+	if (readl_relaxed(IOMEM(base + APP_STATUS)) == PCOM_CMD_SUCCESS) {
 		if (data1)
-			*data1 = readl_relaxed(base + APP_DATA1);
+			*data1 = readl_relaxed(IOMEM(base + APP_DATA1));
 		if (data2)
-			*data2 = readl_relaxed(base + APP_DATA2);
+			*data2 = readl_relaxed(IOMEM(base + APP_DATA2));
 		ret = 0;
 	} else {
 		ret = -EIO;
 	}
 
-	writel_relaxed(PCOM_CMD_IDLE, base + APP_COMMAND);
+	writel_relaxed(PCOM_CMD_IDLE, IOMEM(base + APP_COMMAND));
 
 	switch (cmd) {
 	case PCOM_RESET_CHIP:
