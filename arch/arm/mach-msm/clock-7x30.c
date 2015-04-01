@@ -2925,7 +2925,7 @@ static void __init set_clock_ownership(void)
  * Miscellaneous clock register initializations
  */
 static const struct reg_init {
-	const void __iomem *reg;
+	void __iomem *reg;
 	uint32_t mask;
 	uint32_t val;
 } ri_list[] __initconst = {
