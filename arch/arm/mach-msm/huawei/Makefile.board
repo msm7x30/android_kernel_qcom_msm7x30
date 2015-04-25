@@ -1,0 +1,18 @@
+obj-$(CONFIG_MACH_HUAWEI_U8800) += board-u8800.o board-hw7x30-devices.o board-hw7x30-gpiomux.o
+obj-$(CONFIG_MACH_HUAWEI_U8800PRO) += board-u8800pro.o board-hw7x30-devices.o board-hw7x30-gpiomux.o board-hw7x30-bcm.o
+obj-$(CONFIG_MACH_HUAWEI_U8860) += board-u8860.o board-hw7x30-devices.o board-hw7x30-gpiomux.o board-hw7x30-bcm.o
+
+ifdef CONFIG_MSM_PROC_COMM_REGULATOR
+obj-$(CONFIG_MACH_HUAWEI_U8800) += board-hw7x30-regulator.o
+obj-$(CONFIG_MACH_HUAWEI_U8800PRO) += board-hw7x30-regulator.o
+obj-$(CONFIG_MACH_HUAWEI_U8860) += board-hw7x30-regulator.o
+endif
+
+ifeq ($(CONFIG_MARIMBA_CODEC), y)
+obj-$(CONFIG_MACH_HUAWEI_U8800) += snddev_data_marimba_u8800.o
+obj-$(CONFIG_MACH_HUAWEI_U8800PRO) += snddev_data_marimba_u8800.o
+endif
+
+ifeq ($(CONFIG_TIMPANI_CODEC), y)
+obj-$(CONFIG_MACH_HUAWEI_U8860) += snddev_data_timpani_u8860.o
+endif
