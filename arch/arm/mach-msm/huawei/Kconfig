@@ -4,3 +4,12 @@ config MACH_HUAWEI
 menu "Huawei Board Selection"
 source "arch/arm/mach-msm/huawei/Kconfig.board"
 endmenu
+
+config MSM_HUAWEI_HWPROPS
+	bool "Enable Huawei hardware properties"
+	depends on MACH_HUAWEI
+	help
+	  Enables Huawei hardware properties such as Wi-Fi/Bluetooth MAC
+	  addresses, serial number.
+
+	  Exported to userspace under /sys/hwprops.
