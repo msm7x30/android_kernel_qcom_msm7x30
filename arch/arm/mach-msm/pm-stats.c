@@ -17,6 +17,7 @@
 #include <linux/spinlock.h>
 #include <linux/uaccess.h>
 #include <linux/proc_fs.h>
+#include <linux/seq_file.h>
 
 #include "pm.h"
 
@@ -83,108 +84,79 @@ add_bail:
 }
 
 /*
- * Helper function of snprintf where buf is auto-incremented, size is auto-
- * decremented, and there is no return value.
- *
- * NOTE: buf and size must be l-values (e.g. variables)
- */
-#define SNPRINTF(buf, size, format, ...) \
-	do { \
-		if (size > 0) { \
-			int ret; \
-			ret = snprintf(buf, size, format, ## __VA_ARGS__); \
-			if (ret > size) { \
-				buf += size; \
-				size = 0; \
-			} else { \
-				buf += ret; \
-				size -= ret; \
-			} \
-		} \
-	} while (0)
-
-/*
  * Write out the power management statistics.
  */
-static int msm_pm_read_proc
-	(char *page, char **start, off_t off, int count, int *eof, void *data)
+static int msm_pm_read_proc(struct seq_file *m, void *v)
 {
-	unsigned int cpu = off / MSM_PM_STAT_COUNT;
-	int id = off % MSM_PM_STAT_COUNT;
-	char *p = page;
-
-	if (count < 1024) {
-		*start = (char *) 0;
-		*eof = 0;
-		return 0;
-	}
-
-	if (cpu < num_possible_cpus()) {
-		unsigned long flags;
+	unsigned int cpu;
+	for_each_possible_cpu(cpu) {
 		struct msm_pm_time_stats *stats;
-		int i;
-		int64_t bucket_time;
-		int64_t s;
-		uint32_t ns;
+		unsigned long flags;
+		int id;
 
 		spin_lock_irqsave(&msm_pm_stats_lock, flags);
 		stats = per_cpu(msm_pm_stats, cpu).stats;
+		spin_unlock_irqrestore(&msm_pm_stats_lock, flags);
 
-		/* Skip the disabled ones */
-		if (!stats[id].enabled) {
-			*p = '\0';
-			p++;
-			goto again;
-		}
+		for (id = 0; id < MSM_PM_STAT_COUNT; id++) {
+			int i;
+			int64_t bucket_time;
+			int64_t s;
+			uint32_t ns;
 
-		s = stats[id].total_time;
-		ns = do_div(s, NSEC_PER_SEC);
-		SNPRINTF(p, count,
-			"[cpu %u] %s:\n"
-			"  count: %7d\n"
-			"  total_time: %lld.%09u\n",
-			cpu, stats[id].name,
-			stats[id].count,
-			s, ns);
+			/* Skip the disabled ones */
+			if (!stats[id].enabled)
+				continue;
 
-		bucket_time = stats[id].first_bucket_time;
-		for (i = 0; i < CONFIG_MSM_IDLE_STATS_BUCKET_COUNT - 1; i++) {
-			s = bucket_time;
+			s = stats[id].total_time;
 			ns = do_div(s, NSEC_PER_SEC);
-			SNPRINTF(p, count,
-				"   <%6lld.%09u: %7d (%lld-%lld)\n",
+			seq_printf(m,
+				"[cpu %u] %s:\n"
+				"  count: %7d\n"
+				"  total_time: %lld.%09u\n",
+				cpu, stats[id].name,
+				stats[id].count,
+				s, ns);
+
+			bucket_time = stats[id].first_bucket_time;
+			for (i = 0; i < CONFIG_MSM_IDLE_STATS_BUCKET_COUNT - 1;
+				i++) {
+				s = bucket_time;
+				ns = do_div(s, NSEC_PER_SEC);
+				seq_printf(m,
+					"   <%6lld.%09u: %7d (%lld-%lld)\n",
+					s, ns, stats[id].bucket[i],
+					stats[id].min_time[i],
+					stats[id].max_time[i]);
+
+				bucket_time <<=
+					CONFIG_MSM_IDLE_STATS_BUCKET_SHIFT;
+			}
+
+			seq_printf(m, "  >=%6lld.%09u: %7d (%lld-%lld)\n",
 				s, ns, stats[id].bucket[i],
 				stats[id].min_time[i],
 				stats[id].max_time[i]);
-
-			bucket_time <<= CONFIG_MSM_IDLE_STATS_BUCKET_SHIFT;
 		}
-
-		SNPRINTF(p, count, "  >=%6lld.%09u: %7d (%lld-%lld)\n",
-			s, ns, stats[id].bucket[i],
-			stats[id].min_time[i],
-			stats[id].max_time[i]);
-
-again:
-		*start = (char *) 1;
-		*eof = (off + 1 >= MSM_PM_STAT_COUNT * num_possible_cpus());
-
-		spin_unlock_irqrestore(&msm_pm_stats_lock, flags);
 	}
 
-	return p - page;
+	return 0;
 }
-#undef SNPRINTF
+
+static int msm_pm_open_proc(struct inode *inodp, struct file *filp)
+{
+	return single_open(filp, msm_pm_read_proc, PDE_DATA(inodp));
+}
 
 #define MSM_PM_STATS_RESET "reset"
 
 /*
  * Reset the power management statistics values.
  */
-static int msm_pm_write_proc(struct file *file, const char __user *buffer,
-	unsigned long count, void *data)
+static int msm_pm_write_proc(struct file *filp,
+	const char __user *buf, size_t count, loff_t *ppos)
 {
-	char buf[sizeof(MSM_PM_STATS_RESET)];
+	char buffer[sizeof(MSM_PM_STATS_RESET)];
 	int ret;
 	unsigned long flags;
 	unsigned int cpu;
@@ -195,12 +167,12 @@ static int msm_pm_write_proc(struct file *file, const char __user *buffer,
 		goto write_proc_failed;
 	}
 
-	if (copy_from_user(buf, buffer, len)) {
+	if (copy_from_user(buffer, buf, len)) {
 		ret = -EFAULT;
 		goto write_proc_failed;
 	}
 
-	if (strncmp(buf, MSM_PM_STATS_RESET, len)) {
+	if (strncmp(buffer, MSM_PM_STATS_RESET, len)) {
 		ret = -EINVAL;
 		goto write_proc_failed;
 	}
@@ -230,6 +202,15 @@ write_proc_failed:
 	return ret;
 }
 #undef MSM_PM_STATS_RESET
+
+static struct file_operations msm_pm_proc_ops = {
+	.owner = THIS_MODULE,
+	.open = msm_pm_open_proc,
+	.read = seq_read,
+	.llseek = seq_lseek,
+	.release = single_release,
+	.write = msm_pm_write_proc,
+};
 
 void msm_pm_add_stats(enum msm_pm_time_stats_id *enable_stats, int size)
 {
@@ -296,11 +277,7 @@ void msm_pm_add_stats(enum msm_pm_time_stats_id *enable_stats, int size)
 
 	}
 
-	d_entry = create_proc_entry("msm_pm_stats",
-			S_IRUGO | S_IWUSR | S_IWGRP, NULL);
-	if (d_entry) {
-		d_entry->read_proc = msm_pm_read_proc;
-		d_entry->write_proc = msm_pm_write_proc;
-		d_entry->data = NULL;
-	}
+	d_entry = proc_create_data("msm_pm_stats",
+			S_IRUGO | S_IWUSR | S_IWGRP, NULL,
+			&msm_pm_proc_ops, NULL);
 }
