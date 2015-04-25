@@ -833,11 +833,6 @@ static int msm_pm_power_collapse
 	msm_pm_boot_config_before_pc(smp_processor_id(),
 			virt_to_phys(msm_pm_collapse_exit));
 
-#ifdef CONFIG_VFP
-	if (from_idle)
-		vfp_pm_suspend();
-#endif
-
 #ifdef CONFIG_CACHE_L2X0
 	l2cc_suspend();
 #endif
@@ -851,10 +846,6 @@ static int msm_pm_power_collapse
 	msm_pm_boot_config_after_pc(smp_processor_id());
 
 	if (collapsed) {
-#ifdef CONFIG_VFP
-		if (from_idle)
-			vfp_pm_resume();
-#endif
 		cpu_init();
 		local_fiq_enable();
 	}
@@ -1054,10 +1045,6 @@ static int __ref msm_pm_power_collapse_standalone(bool from_idle)
 	msm_pm_boot_config_before_pc(smp_processor_id(),
 						virt_to_phys(entry));
 
-#ifdef CONFIG_VFP
-	vfp_pm_suspend();
-#endif
-
 #ifdef CONFIG_CACHE_L2X0
 	l2cc_suspend();
 #endif
@@ -1071,9 +1058,6 @@ static int __ref msm_pm_power_collapse_standalone(bool from_idle)
 	msm_pm_boot_config_after_pc(smp_processor_id());
 
 	if (collapsed) {
-#ifdef CONFIG_VFP
-		vfp_pm_resume();
-#endif
 		cpu_init();
 		local_fiq_enable();
 	}
