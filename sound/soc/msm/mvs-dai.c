@@ -69,27 +69,27 @@ static const struct snd_soc_component_driver soc_component_dev_msm = {
 	.name = "mvs-cpu",
 };
 
-static __devinit int asoc_mvs_codec_probe(struct platform_device *pdev)
+static int asoc_mvs_codec_probe(struct platform_device *pdev)
 {
 	dev_info(&pdev->dev, "%s: dev name %s\n", __func__, dev_name(&pdev->dev));
 	return snd_soc_register_codec(&pdev->dev, &soc_codec_dev_msm,
 			&msm_mvs_codec_dais, 1);
 }
 
-static int __devexit asoc_mvs_codec_remove(struct platform_device *pdev)
+static int asoc_mvs_codec_remove(struct platform_device *pdev)
 {
 	snd_soc_unregister_codec(&pdev->dev);
 	return 0;
 }
 
-static __devinit int asoc_mvs_cpu_probe(struct platform_device *pdev)
+static int asoc_mvs_cpu_probe(struct platform_device *pdev)
 {
 	dev_info(&pdev->dev, "%s: dev name %s\n", __func__, dev_name(&pdev->dev));
 	return snd_soc_register_component(&pdev->dev, &soc_component_dev_msm,
 			&msm_mvs_cpu_dais, 1);
 }
 
-static int __devexit asoc_mvs_cpu_remove(struct platform_device *pdev)
+static int asoc_mvs_cpu_remove(struct platform_device *pdev)
 {
 	snd_soc_unregister_component(&pdev->dev);
 	return 0;
@@ -97,7 +97,7 @@ static int __devexit asoc_mvs_cpu_remove(struct platform_device *pdev)
 
 static struct platform_driver asoc_mvs_codec_driver = {
 	.probe = asoc_mvs_codec_probe,
-	.remove = __devexit_p(asoc_mvs_codec_remove),
+	.remove = asoc_mvs_codec_remove,
 	.driver = {
 			.name = "mvs-codec-dai",
 			.owner = THIS_MODULE,
@@ -106,7 +106,7 @@ static struct platform_driver asoc_mvs_codec_driver = {
 
 static struct platform_driver asoc_mvs_cpu_driver = {
 	.probe = asoc_mvs_cpu_probe,
-	.remove = __devexit_p(asoc_mvs_cpu_remove),
+	.remove = asoc_mvs_cpu_remove,
 	.driver = {
 			.name = "mvs-cpu-dai",
 			.owner = THIS_MODULE,
