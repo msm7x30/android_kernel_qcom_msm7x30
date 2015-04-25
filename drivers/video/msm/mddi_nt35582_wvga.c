@@ -88,7 +88,7 @@ static void mddi_nt35582_panel_set_backlight(struct msm_fb_data_type *mfd)
 #endif
 }
 
-static int __devinit nt35582_probe(struct platform_device *pdev)
+static int nt35582_probe(struct platform_device *pdev)
 {
 	if (pdev->id == 0) {
 		pdata = pdev->dev.platform_data;
