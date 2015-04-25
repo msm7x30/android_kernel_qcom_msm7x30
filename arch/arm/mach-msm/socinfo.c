@@ -15,8 +15,7 @@
  *
  */
 
-#include <linux/types.h>
-#include <linux/sysdev.h>
+#include <linux/device.h>
 #include <asm/mach-types.h>
 #include <mach/socinfo.h>
 
@@ -239,8 +238,8 @@ enum msm_cpu socinfo_get_msm_cpu(void)
 EXPORT_SYMBOL_GPL(socinfo_get_msm_cpu);
 
 static ssize_t
-socinfo_show_id(struct sys_device *dev,
-		struct sysdev_attribute *attr,
+socinfo_show_id(struct device *dev,
+		struct device_attribute *attr,
 		char *buf)
 {
 	if (!socinfo) {
@@ -252,8 +251,8 @@ socinfo_show_id(struct sys_device *dev,
 }
 
 static ssize_t
-socinfo_show_version(struct sys_device *dev,
-		     struct sysdev_attribute *attr,
+socinfo_show_version(struct device *dev,
+		     struct device_attribute *attr,
 		     char *buf)
 {
 	uint32_t version;
@@ -270,8 +269,8 @@ socinfo_show_version(struct sys_device *dev,
 }
 
 static ssize_t
-socinfo_show_build_id(struct sys_device *dev,
-		      struct sysdev_attribute *attr,
+socinfo_show_build_id(struct device *dev,
+		      struct device_attribute *attr,
 		      char *buf)
 {
 	if (!socinfo) {
@@ -283,8 +282,8 @@ socinfo_show_build_id(struct sys_device *dev,
 }
 
 static ssize_t
-socinfo_show_raw_id(struct sys_device *dev,
-		    struct sysdev_attribute *attr,
+socinfo_show_raw_id(struct device *dev,
+		    struct device_attribute *attr,
 		    char *buf)
 {
 	if (!socinfo) {
@@ -300,8 +299,8 @@ socinfo_show_raw_id(struct sys_device *dev,
 }
 
 static ssize_t
-socinfo_show_raw_version(struct sys_device *dev,
-			 struct sysdev_attribute *attr,
+socinfo_show_raw_version(struct device *dev,
+			 struct device_attribute *attr,
 			 char *buf)
 {
 	if (!socinfo) {
@@ -317,8 +316,8 @@ socinfo_show_raw_version(struct sys_device *dev,
 }
 
 static ssize_t
-socinfo_show_platform_type(struct sys_device *dev,
-			 struct sysdev_attribute *attr,
+socinfo_show_platform_type(struct device *dev,
+			 struct device_attribute *attr,
 			 char *buf)
 {
 	uint32_t hw_type;
@@ -343,8 +342,8 @@ socinfo_show_platform_type(struct sys_device *dev,
 }
 
 static ssize_t
-socinfo_show_platform_version(struct sys_device *dev,
-			 struct sysdev_attribute *attr,
+socinfo_show_platform_version(struct device *dev,
+			 struct device_attribute *attr,
 			 char *buf)
 {
 
@@ -362,8 +361,8 @@ socinfo_show_platform_version(struct sys_device *dev,
 }
 
 static ssize_t
-socinfo_show_accessory_chip(struct sys_device *dev,
-			struct sysdev_attribute *attr,
+socinfo_show_accessory_chip(struct device *dev,
+			struct device_attribute *attr,
 			char *buf)
 {
 	if (!socinfo) {
@@ -380,8 +379,8 @@ socinfo_show_accessory_chip(struct sys_device *dev,
 }
 
 static ssize_t
-socinfo_show_platform_subtype(struct sys_device *dev,
-			struct sysdev_attribute *attr,
+socinfo_show_platform_subtype(struct device *dev,
+			struct device_attribute *attr,
 			char *buf)
 {
 	uint32_t hw_subtype;
@@ -405,8 +404,8 @@ socinfo_show_platform_subtype(struct sys_device *dev,
 }
 
 static ssize_t
-socinfo_show_pmic_model(struct sys_device *dev,
-			struct sysdev_attribute *attr,
+socinfo_show_pmic_model(struct device *dev,
+			struct device_attribute *attr,
 			char *buf)
 {
 	if (!socinfo) {
@@ -423,8 +422,8 @@ socinfo_show_pmic_model(struct sys_device *dev,
 }
 
 static ssize_t
-socinfo_show_pmic_die_revision(struct sys_device *dev,
-			       struct sysdev_attribute *attr,
+socinfo_show_pmic_die_revision(struct device *dev,
+			       struct device_attribute *attr,
 			       char *buf)
 {
 	if (!socinfo) {
@@ -440,61 +439,62 @@ socinfo_show_pmic_die_revision(struct sys_device *dev,
 		socinfo_get_pmic_die_revision());
 }
 
-static struct sysdev_attribute socinfo_v1_files[] = {
-	_SYSDEV_ATTR(id, 0444, socinfo_show_id, NULL),
-	_SYSDEV_ATTR(version, 0444, socinfo_show_version, NULL),
-	_SYSDEV_ATTR(build_id, 0444, socinfo_show_build_id, NULL),
+static struct device_attribute socinfo_v1_files[] = {
+	__ATTR(id, 0444, socinfo_show_id, NULL),
+	__ATTR(version, 0444, socinfo_show_version, NULL),
+	__ATTR(build_id, 0444, socinfo_show_build_id, NULL),
 };
 
-static struct sysdev_attribute socinfo_v2_files[] = {
-	_SYSDEV_ATTR(raw_id, 0444, socinfo_show_raw_id, NULL),
-	_SYSDEV_ATTR(raw_version, 0444, socinfo_show_raw_version, NULL),
+static struct device_attribute socinfo_v2_files[] = {
+	__ATTR(raw_id, 0444, socinfo_show_raw_id, NULL),
+	__ATTR(raw_version, 0444, socinfo_show_raw_version, NULL),
 };
 
-static struct sysdev_attribute socinfo_v3_files[] = {
-	_SYSDEV_ATTR(hw_platform, 0444, socinfo_show_platform_type, NULL),
+static struct device_attribute socinfo_v3_files[] = {
+	__ATTR(hw_platform, 0444, socinfo_show_platform_type, NULL),
 };
 
-static struct sysdev_attribute socinfo_v4_files[] = {
-	_SYSDEV_ATTR(platform_version, 0444,
+static struct device_attribute socinfo_v4_files[] = {
+	__ATTR(platform_version, 0444,
 			socinfo_show_platform_version, NULL),
 };
 
-static struct sysdev_attribute socinfo_v5_files[] = {
-	_SYSDEV_ATTR(accessory_chip, 0444,
+static struct device_attribute socinfo_v5_files[] = {
+	__ATTR(accessory_chip, 0444,
 			socinfo_show_accessory_chip, NULL),
 };
 
-static struct sysdev_attribute socinfo_v6_files[] = {
-	_SYSDEV_ATTR(platform_subtype, 0444,
+static struct device_attribute socinfo_v6_files[] = {
+	__ATTR(platform_subtype, 0444,
 			socinfo_show_platform_subtype, NULL),
 };
 
-static struct sysdev_attribute socinfo_v7_files[] = {
-	_SYSDEV_ATTR(pmic_model, 0444,
+static struct device_attribute socinfo_v7_files[] = {
+	__ATTR(pmic_model, 0444,
 			socinfo_show_pmic_model, NULL),
-	_SYSDEV_ATTR(pmic_die_revision, 0444,
+	__ATTR(pmic_die_revision, 0444,
 			socinfo_show_pmic_die_revision, NULL),
 };
 
-static struct sysdev_class soc_sysdev_class = {
+static struct bus_type soc_subsys = {
 	.name = "soc",
+	.dev_name = "soc",
 };
 
-static struct sys_device soc_sys_device = {
+static struct device soc_device = {
 	.id = 0,
-	.cls = &soc_sysdev_class,
+	.bus = &soc_subsys,
 };
 
-static int __init socinfo_create_files(struct sys_device *dev,
-					struct sysdev_attribute files[],
+static int __init socinfo_create_files(struct device *dev,
+					struct device_attribute files[],
 					int size)
 {
 	int i;
 	for (i = 0; i < size; i++) {
-		int err = sysdev_create_file(dev, &files[i]);
+		int err = device_create_file(dev, &files[i]);
 		if (err) {
-			pr_err("%s: sysdev_create_file(%s)=%d\n",
+			pr_err("%s: device_create_file(%s)=%d\n",
 			       __func__, files[i].attr.name, err);
 			return err;
 		}
@@ -502,7 +502,7 @@ static int __init socinfo_create_files(struct sys_device *dev,
 	return 0;
 }
 
-static int __init socinfo_init_sysdev(void)
+static int __init socinfo_init_dev(void)
 {
 	int err;
 
@@ -511,57 +511,57 @@ static int __init socinfo_init_sysdev(void)
 		return -ENODEV;
 	}
 
-	err = sysdev_class_register(&soc_sysdev_class);
+	err = subsys_system_register(&soc_subsys, NULL);
 	if (err) {
-		pr_err("%s: sysdev_class_register fail (%d)\n",
+		pr_err("%s: bus_register fail (%d)\n",
 		       __func__, err);
 		return err;
 	}
-	err = sysdev_register(&soc_sys_device);
+	err = device_register(&soc_device);
 	if (err) {
-		pr_err("%s: sysdev_register fail (%d)\n",
+		pr_err("%s: device_register fail (%d)\n",
 		       __func__, err);
 		return err;
 	}
-	socinfo_create_files(&soc_sys_device, socinfo_v1_files,
+	socinfo_create_files(&soc_device, socinfo_v1_files,
 				ARRAY_SIZE(socinfo_v1_files));
 	if (socinfo->v1.format < 2)
 		return err;
-	socinfo_create_files(&soc_sys_device, socinfo_v2_files,
+	socinfo_create_files(&soc_device, socinfo_v2_files,
 				ARRAY_SIZE(socinfo_v2_files));
 
 	if (socinfo->v1.format < 3)
 		return err;
 
-	socinfo_create_files(&soc_sys_device, socinfo_v3_files,
+	socinfo_create_files(&soc_device, socinfo_v3_files,
 				ARRAY_SIZE(socinfo_v3_files));
 
 	if (socinfo->v1.format < 4)
 		return err;
 
-	socinfo_create_files(&soc_sys_device, socinfo_v4_files,
+	socinfo_create_files(&soc_device, socinfo_v4_files,
 				ARRAY_SIZE(socinfo_v4_files));
 
 	if (socinfo->v1.format < 5)
 		return err;
 
-	socinfo_create_files(&soc_sys_device, socinfo_v5_files,
+	socinfo_create_files(&soc_device, socinfo_v5_files,
 				ARRAY_SIZE(socinfo_v5_files));
 
 	if (socinfo->v1.format < 6)
 		return err;
 
-	socinfo_create_files(&soc_sys_device, socinfo_v6_files,
+	socinfo_create_files(&soc_device, socinfo_v6_files,
 				ARRAY_SIZE(socinfo_v6_files));
 
 	if (socinfo->v1.format < 7)
 		return err;
 
-	return socinfo_create_files(&soc_sys_device, socinfo_v7_files,
+	return socinfo_create_files(&soc_device, socinfo_v7_files,
 				ARRAY_SIZE(socinfo_v7_files));
 }
 
-arch_initcall(socinfo_init_sysdev);
+arch_initcall(socinfo_init_dev);
 
 static void * __init setup_dummy_socinfo(void)
 {
