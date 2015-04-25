@@ -23,6 +23,7 @@
 #include <linux/scatterlist.h>
 #include <linux/log2.h>
 #include <linux/regulator/consumer.h>
+#include <linux/pm.h>
 #include <linux/pm_runtime.h>
 #include <linux/suspend.h>
 #include <linux/fault-inject.h>
@@ -905,6 +906,13 @@ int __mmc_claim_host(struct mmc_host *host, atomic_t *abort)
 	might_sleep();
 
 	add_wait_queue(&host->wq, &wait);
+#ifdef CONFIG_PM_RUNTIME
+	while (mmc_dev(host)->power.runtime_status == RPM_SUSPENDING) {
+		if (host->suspend_task == current)
+			break;
+		msleep(15);
+	}
+#endif
 	spin_lock_irqsave(&host->lock, flags);
 	while (1) {
 		set_current_state(TASK_UNINTERRUPTIBLE);

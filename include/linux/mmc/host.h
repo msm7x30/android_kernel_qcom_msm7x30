@@ -331,6 +331,7 @@ struct mmc_host {
 	wait_queue_head_t	wq;
 	struct task_struct	*claimer;	/* task that has host claimed */
 	int			claim_cnt;	/* "claim" nesting count */
+	struct task_struct	*suspend_task;
 
 	struct delayed_work	detect;
 	struct wake_lock	detect_wake_lock;
