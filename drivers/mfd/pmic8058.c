@@ -430,7 +430,7 @@ pm8058_add_subdevices(const struct pm8058_platform_data *pdata,
 		gpio_cell.platform_data = pdata->gpio_pdata;
 		gpio_cell.pdata_size = sizeof(struct pm8xxx_gpio_platform_data);
 		rc = mfd_add_devices(pmic->dev, 0, &gpio_cell, 1,
-					NULL, irq_base);
+					NULL, irq_base, NULL);
 		if (rc) {
 			pr_err("Failed to add  gpio subdevice ret=%d\n", rc);
 			goto bail;
@@ -443,7 +443,7 @@ pm8058_add_subdevices(const struct pm8058_platform_data *pdata,
 		mpp_cell.platform_data = pdata->mpp_pdata;
 		mpp_cell.pdata_size = sizeof(struct pm8xxx_mpp_platform_data);
 		rc = mfd_add_devices(pmic->dev, 0, &mpp_cell, 1, NULL,
-					irq_base);
+					irq_base, NULL);
 		if (rc) {
 			pr_err("Failed to add mpp subdevice ret=%d\n", rc);
 			goto bail;
@@ -469,7 +469,7 @@ pm8058_add_subdevices(const struct pm8058_platform_data *pdata,
 					sizeof(struct pm8058_vreg_pdata);
 		}
 		rc = mfd_add_devices(pmic->dev, 0, mfd_regulators,
-				pdata->num_regulators, NULL, irq_base);
+				pdata->num_regulators, NULL, irq_base, NULL);
 		if (rc) {
 			pr_err("Failed to add regulator subdevices ret=%d\n",
 				rc);
@@ -498,7 +498,7 @@ pm8058_add_subdevices(const struct pm8058_platform_data *pdata,
 					sizeof(struct pm8058_xo_pdata);
 		}
 		rc = mfd_add_devices(pmic->dev, 0, mfd_xo_buffers,
-				pdata->num_xo_buffers, NULL, irq_base);
+				pdata->num_xo_buffers, NULL, irq_base, NULL);
 		if (rc) {
 			pr_err("Failed to add XO buffer subdevices ret=%d\n",
 				rc);
@@ -513,7 +513,7 @@ pm8058_add_subdevices(const struct pm8058_platform_data *pdata,
 		keypad_cell.pdata_size =
 			sizeof(struct pm8xxx_keypad_platform_data);
 		rc = mfd_add_devices(pmic->dev, 0, &keypad_cell, 1, NULL,
-					irq_base);
+					irq_base, NULL);
 		if (rc) {
 			pr_err("Failed to add keypad subdevice ret=%d\n", rc);
 			goto bail;
@@ -524,7 +524,7 @@ pm8058_add_subdevices(const struct pm8058_platform_data *pdata,
 		rtc_cell.platform_data = pdata->rtc_pdata;
 		rtc_cell.pdata_size = sizeof(struct pm8xxx_rtc_platform_data);
 		rc = mfd_add_devices(pmic->dev, 0, &rtc_cell, 1, NULL,
-						irq_base);
+						irq_base, NULL);
 		if (rc) {
 			pr_err("Failed to add rtc subdevice ret=%d\n", rc);
 			goto bail;
@@ -536,7 +536,7 @@ pm8058_add_subdevices(const struct pm8058_platform_data *pdata,
 		pwrkey_cell.pdata_size =
 			sizeof(struct pm8xxx_pwrkey_platform_data);
 		rc = mfd_add_devices(pmic->dev, 0, &pwrkey_cell, 1, NULL,
-							irq_base);
+							irq_base, NULL);
 		if (rc) {
 			pr_err("Failed to add pwrkey subdevice ret=%d\n", rc);
 			goto bail;
@@ -548,7 +548,7 @@ pm8058_add_subdevices(const struct pm8058_platform_data *pdata,
 		vibrator_cell.pdata_size =
 				sizeof(struct pm8xxx_vibrator_platform_data);
 		rc = mfd_add_devices(pmic->dev, 0, &vibrator_cell, 1, NULL,
-								irq_base);
+								irq_base, NULL);
 		if (rc) {
 			pr_err("Failed to add vibrator subdevice ret=%d\n",
 									rc);
@@ -559,7 +559,8 @@ pm8058_add_subdevices(const struct pm8058_platform_data *pdata,
 	if (pdata->leds_pdata) {
 		leds_cell.platform_data = pdata->leds_pdata;
 		leds_cell.pdata_size = sizeof(struct pm8xxx_led_platform_data);
-		rc = mfd_add_devices(pmic->dev, 0, &leds_cell, 1, NULL, 0);
+		rc = mfd_add_devices(pmic->dev, 0, &leds_cell, 1, NULL, 0,
+								NULL);
 		if (rc) {
 			pr_err("Failed to add leds subdevice ret=%d\n", rc);
 			goto bail;
@@ -571,7 +572,7 @@ pm8058_add_subdevices(const struct pm8058_platform_data *pdata,
 		xoadc_cell.pdata_size =
 			sizeof(struct xoadc_platform_data);
 		rc = mfd_add_devices(pmic->dev, 0, &xoadc_cell, 1, NULL,
-								irq_base);
+							irq_base, NULL);
 		if (rc) {
 			pr_err("Failed to add leds subdevice ret=%d\n", rc);
 			goto bail;
@@ -582,7 +583,8 @@ pm8058_add_subdevices(const struct pm8058_platform_data *pdata,
 		othc0_cell.platform_data = pdata->othc0_pdata;
 		othc0_cell.pdata_size =
 			sizeof(struct pmic8058_othc_config_pdata);
-		rc = mfd_add_devices(pmic->dev, 0, &othc0_cell, 1, NULL, 0);
+		rc = mfd_add_devices(pmic->dev, 0, &othc0_cell, 1, NULL, 0,
+								NULL);
 		if (rc) {
 			pr_err("Failed to add othc0 subdevice ret=%d\n", rc);
 			goto bail;
@@ -594,7 +596,7 @@ pm8058_add_subdevices(const struct pm8058_platform_data *pdata,
 		othc1_cell.pdata_size =
 			sizeof(struct pmic8058_othc_config_pdata);
 		rc = mfd_add_devices(pmic->dev, 0, &othc1_cell, 1, NULL,
-								irq_base);
+							irq_base, NULL);
 		if (rc) {
 			pr_err("Failed to add othc1 subdevice ret=%d\n", rc);
 			goto bail;
@@ -605,7 +607,8 @@ pm8058_add_subdevices(const struct pm8058_platform_data *pdata,
 		othc2_cell.platform_data = pdata->othc2_pdata;
 		othc2_cell.pdata_size =
 			sizeof(struct pmic8058_othc_config_pdata);
-		rc = mfd_add_devices(pmic->dev, 0, &othc2_cell, 1, NULL, 0);
+		rc = mfd_add_devices(pmic->dev, 0, &othc2_cell, 1, NULL, 0,
+								NULL);
 		if (rc) {
 			pr_err("Failed to add othc2 subdevice ret=%d\n", rc);
 			goto bail;
@@ -617,7 +620,7 @@ pm8058_add_subdevices(const struct pm8058_platform_data *pdata,
 		pwm_cell.pdata_size =
 			sizeof(struct pm8xxx_pwm_platform_data);
 	}
-	rc = mfd_add_devices(pmic->dev, 0, &pwm_cell, 1, NULL, 0);
+	rc = mfd_add_devices(pmic->dev, 0, &pwm_cell, 1, NULL, 0, NULL);
 	if (rc) {
 		pr_err("Failed to add pwm subdevice ret=%d\n", rc);
 		goto bail;
@@ -627,7 +630,7 @@ pm8058_add_subdevices(const struct pm8058_platform_data *pdata,
 		misc_cell.platform_data = pdata->misc_pdata;
 		misc_cell.pdata_size = sizeof(struct pm8xxx_misc_platform_data);
 		rc = mfd_add_devices(pmic->dev, 0, &misc_cell, 1, NULL,
-				      irq_base);
+				      irq_base, NULL);
 		if (rc) {
 			pr_err("Failed to add  misc subdevice ret=%d\n", rc);
 			goto bail;
@@ -635,7 +638,7 @@ pm8058_add_subdevices(const struct pm8058_platform_data *pdata,
 	}
 
 	rc = mfd_add_devices(pmic->dev, 0, &thermal_alarm_cell, 1, NULL,
-				irq_base);
+				irq_base, NULL);
 	if (rc) {
 		pr_err("Failed to add thermal alarm subdevice ret=%d\n",
 			rc);
@@ -643,20 +646,20 @@ pm8058_add_subdevices(const struct pm8058_platform_data *pdata,
 	}
 
 	rc = mfd_add_devices(pmic->dev, 0, &batt_alarm_cell, 1, NULL,
-				irq_base);
+				irq_base, NULL);
 	if (rc) {
 		pr_err("Failed to add battery alarm subdevice ret=%d\n",
 			rc);
 		goto bail;
 	}
 
-	rc = mfd_add_devices(pmic->dev, 0, &upl_cell, 1, NULL, 0);
+	rc = mfd_add_devices(pmic->dev, 0, &upl_cell, 1, NULL, 0, NULL);
 	if (rc) {
 		pr_err("Failed to add upl subdevice ret=%d\n", rc);
 		goto bail;
 	}
 
-	rc = mfd_add_devices(pmic->dev, 0, &nfc_cell, 1, NULL, 0);
+	rc = mfd_add_devices(pmic->dev, 0, &nfc_cell, 1, NULL, 0, NULL);
 	if (rc) {
 		pr_err("Failed to add upl subdevice ret=%d\n", rc);
 		goto bail;
@@ -667,14 +670,15 @@ pm8058_add_subdevices(const struct pm8058_platform_data *pdata,
 		pm8058_charger_cell.pdata_size = sizeof(struct
 						pmic8058_charger_data);
 		rc = mfd_add_devices(pmic->dev, 0, &pm8058_charger_cell,
-						1, NULL, irq_base);
+						1, NULL, irq_base, NULL);
 		if (rc) {
 			pr_err("Failed to add charger subdevice ret=%d\n", rc);
 			goto bail;
 		}
 	}
 
-	rc = mfd_add_devices(pmic->dev, 0, &debugfs_cell, 1, NULL, irq_base);
+	rc = mfd_add_devices(pmic->dev, 0, &debugfs_cell, 1, NULL, irq_base,
+								NULL);
 	if (rc) {
 		pr_err("Failed to add debugfs subdevice ret=%d\n", rc);
 		goto bail;
