@@ -1,0 +1,79 @@
+config MACH_HUAWEI_U8800
+	depends on ARCH_MSM7X30
+	depends on !MSM_STACKED_MEMORY
+	select MACH_HUAWEI
+	select MSM_HUAWEI_HWPROPS
+	select MSM_HUAWEI_RMT_OEMINFO
+	bool "HUAWEI U8800"
+	help
+	  Support for the Huawei U8800 board.
+
+config MACH_HUAWEI_U8800PRO
+	depends on ARCH_MSM7X30
+	depends on !MSM_STACKED_MEMORY
+	select MACH_HUAWEI
+	select MSM_HUAWEI_HWPROPS
+	select MSM_HUAWEI_RMT_OEMINFO
+	bool "HUAWEI U8800PRO"
+	help
+	  Support for the Huawei U8800PRO board.
+
+config MACH_HUAWEI_U8860
+	depends on ARCH_MSM7X30
+	depends on !MSM_STACKED_MEMORY
+	select MACH_HUAWEI
+	select MSM_HUAWEI_HWPROPS
+	select MSM_HUAWEI_RMT_OEMINFO
+	bool "HUAWEI U8860"
+	help
+	  Support for the Huawei U8860 board.
+
+config MACH_HUAWEI_U8860LP
+	depends on ARCH_MSM7X30
+	depends on !MSM_STACKED_MEMORY
+	select MACH_HUAWEI
+	select MSM_HUAWEI_HWPROPS
+	select MSM_HUAWEI_RMT_OEMINFO
+	bool "HUAWEI U8860LP"
+	help
+	  Support for the Huawei U8860LP board.
+
+config MACH_HUAWEI_U8860_51
+	depends on ARCH_MSM7X30
+	depends on !MSM_STACKED_MEMORY
+	select MACH_HUAWEI
+	select MSM_HUAWEI_HWPROPS
+	select MSM_HUAWEI_RMT_OEMINFO
+	bool "HUAWEI U8860-51"
+	help
+	  Support for the Huawei U8860-51 board.
+
+config MACH_HUAWEI_U8860_92
+	depends on ARCH_MSM7X30
+	depends on !MSM_STACKED_MEMORY
+	select MACH_HUAWEI
+	select MSM_HUAWEI_HWPROPS
+	select MSM_HUAWEI_RMT_OEMINFO
+	bool "HUAWEI U8860-92"
+	help
+	  Support for the Huawei U8860-92 board.
+
+config MACH_HUAWEI_U8860_R
+	depends on ARCH_MSM7X30
+	depends on !MSM_STACKED_MEMORY
+	select MACH_HUAWEI
+	select MSM_HUAWEI_HWPROPS
+	select MSM_HUAWEI_RMT_OEMINFO
+	bool "HUAWEI U8860-R"
+	help
+	  Support for the Huawei U8860-R board.
+
+config MACH_HUAWEI_C8860
+	depends on ARCH_MSM7X30
+	depends on !MSM_STACKED_MEMORY
+	select MACH_HUAWEI
+	select MSM_HUAWEI_HWPROPS
+	select MSM_HUAWEI_RMT_OEMINFO
+	bool "HUAWEI C8860"
+	help
+	  Support for the Huawei C8860 board.

@@ -1,0 +1,6 @@
+config MACH_HUAWEI
+	bool
+
+menu "Huawei Board Selection"
+source "arch/arm/mach-msm/huawei/Kconfig.board"
+endmenu
