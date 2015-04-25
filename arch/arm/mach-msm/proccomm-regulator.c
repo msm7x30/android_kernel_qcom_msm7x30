@@ -193,7 +193,7 @@ static struct regulator_ops proccomm_regulator_ops = {
  * a struct proccomm_regulator_info.
  * Fills in the rdev field in struct proccomm_regulator_info.
  */
-static struct regulator_dev *__devinit create_proccomm_rdev(
+static struct regulator_dev *create_proccomm_rdev(
 	struct proccomm_regulator_info *info, struct device *parent)
 {
 	const char *name;
@@ -289,7 +289,7 @@ static void destroy_proccomm_rdev(struct regulator_dev *rdev)
 }
 
 
-static int __devinit proccomm_vreg_probe(struct platform_device *pdev)
+static int proccomm_vreg_probe(struct platform_device *pdev)
 {
 	struct device *dev = &pdev->dev;
 	struct proccomm_regulator_platform_data *pdata = dev->platform_data;
@@ -345,7 +345,7 @@ check_fail:
 	return rc;
 }
 
-static int __devexit proccomm_vreg_remove(struct platform_device *pdev)
+static int proccomm_vreg_remove(struct platform_device *pdev)
 {
 	struct proccomm_regulator_platform_data *pdata;
 	struct regulator_dev **rdevs;
@@ -364,7 +364,7 @@ static int __devexit proccomm_vreg_remove(struct platform_device *pdev)
 
 static struct platform_driver proccomm_vreg_driver = {
 	.probe	= proccomm_vreg_probe,
-	.remove = __devexit_p(proccomm_vreg_remove),
+	.remove = proccomm_vreg_remove,
 	.driver = {
 		.name	= PROCCOMM_REGULATOR_DEV_NAME,
 		.owner	= THIS_MODULE,
