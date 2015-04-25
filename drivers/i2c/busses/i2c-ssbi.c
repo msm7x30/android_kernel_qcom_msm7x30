@@ -501,7 +501,7 @@ static struct platform_driver i2c_ssbi_driver = {
 		.name	= "i2c_ssbi",
 		.owner	= THIS_MODULE,
 	},
-	.remove		= __exit_p(i2c_ssbi_remove),
+	.remove		= i2c_ssbi_remove,
 };
 
 static int __init i2c_ssbi_init(void)
