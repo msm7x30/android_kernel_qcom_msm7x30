@@ -103,7 +103,7 @@ static struct attribute_group mddi_nt35560_sysfs_attr_group = {
 	.attrs = mddi_nt35560_sysfs_attrs,
 };
 
-static int __devinit nt35560_probe(struct platform_device *pdev)
+static int nt35560_probe(struct platform_device *pdev)
 {
 	int ret;
 	struct platform_device *pthisdev = NULL;
