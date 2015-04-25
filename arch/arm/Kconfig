@@ -625,6 +625,15 @@ config ARCH_MSM
 	select CLKDEV_LOOKUP
 	select GENERIC_CLOCKEVENTS
 	select HAVE_CLK
+	select HAVE_CLK_PREPARE
+	select ARCH_HAS_CPUFREQ
+	select GENERIC_GPIO
+	select GENERIC_TIME
+	select GENERIC_ALLOCATOR
+	select HAVE_SCHED_CLOCK
+	select NEED_MACH_MEMORY_H
+	select NEED_MACH_IO_H
+	select NEED_MACH_GPIO_H
 	help
 	  Support for Qualcomm MSM/QSD based systems.  This runs on the
 	  apps processor of the MSM/QSD and depends on a shared memory
@@ -2154,6 +2163,14 @@ endif
 source "drivers/cpuidle/Kconfig"
 
 endmenu
+
+config CPU_FREQ_MSM
+	bool
+	depends on CPU_FREQ && ARCH_MSM
+	default y
+	help
+	  This enables the CPUFreq driver for Qualcomm CPUs.
+	  If in doubt, say Y.
 
 menu "Floating point emulation"
 
