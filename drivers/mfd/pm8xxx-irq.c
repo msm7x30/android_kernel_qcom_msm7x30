@@ -315,13 +315,6 @@ static int pm8xxx_irq_set_wake(struct irq_data *d, unsigned int on)
 	return 0;
 }
 
-static int pm8xxx_irq_read_line(struct irq_data *d)
-{
-	struct pm_irq_chip *chip = irq_data_get_irq_chip_data(d);
-
-	return pm8xxx_get_irq_stat(chip, d->irq);
-}
-
 static struct irq_chip pm8xxx_irq_chip = {
 	.name		= "pm8xxx",
 	.irq_mask	= pm8xxx_irq_mask,
@@ -329,7 +322,6 @@ static struct irq_chip pm8xxx_irq_chip = {
 	.irq_unmask	= pm8xxx_irq_unmask,
 	.irq_set_type	= pm8xxx_irq_set_type,
 	.irq_set_wake	= pm8xxx_irq_set_wake,
-	.irq_read_line	= pm8xxx_irq_read_line,
 	.flags		= IRQCHIP_MASK_ON_SUSPEND,
 };
 
