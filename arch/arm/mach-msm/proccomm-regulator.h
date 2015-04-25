@@ -14,6 +14,7 @@
 #ifndef __ARCH_ARM_MACH_MSM_PROCCOMM_REGULATOR_H__
 #define __ARCH_ARM_MACH_MSM_PROCCOMM_REGULATOR_H__
 
+#include <linux/types.h>
 #include <linux/regulator/machine.h>
 
 #define PROCCOMM_REGULATOR_DEV_NAME "proccomm-regulator"
