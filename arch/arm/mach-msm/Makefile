@@ -1,33 +1,76 @@
-obj-y += io.o timer.o
-obj-y += clock.o
+obj-y += io.o dma.o memory.o
+ifndef CONFIG_ARM_ARCH_TIMER
+obj-y += timer.o
+endif
+obj-y += clock.o clock-voter.o clock-dummy.o
+obj-y += modem_notifier.o subsystem_map.o
+obj-$(CONFIG_CPU_FREQ_MSM) += cpufreq.o
 obj-$(CONFIG_DEBUG_FS) += clock-debug.o
 
+obj-$(CONFIG_MSM_PROC_COMM) += proc_comm.o
+obj-$(CONFIG_MSM_PROC_COMM) += clock-pcom.o
+obj-$(CONFIG_MSM_PROC_COMM) += vreg.o mpp.o
+ifdef CONFIG_MSM_PROC_COMM
+	obj-$(CONFIG_REGULATOR) += footswitch-pcom.o
+	obj-$(CONFIG_DEBUG_FS) += pmic_debugfs.o
+endif
+
+obj-y += acpuclock.o
+obj-$(CONFIG_ARCH_MSM_SCORPION) += pmu.o
+
+ifndef CONFIG_MSM_SMP
+obj-$(CONFIG_ARCH_MSM_SCORPION) += msm_fault_handlers.o
+endif
+
 obj-$(CONFIG_MSM_VIC) += irq-vic.o
-obj-$(CONFIG_MSM_IOMMU) += devices-iommu.o
 
-obj-$(CONFIG_ARCH_MSM7X00A) += dma.o irq.o
-obj-$(CONFIG_ARCH_MSM7X30) += dma.o
-obj-$(CONFIG_ARCH_QSD8X50) += dma.o sirc.o
+obj-$(CONFIG_CPU_V7) += idle-v7.o
 
-obj-$(CONFIG_MSM_PROC_COMM) += proc_comm.o clock-pcom.o vreg.o
+quiet_cmd_mkrpcsym = MKCAP   $@
+      cmd_mkrpcsym = $(PERL) $(srctree)/$(src)/mkrpcsym.pl $< $@
 
-obj-$(CONFIG_MSM_SMD) += smd.o smd_debug.o
-obj-$(CONFIG_MSM_SMD) += last_radio_log.o
-obj-$(CONFIG_MSM_SCM) += scm.o scm-boot.o
+target += smd_rpc_sym.c
+$(obj)/smd_rpc_sym.c: $(src)/smd_rpc_sym $(src)/mkrpcsym.pl
+	$(call if_changed,mkrpcsym)
 
-CFLAGS_scm.o :=$(call as-instr,.arch_extension sec,-DREQUIRES_SEC=1)
-
-obj-$(CONFIG_HOTPLUG_CPU) += hotplug.o
-obj-$(CONFIG_SMP) += headsmp.o platsmp.o
-
-obj-$(CONFIG_MACH_TROUT) += board-trout.o board-trout-gpio.o board-trout-mmc.o devices-msm7x00.o
-obj-$(CONFIG_MACH_TROUT) += board-trout.o board-trout-gpio.o board-trout-mmc.o board-trout-panel.o devices-msm7x00.o
-obj-$(CONFIG_MACH_HALIBUT) += board-halibut.o devices-msm7x00.o
-obj-$(CONFIG_ARCH_MSM7X30) += board-msm7x30.o devices-msm7x30.o
-obj-$(CONFIG_ARCH_QSD8X50) += board-qsd8x50.o devices-qsd8x50.o
-obj-$(CONFIG_ARCH_MSM8X60) += board-dt-8660.o
-obj-$(CONFIG_ARCH_MSM8960) += board-dt-8960.o
-
+obj-$(CONFIG_MSM_FIQ_SUPPORT) += fiq_glue.o
+obj-$(CONFIG_MSM_SMD_LOGGING) += smem_log.o
+obj-$(CONFIG_MSM_SMD) += smd.o smd_debug.o remote_spinlock.o smd_private.o
+obj-y += socinfo.o
+obj-$(CONFIG_MSM_SMD) += pmic.o
+obj-$(CONFIG_MSM_ONCRPCROUTER) += rpc_hsusb.o rpc_pmapp.o rpc_fsusb.o
+obj-y += nand_partitions.o
+obj-$(CONFIG_MSM_SMD_TTY) += smd_tty.o
+obj-$(CONFIG_MSM_SMD_QMI) += smd_qmi.o
+obj-$(CONFIG_MSM_SMD_PKT) += smd_pkt.o
+obj-$(CONFIG_MSM_SMD_NMEA) += smd_nmea.o
+obj-$(CONFIG_MSM_ONCRPCROUTER) += smd_rpcrouter.o
+obj-$(CONFIG_MSM_ONCRPCROUTER) += smd_rpcrouter_device.o
+obj-$(CONFIG_DEBUG_FS) += smd_rpc_sym.o
+obj-$(CONFIG_MSM_ONCRPCROUTER) += smd_rpcrouter_servers.o
+obj-$(CONFIG_MSM_ONCRPCROUTER) += smd_rpcrouter_clients.o
+obj-$(CONFIG_MSM_ONCRPCROUTER) += smd_rpcrouter_xdr.o
+obj-$(CONFIG_MSM_ONCRPCROUTER) += rpcrouter_smd_xprt.o
+obj-$(CONFIG_MSM_RPC_PING) += ping_mdm_rpc_client.o
+obj-$(CONFIG_MSM_RPC_PROC_COMM_TEST) += proc_comm_test.o
+obj-$(CONFIG_MSM_RPC_PING) += ping_mdm_rpc_client.o ping_apps_server.o
+obj-$(CONFIG_MSM_RPC_OEM_RAPI) += oem_rapi_client.o
+obj-$(CONFIG_MSM_RPC_WATCHDOG) += rpc_dog_keepalive.o
+obj-$(CONFIG_MSM_RPCSERVER_WATCHDOG) += rpc_server_dog_keepalive.o
+obj-$(CONFIG_MSM_RPCSERVER_TIME_REMOTE) += rpc_server_time_remote.o
+obj-$(CONFIG_MSM_DALRPC) += dal.o
+obj-$(CONFIG_ARCH_MSM7X30) += dal_axi.o
+obj-$(CONFIG_MSM_RPCSERVER_HANDSET) += rpc_server_handset.o
+obj-$(CONFIG_PM) += pm-boot.o
+obj-$(CONFIG_MSM_IDLE_STATS) += pm-stats.o
+obj-$(CONFIG_MSM_PM2) += pm2.o
+obj-$(CONFIG_MSM_SPM_V1) += spm.o
+obj-$(CONFIG_ARCH_MSM7X30) += acpuclock-7x30.o clock-7x30.o clock-local.o clock-pll.o memory_topology.o
 obj-$(CONFIG_ARCH_MSM7X30) += gpiomux-v1.o gpiomux.o
-obj-$(CONFIG_ARCH_QSD8X50) += gpiomux-8x50.o gpiomux-v1.o gpiomux.o
-obj-$(CONFIG_ARCH_MSM8X60) += gpiomux-8x60.o gpiomux-v2.o gpiomux.o
+
+
+obj-$(CONFIG_MSM_RMT_STORAGE_CLIENT) += rmt_storage_client.o
+obj-$(CONFIG_MSM_SHOW_RESUME_IRQ) += msm_show_resume_irq.o
+obj-$(CONFIG_MSM_MODEM_RESTART) += restart_7k.o
+
+obj-$(CONFIG_MSM_PROC_COMM_REGULATOR) += proccomm-regulator.o
