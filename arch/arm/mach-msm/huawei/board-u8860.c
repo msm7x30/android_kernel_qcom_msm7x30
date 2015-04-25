@@ -1692,7 +1692,7 @@ static struct tpa2028d1_platform_data tpa2028d1_pdata = {
 };
 #endif
 
-#if CONFIG_TOUCHSCREEN_SYNAPTICS_I2C_RMI4_HW
+#ifdef CONFIG_TOUCHSCREEN_SYNAPTICS_I2C_RMI4_HW
 #define TS_GPIO_IRQ	148
 
 static struct regulator *synaptics_reg = NULL;
@@ -1911,7 +1911,7 @@ static struct i2c_board_info msm_i2c_board_info[] = {
 		.platform_data = &tpa2028d1_pdata,
 	},
 	#endif
-	#if CONFIG_TOUCHSCREEN_SYNAPTICS_I2C_RMI4_HW
+	#ifdef CONFIG_TOUCHSCREEN_SYNAPTICS_I2C_RMI4_HW
 	{
 		I2C_BOARD_INFO("synaptics_i2c_rmi4", 0x70),
 		.platform_data = &synaptics_rmi4_pdata,

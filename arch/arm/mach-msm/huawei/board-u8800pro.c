@@ -3424,7 +3424,7 @@ static struct i2c_board_info atmel_mxt_ts = {
 };
 #endif
 
-#if CONFIG_TOUCHSCREEN_SYNAPTICS_I2C_RMI4_HW
+#ifdef CONFIG_TOUCHSCREEN_SYNAPTICS_I2C_RMI4_HW
 static struct regulator *synaptics_reg = NULL;
 
 static int synaptics_rmi4_power(bool enable)
