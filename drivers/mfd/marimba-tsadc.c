@@ -547,7 +547,7 @@ static void marimba_tsadc_late_resume(struct early_suspend *h)
 }
 #endif
 
-static int __devinit marimba_tsadc_probe(struct platform_device *pdev)
+static int marimba_tsadc_probe(struct platform_device *pdev)
 {
 	struct marimba *marimba = platform_get_drvdata(pdev);
 	struct marimba_tsadc *tsadc;
@@ -639,7 +639,7 @@ fail_tsadc_init:
 	return rc;
 }
 
-static int __devexit marimba_tsadc_remove(struct platform_device *pdev)
+static int marimba_tsadc_remove(struct platform_device *pdev)
 {
 	int rc = 0;
 	struct marimba_tsadc *tsadc = platform_get_drvdata(pdev);
@@ -668,7 +668,7 @@ static int __devexit marimba_tsadc_remove(struct platform_device *pdev)
 
 static struct platform_driver tsadc_driver = {
 	.probe	= marimba_tsadc_probe,
-	.remove	= __devexit_p(marimba_tsadc_remove),
+	.remove	= marimba_tsadc_remove,
 	.driver	= {
 		.name = "marimba_tsadc",
 		.owner = THIS_MODULE,

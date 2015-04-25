@@ -1666,7 +1666,7 @@ bail:
 	return rc;
 }
 
-static int __devinit pm8058_vreg_probe(struct platform_device *pdev)
+static int pm8058_vreg_probe(struct platform_device *pdev)
 {
 	struct regulator_desc *rdesc;
 	struct pm8058_vreg *vreg;
@@ -1710,7 +1710,7 @@ bail:
 	return rc;
 }
 
-static int __devexit pm8058_vreg_remove(struct platform_device *pdev)
+static int pm8058_vreg_remove(struct platform_device *pdev)
 {
 	regulator_unregister(pm8058_vreg[pdev->id].rdev);
 	return 0;
@@ -1718,7 +1718,7 @@ static int __devexit pm8058_vreg_remove(struct platform_device *pdev)
 
 static struct platform_driver pm8058_vreg_driver = {
 	.probe = pm8058_vreg_probe,
-	.remove = __devexit_p(pm8058_vreg_remove),
+	.remove = pm8058_vreg_remove,
 	.driver = {
 		.name = "pm8058-regulator",
 		.owner = THIS_MODULE,
