@@ -126,12 +126,7 @@ extern int arm_dma_set_mask(struct device *dev, u64 dma_mask);
  */
 static inline void dma_coherent_pre_ops(void)
 {
-#if (__LINUX_ARM_ARCH__ >= 7) && !defined(CONFIG_ARCH_QSD8X50)
 	dmb();
-#else
-	if (arch_is_coherent())
-		dmb();
-#endif
 }
 /*
  * dma_post_coherent_ops - barrier functions for coherent memory after DMA.
@@ -141,10 +136,7 @@ static inline void dma_coherent_pre_ops(void)
  */
 static inline void dma_coherent_post_ops(void)
 {
-	if (arch_is_coherent())
-		dmb();
-	else
-		barrier();
+	barrier();
 }
 
 /**
