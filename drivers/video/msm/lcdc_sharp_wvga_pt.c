@@ -276,7 +276,7 @@ static void lcdc_sharp_panel_set_backlight(struct msm_fb_data_type *mfd)
 #endif
 }
 
-static int __devinit sharp_probe(struct platform_device *pdev)
+static int sharp_probe(struct platform_device *pdev)
 {
 	if (pdev->id == 0) {
 		lcdc_sharp_pdata = pdev->dev.platform_data;
@@ -300,13 +300,13 @@ static int __devinit sharp_probe(struct platform_device *pdev)
 }
 
 #ifdef CONFIG_SPI_QSD
-static int __devinit lcdc_sharp_spi_probe(struct spi_device *spi)
+static int lcdc_sharp_spi_probe(struct spi_device *spi)
 {
 	lcdc_spi_client = spi;
 	lcdc_spi_client->bits_per_word = 32;
 	return 0;
 }
-static int __devexit lcdc_sharp_spi_remove(struct spi_device *spi)
+static int lcdc_sharp_spi_remove(struct spi_device *spi)
 {
 	lcdc_spi_client = NULL;
 	return 0;
@@ -317,7 +317,7 @@ static struct spi_driver lcdc_sharp_spi_driver = {
 		.owner = THIS_MODULE,
 	},
 	.probe         = lcdc_sharp_spi_probe,
-	.remove        = __devexit_p(lcdc_sharp_spi_remove),
+	.remove        = lcdc_sharp_spi_remove,
 };
 #endif
 static struct platform_driver this_driver = {

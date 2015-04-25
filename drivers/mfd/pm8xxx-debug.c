@@ -113,7 +113,7 @@ static int pm8xxx_debug_addr_get(void *data, u64 *val)
 DEFINE_SIMPLE_ATTRIBUTE(debug_addr_fops, pm8xxx_debug_addr_get,
 			pm8xxx_debug_addr_set, "0x%03llX\n");
 
-static int __devinit pm8xxx_debug_probe(struct platform_device *pdev)
+static int pm8xxx_debug_probe(struct platform_device *pdev)
 {
 	char *name = pdev->dev.platform_data;
 	struct pm8xxx_debug_device *debugdev;
@@ -174,7 +174,7 @@ dir_error:
 	return rc;
 }
 
-static int __devexit pm8xxx_debug_remove(struct platform_device *pdev)
+static int pm8xxx_debug_remove(struct platform_device *pdev)
 {
 	struct pm8xxx_debug_device *debugdev = platform_get_drvdata(pdev);
 
@@ -191,7 +191,7 @@ static int __devexit pm8xxx_debug_remove(struct platform_device *pdev)
 
 static struct platform_driver pm8xxx_debug_driver = {
 	.probe		= pm8xxx_debug_probe,
-	.remove		= __devexit_p(pm8xxx_debug_remove),
+	.remove		= pm8xxx_debug_remove,
 	.driver		= {
 		.name	= PM8XXX_DEBUG_DEV_NAME,
 		.owner	= THIS_MODULE,

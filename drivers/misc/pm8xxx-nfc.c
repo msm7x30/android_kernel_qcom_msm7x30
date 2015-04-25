@@ -246,7 +246,7 @@ static int pm8xxx_nfc_debug_init(struct pm8xxx_nfc_device *nfcdev)
 }
 #endif
 
-static int __devinit pm8xxx_nfc_probe(struct platform_device *pdev)
+static int pm8xxx_nfc_probe(struct platform_device *pdev)
 {
 	struct pm8xxx_nfc_device	*nfcdev;
 
@@ -270,7 +270,7 @@ static int __devinit pm8xxx_nfc_probe(struct platform_device *pdev)
 	return 0;
 }
 
-static int __devexit pm8xxx_nfc_remove(struct platform_device *pdev)
+static int pm8xxx_nfc_remove(struct platform_device *pdev)
 {
 	struct pm8xxx_nfc_device *nfcdev = platform_get_drvdata(pdev);
 
@@ -285,7 +285,7 @@ static int __devexit pm8xxx_nfc_remove(struct platform_device *pdev)
 
 static struct platform_driver pm8xxx_nfc_driver = {
 	.probe		= pm8xxx_nfc_probe,
-	.remove		= __devexit_p(pm8xxx_nfc_remove),
+	.remove		= pm8xxx_nfc_remove,
 	.driver		= {
 		.name = PM8XXX_NFC_DEV_NAME,
 		.owner = THIS_MODULE,

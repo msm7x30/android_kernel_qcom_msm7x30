@@ -387,7 +387,7 @@ fail_id_check:
 	return rc;
 }
 
-static int __devexit pmic8058_led_remove(struct platform_device *pdev)
+static int pmic8058_led_remove(struct platform_device *pdev)
 {
 	int i;
 	struct pmic8058_leds_platform_data *pdata = pdev->dev.platform_data;
@@ -403,7 +403,7 @@ static int __devexit pmic8058_led_remove(struct platform_device *pdev)
 
 static struct platform_driver pmic8058_led_driver = {
 	.probe		= pmic8058_led_probe,
-	.remove		= __devexit_p(pmic8058_led_remove),
+	.remove		= pmic8058_led_remove,
 	.driver		= {
 		.name	= "pm8058-led",
 		.owner	= THIS_MODULE,

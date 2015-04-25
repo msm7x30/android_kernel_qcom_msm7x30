@@ -550,7 +550,7 @@ static int pm8xxx_init_adc(struct pm8xxx_tm_chip *chip, bool enable)
 	return rc;
 }
 
-static int __devinit pm8xxx_tm_probe(struct platform_device *pdev)
+static int pm8xxx_tm_probe(struct platform_device *pdev)
 {
 	const struct pm8xxx_tm_core_data *cdata = pdev->dev.platform_data;
 	struct thermal_zone_device_ops *tz_ops;
@@ -665,7 +665,7 @@ err_free_chip:
 	return rc;
 }
 
-static int __devexit pm8xxx_tm_remove(struct platform_device *pdev)
+static int pm8xxx_tm_remove(struct platform_device *pdev)
 {
 	struct pm8xxx_tm_chip *chip = platform_get_drvdata(pdev);
 
@@ -725,7 +725,7 @@ static const struct dev_pm_ops pm8xxx_tm_pm_ops = {
 
 static struct platform_driver pm8xxx_tm_driver = {
 	.probe	= pm8xxx_tm_probe,
-	.remove	= __devexit_p(pm8xxx_tm_remove),
+	.remove	= pm8xxx_tm_remove,
 	.shutdown = pm8xxx_tm_shutdown,
 	.driver	= {
 		.name = PM8XXX_TM_DEV_NAME,

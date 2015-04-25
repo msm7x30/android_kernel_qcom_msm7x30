@@ -253,7 +253,7 @@ static struct dev_pm_ops pm8058_othc_pm_ops = {
 };
 #endif
 
-static int __devexit pm8058_othc_remove(struct platform_device *pd)
+static int pm8058_othc_remove(struct platform_device *pd)
 {
 	struct pm8058_othc *dd = platform_get_drvdata(pd);
 
@@ -1059,7 +1059,7 @@ fail_input_alloc:
 	return rc;
 }
 
-static int __devinit pm8058_othc_probe(struct platform_device *pd)
+static int pm8058_othc_probe(struct platform_device *pd)
 {
 	int rc;
 	struct pm8058_othc *dd;
@@ -1164,7 +1164,7 @@ static struct platform_driver pm8058_othc_driver = {
 #endif
 	},
 	.probe = pm8058_othc_probe,
-	.remove = __devexit_p(pm8058_othc_remove),
+	.remove = pm8058_othc_remove,
 };
 
 static int __init pm8058_othc_init(void)

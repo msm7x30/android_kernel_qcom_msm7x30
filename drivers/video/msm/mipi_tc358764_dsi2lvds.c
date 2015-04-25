@@ -681,7 +681,7 @@ static u32 d2l_i2c_write_reg(struct i2c_client *client, u16 reg, u32 val)
 	return val;
 }
 
-static int __devinit d2l_i2c_slave_probe(struct i2c_client *client,
+static int d2l_i2c_slave_probe(struct i2c_client *client,
 					 const struct i2c_device_id *id)
 {
 	static const u32 i2c_funcs = I2C_FUNC_I2C;
@@ -702,7 +702,7 @@ static int __devinit d2l_i2c_slave_probe(struct i2c_client *client,
 	return 0;
 }
 
-static __devexit int d2l_i2c_slave_remove(struct i2c_client *client)
+static int d2l_i2c_slave_remove(struct i2c_client *client)
 {
 	d2l_i2c_client = NULL;
 
@@ -720,7 +720,7 @@ static struct i2c_driver d2l_i2c_slave_driver = {
 		.owner = THIS_MODULE
 	},
 	.probe    = d2l_i2c_slave_probe,
-	.remove   = __devexit_p(d2l_i2c_slave_remove),
+	.remove   = d2l_i2c_slave_remove,
 	.id_table = d2l_i2c_id,
 };
 
@@ -830,7 +830,7 @@ err_device_create_file:
  *
  * @return int
  */
-static int __devinit mipi_d2l_probe(struct platform_device *pdev)
+static int mipi_d2l_probe(struct platform_device *pdev)
 {
 	int ret = 0;
 	struct msm_panel_info *pinfo = NULL;
@@ -916,7 +916,7 @@ static int __devinit mipi_d2l_probe(struct platform_device *pdev)
  *
  * @return int
  */
-static int __devexit mipi_d2l_remove(struct platform_device *pdev)
+static int mipi_d2l_remove(struct platform_device *pdev)
 {
 	/* Note: There are no APIs to remove fb device and free DSI buf. */
 	pr_debug("%s.\n", __func__);
@@ -975,7 +975,7 @@ err_device_put:
 
 static struct platform_driver d2l_driver = {
 	.probe  = mipi_d2l_probe,
-	.remove = __devexit_p(mipi_d2l_remove),
+	.remove = mipi_d2l_remove,
 	.driver = {
 		.name   = DRV_NAME,
 	},

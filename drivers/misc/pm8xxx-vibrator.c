@@ -216,7 +216,7 @@ static const struct dev_pm_ops pm8xxx_vib_pm_ops = {
 };
 #endif
 
-static int __devinit pm8xxx_vib_probe(struct platform_device *pdev)
+static int pm8xxx_vib_probe(struct platform_device *pdev)
 
 {
 	const struct pm8xxx_vibrator_platform_data *pdata =
@@ -283,7 +283,7 @@ err_read_vib:
 	return rc;
 }
 
-static int __devexit pm8xxx_vib_remove(struct platform_device *pdev)
+static int pm8xxx_vib_remove(struct platform_device *pdev)
 {
 	struct pm8xxx_vib *vib = platform_get_drvdata(pdev);
 
@@ -298,7 +298,7 @@ static int __devexit pm8xxx_vib_remove(struct platform_device *pdev)
 
 static struct platform_driver pm8xxx_vib_driver = {
 	.probe		= pm8xxx_vib_probe,
-	.remove		= __devexit_p(pm8xxx_vib_remove),
+	.remove		= pm8xxx_vib_remove,
 	.driver		= {
 		.name	= PM8XXX_VIBRATOR_DEV_NAME,
 		.owner	= THIS_MODULE,
