@@ -1,5 +1,5 @@
 /*
- * drivers/staging/android/uapi/ion.h
+ * include/linux/ion.h
  *
  * Copyright (C) 2011 Google, Inc.
  *
@@ -14,8 +14,8 @@
  *
  */
 
-#ifndef _UAPI_LINUX_ION_H
-#define _UAPI_LINUX_ION_H
+#ifndef _UAPI_ION_H
+#define _UAPI_ION_H
 
 #include <linux/ioctl.h>
 #include <linux/types.h>
@@ -126,7 +126,6 @@ struct ion_custom_data {
 	unsigned int cmd;
 	unsigned long arg;
 };
-
 #define ION_IOC_MAGIC		'I'
 
 /**
@@ -193,4 +192,4 @@ struct ion_custom_data {
  */
 #define ION_IOC_CUSTOM		_IOWR(ION_IOC_MAGIC, 6, struct ion_custom_data)
 
-#endif /* _UAPI_LINUX_ION_H */
+#endif /* _UAPI_ION_H */
