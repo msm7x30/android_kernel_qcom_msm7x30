@@ -3286,7 +3286,7 @@ smem_areas_alloc_fail:
 	return err_ret;
 }
 
-static int __devinit msm_smd_probe(struct platform_device *pdev)
+static int msm_smd_probe(struct platform_device *pdev)
 {
 	int ret;
 

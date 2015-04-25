@@ -31,7 +31,7 @@ static uint32_t saved_vector[2];
 static void (*msm_pm_boot_before_pc)(unsigned int cpu, unsigned long entry);
 static void (*msm_pm_boot_after_pc)(unsigned int cpu);
 
-static int __devinit msm_pm_boot_reset_vector_init(uint32_t *reset_vector)
+static int msm_pm_boot_reset_vector_init(uint32_t *reset_vector)
 {
 	if (!reset_vector)
 		return -ENODEV;
@@ -69,7 +69,7 @@ void msm_pm_boot_config_after_pc(unsigned int cpu)
 }
 #define BOOT_REMAP_ENABLE  BIT(0)
 
-int __devinit msm_pm_boot_init(struct msm_pm_boot_platform_data *pdata)
+int msm_pm_boot_init(struct msm_pm_boot_platform_data *pdata)
 {
 	int ret = 0;
 	void *remapped;
@@ -111,7 +111,7 @@ int __devinit msm_pm_boot_init(struct msm_pm_boot_platform_data *pdata)
 	return ret;
 }
 
-static int __devinit msm_pm_boot_probe(struct platform_device *pdev)
+static int msm_pm_boot_probe(struct platform_device *pdev)
 {
 	struct msm_pm_boot_platform_data pdata;
 	char *key = NULL;

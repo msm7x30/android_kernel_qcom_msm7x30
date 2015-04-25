@@ -278,7 +278,7 @@ err:
 			__func__, vreg->name);
 }
 
-static int __devinit vreg_debug_init(void)
+static int vreg_debug_init(void)
 {
 	root = debugfs_create_dir("vreg", NULL);
 
@@ -291,7 +291,7 @@ static int __devinit vreg_debug_init(void)
 
 	return 0;
 }
-static void __devexit vreg_debug_exit(void)
+static void vreg_debug_exit(void)
 {
 	if (root)
 		debugfs_remove_recursive(root);
