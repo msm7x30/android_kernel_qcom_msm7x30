@@ -29,8 +29,8 @@
 #include <linux/major.h>
 #include <linux/regulator/consumer.h>
 #include <linux/msm_ion.h>
-#include <linux/sync.h>
-#include <linux/sw_sync.h>
+#include "../staging/android/sync.h"
+#include "../staging/android/sw_sync.h"
 
 #ifdef CONFIG_MSM_BUS_SCALING
 #include <mach/msm_bus.h>
