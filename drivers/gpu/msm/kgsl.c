@@ -21,9 +21,13 @@
 #include <linux/android_pmem.h>
 #include <linux/vmalloc.h>
 #include <linux/pm_runtime.h>
+#ifdef CONFIG_GENLOCK
 #include <linux/genlock.h>
+#endif
 #include <linux/rbtree.h>
+#ifdef CONFIG_ASHMEM
 #include <linux/ashmem.h>
+#endif
 #include <linux/major.h>
 #include <linux/msm_ion.h>
 #include <linux/io.h>
@@ -808,6 +812,7 @@ const struct dev_pm_ops kgsl_pm_ops = {
 };
 EXPORT_SYMBOL(kgsl_pm_ops);
 
+#ifdef CONFIG_HAS_EARLYSUSPEND
 void kgsl_early_suspend_driver(struct early_suspend *h)
 {
 	struct kgsl_device *device = container_of(h,
@@ -826,6 +831,7 @@ void kgsl_early_suspend_driver(struct early_suspend *h)
 	KGSL_PWR_WARN(device, "early suspend end\n");
 }
 EXPORT_SYMBOL(kgsl_early_suspend_driver);
+#endif
 
 int kgsl_suspend_driver(struct platform_device *pdev,
 					pm_message_t state)
@@ -842,6 +848,7 @@ int kgsl_resume_driver(struct platform_device *pdev)
 }
 EXPORT_SYMBOL(kgsl_resume_driver);
 
+#ifdef CONFIG_HAS_EARLYSUSPEND
 void kgsl_late_resume_driver(struct early_suspend *h)
 {
 	struct kgsl_device *device = container_of(h,
@@ -875,6 +882,7 @@ void kgsl_late_resume_driver(struct early_suspend *h)
 	KGSL_PWR_WARN(device, "late resume end\n");
 }
 EXPORT_SYMBOL(kgsl_late_resume_driver);
+#endif
 
 /*
  * kgsl_destroy_process_private() - Cleanup function to free process private

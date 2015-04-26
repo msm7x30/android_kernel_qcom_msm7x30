@@ -15,7 +15,9 @@
 
 #include <linux/idr.h>
 #include <linux/pm_qos.h>
+#ifdef CONFIG_HAS_EARLYSUSPEND
 #include <linux/earlysuspend.h>
+#endif
 
 #include "kgsl.h"
 #include "kgsl_mmu.h"
@@ -187,7 +189,9 @@ struct kgsl_device {
 	struct completion ft_gate;
 	struct dentry *d_debugfs;
 	struct idr context_idr;
+#ifdef CONFIG_HAS_EARLYSUSPEND
 	struct early_suspend display_off;
+#endif
 	rwlock_t context_lock;
 
 	void *snapshot;		/* Pointer to the snapshot memory region */
