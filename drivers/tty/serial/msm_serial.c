@@ -239,8 +239,8 @@ static irqreturn_t msm_rx_irq(int irq, void *dev_id)
 	 */
 	if (inject_wakeup) {
 		struct tty_struct *tty = port->state->port.tty;
-		tty_insert_flip_char(tty, WAKE_UP_IND, TTY_NORMAL);
-		tty_flip_buffer_push(tty);
+		tty_insert_flip_char(tty->port, WAKE_UP_IND, TTY_NORMAL);
+		tty_flip_buffer_push(tty->port);
 	}
 
 	spin_unlock_irqrestore(&port->lock, flags);
@@ -259,7 +259,7 @@ static void handle_rx(struct uart_port *port)
 	 */
 	if ((msm_read(port, UART_SR) & UART_SR_OVERRUN)) {
 		port->icount.overrun++;
-		tty_insert_flip_char(tty, 0, TTY_OVERRUN);
+		tty_insert_flip_char(tty->port, 0, TTY_OVERRUN);
 		msm_write(port, UART_CR_CMD_RESET_ERR, UART_CR);
 	}
 
@@ -290,10 +290,10 @@ static void handle_rx(struct uart_port *port)
 		}
 
 		if (!uart_handle_sysrq_char(port, c))
-			tty_insert_flip_char(tty, c, flag);
+			tty_insert_flip_char(tty->port, c, flag);
 	}
 
-	tty_flip_buffer_push(tty);
+	tty_flip_buffer_push(tty->port);
 }
 
 static void handle_tx(struct uart_port *port)
