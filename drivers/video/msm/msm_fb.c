@@ -42,8 +42,8 @@
 #include <linux/android_pmem.h>
 #include <linux/leds.h>
 #include <linux/pm_runtime.h>
-#include <linux/sync.h>
-#include <linux/sw_sync.h>
+#include "../../staging/android/sync.h"
+#include "../../staging/android/sw_sync.h"
 #include <linux/file.h>
 
 #define MSM_FB_C
