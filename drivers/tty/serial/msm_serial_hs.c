@@ -1287,12 +1287,12 @@ static void flip_insert_work(struct work_struct *work)
 		return;
 	}
 	if (msm_uport->rx.buffer_pending & FIFO_OVERRUN) {
-		retval = tty_insert_flip_char(tty, 0, TTY_OVERRUN);
+		retval = tty_insert_flip_char(tty->port, 0, TTY_OVERRUN);
 		if (retval)
 			msm_uport->rx.buffer_pending &= ~FIFO_OVERRUN;
 	}
 	if (msm_uport->rx.buffer_pending & PARITY_ERROR) {
-		retval = tty_insert_flip_char(tty, 0, TTY_PARITY);
+		retval = tty_insert_flip_char(tty->port, 0, TTY_PARITY);
 		if (retval)
 			msm_uport->rx.buffer_pending &= ~PARITY_ERROR;
 	}
@@ -1300,7 +1300,8 @@ static void flip_insert_work(struct work_struct *work)
 		int rx_count, rx_offset;
 		rx_count = (msm_uport->rx.buffer_pending & 0xFFFF0000) >> 16;
 		rx_offset = (msm_uport->rx.buffer_pending & 0xFFD0) >> 5;
-		retval = tty_insert_flip_string(tty, msm_uport->rx.buffer +
+		retval = tty_insert_flip_string(tty->port,
+						msm_uport->rx.buffer +
 						rx_offset, rx_count);
 		msm_uport->rx.buffer_pending &= (FIFO_OVERRUN |
 						 PARITY_ERROR);
@@ -1322,7 +1323,7 @@ static void flip_insert_work(struct work_struct *work)
 			msm_hs_start_rx_locked(&msm_uport->uport);
 		}
 	spin_unlock_irqrestore(&msm_uport->uport.lock, flags);
-	tty_flip_buffer_push(tty);
+	tty_flip_buffer_push(tty->port);
 }
 
 static void msm_serial_hs_rx_tlet(unsigned long tlet_ptr)
@@ -1354,7 +1355,7 @@ static void msm_serial_hs_rx_tlet(unsigned long tlet_ptr)
 	/* overflow is not connect to data in a FIFO */
 	if (unlikely((status & UARTDM_SR_OVERRUN_BMSK) &&
 		     (uport->read_status_mask & CREAD))) {
-		retval = tty_insert_flip_char(tty, 0, TTY_OVERRUN);
+		retval = tty_insert_flip_char(tty->port, 0, TTY_OVERRUN);
 		if (!retval)
 			msm_uport->rx.buffer_pending |= TTY_OVERRUN;
 		uport->icount.buf_overrun++;
@@ -1371,7 +1372,7 @@ static void msm_serial_hs_rx_tlet(unsigned long tlet_ptr)
 		uport->icount.parity++;
 		error_f = 1;
 		if (!(uport->ignore_status_mask & IGNPAR)) {
-			retval = tty_insert_flip_char(tty, 0, TTY_PARITY);
+			retval = tty_insert_flip_char(tty->port, 0, TTY_PARITY);
 			if (!retval)
 				msm_uport->rx.buffer_pending |= TTY_PARITY;
 		}
@@ -1384,7 +1385,7 @@ static void msm_serial_hs_rx_tlet(unsigned long tlet_ptr)
 		error_f = 1;
 		msm_hs_write(uport, UARTDM_CR_ADDR, RESET_BREAK_INT);
 		if (!(uport->ignore_status_mask & IGNBRK)) {
-			retval = tty_insert_flip_char(tty, 0, TTY_BREAK);
+			retval = tty_insert_flip_char(tty->port, 0, TTY_BREAK);
 			if (!retval)
 				msm_uport->rx.buffer_pending |= TTY_BREAK;
 		}
@@ -1429,7 +1430,7 @@ static void msm_serial_hs_rx_tlet(unsigned long tlet_ptr)
 	rmb();
 
 	if (0 != (uport->read_status_mask & CREAD)) {
-		retval = tty_insert_flip_string(tty, msm_uport->rx.buffer,
+		retval = tty_insert_flip_string(tty->port, msm_uport->rx.buffer,
 						rx_count);
 		if (retval != rx_count) {
 			msm_uport->rx.buffer_pending |= CHARS_NORMAL |
@@ -1459,7 +1460,7 @@ out:
 	/* tty_flip_buffer_push() might call msm_hs_start(), so unlock */
 	spin_unlock_irqrestore(&uport->lock, flags);
 	if (flush < FLUSH_DATA_INVALID)
-		tty_flip_buffer_push(tty);
+		tty_flip_buffer_push(tty->port);
 }
 
 /* Enable the transmitter Interrupt */
@@ -2087,7 +2088,7 @@ static irqreturn_t msm_hs_wakeup_isr(int irq, void *dev)
 		spin_lock_irqsave(&uport->lock, flags);
 		if (msm_uport->wakeup.inject_rx) {
 			tty = uport->state->port.tty;
-			tty_insert_flip_char(tty,
+			tty_insert_flip_char(tty->port,
 					     msm_uport->wakeup.rx_to_inject,
 					     TTY_NORMAL);
 		}
@@ -2096,7 +2097,7 @@ static irqreturn_t msm_hs_wakeup_isr(int irq, void *dev)
 	spin_unlock_irqrestore(&uport->lock, flags);
 
 	if (wakeup && msm_uport->wakeup.inject_rx)
-		tty_flip_buffer_push(tty);
+		tty_flip_buffer_push(tty->port);
 	return IRQ_HANDLED;
 }
 
