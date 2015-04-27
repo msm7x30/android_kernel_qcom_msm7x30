@@ -738,7 +738,7 @@ err0:
 	return err;
 }
 
-static int __devexit lsm303dlh_mag_remove(struct i2c_client *client)
+static int lsm303dlh_mag_remove(struct i2c_client *client)
 {
 	/* TODO: revisit ordering here once _probe order is finalized */
 	struct lsm303dlh_mag_data *mag = i2c_get_clientdata(client);
@@ -783,7 +783,7 @@ static struct i2c_driver lsm303dlh_mag_driver = {
 		   .name = NAME,
 		   },
 	.probe = lsm303dlh_mag_probe,
-	.remove = __devexit_p(lsm303dlh_mag_remove),
+	.remove = lsm303dlh_mag_remove,
 	.resume = lsm303dlh_mag_resume,
 	.suspend = lsm303dlh_mag_suspend,
 	.id_table = lsm303dlh_mag_id,
