@@ -252,6 +252,7 @@ header-y += mroute6.h
 header-y += msdos_fs.h
 header-y += msg.h
 header-y += msm_audio.h
+header-y += msm_audio_qcp.h
 header-y += msm_ion.h
 header-y += msm_mdp.h
 header-y += msm_rotator.h
