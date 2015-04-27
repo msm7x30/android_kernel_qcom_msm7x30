@@ -4131,7 +4131,7 @@ FUNCTION:  tavarua_vidioc_s_tuner
   @return -EINVAL: The struct v4l2_tuner index is out of bounds.
 */
 static int tavarua_vidioc_s_tuner(struct file *file, void *priv,
-		struct v4l2_tuner *tuner)
+		const struct v4l2_tuner *tuner)
 {
 	struct tavarua_device *radio = video_get_drvdata(video_devdata(file));
 	int retval;
@@ -4232,7 +4232,7 @@ FUNCTION:  tavarua_vidioc_s_frequency
   field is wrong.
 */
 static int tavarua_vidioc_s_frequency(struct file *file, void *priv,
-					struct v4l2_frequency *freq)
+					const struct v4l2_frequency *freq)
 {
 	struct tavarua_device *radio = video_get_drvdata(video_devdata(file));
 	int retval = -1;
@@ -4388,7 +4388,7 @@ FUNCTION:  tavarua_vidioc_s_hw_freq_seek
   @return EAGAIN: The ioctl timed-out. Try again.
 */
 static int tavarua_vidioc_s_hw_freq_seek(struct file *file, void *priv,
-					struct v4l2_hw_freq_seek *seek)
+					const struct v4l2_hw_freq_seek *seek)
 {
 	struct tavarua_device  *radio = video_get_drvdata(video_devdata(file));
 	int dir;
