@@ -722,7 +722,7 @@ static const struct attribute_group tpa2028d1_sysfs_attr_group = {
 };
 /* Sysfs end */
 
-static int __devinit tpa2028d1_probe(struct i2c_client *client,
+static int tpa2028d1_probe(struct i2c_client *client,
 	const struct i2c_device_id *id)
 {
 	int ret;
@@ -780,7 +780,7 @@ err:
 	return ret;
 }
 
-static int __devexit tpa2028d1_remove(struct i2c_client *client)
+static int tpa2028d1_remove(struct i2c_client *client)
 {
 	struct tpa2028d1_data *data = i2c_get_clientdata(client);
 
