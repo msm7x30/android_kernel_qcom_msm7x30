@@ -634,7 +634,7 @@ static struct miscdevice aps_12d_dev = {
 	.fops = &aps_12d_fops,
 };
 
-static int __devinit aps_12d_probe(struct i2c_client *client,
+static int aps_12d_probe(struct i2c_client *client,
 	const struct i2c_device_id *id)
 {
 	int ret;
@@ -765,7 +765,7 @@ static int aps_12d_resume(struct i2c_client *client)
 	return 0;
 }
 
-static int __devexit aps_12d_remove(struct i2c_client *client)
+static int aps_12d_remove(struct i2c_client *client)
 {
 	int ret = 0;
 	struct aps_12d_data *data = i2c_get_clientdata(client);
