@@ -20,7 +20,9 @@
 #define CONFIG_SYNAPTICS_UPDATE_RMI_TS_FIRMWARE
 
 #include <linux/delay.h>
+#ifdef CONFIG_HAS_EARLYSUSPEND
 #include <linux/earlysuspend.h>
+#endif
 #include <linux/gpio.h>
 #include <linux/i2c.h>
 #include <linux/input.h>
@@ -86,7 +88,9 @@ struct synaptics_i2c_rmi4 {
 	int use_irq;
 	struct hrtimer timer;
 	struct work_struct work;
+#ifdef CONFIG_HAS_EARLYSUSPEND
 	struct early_suspend early_suspend;
+#endif
 
 	__u8 data_reg;
 	__u8 data_length;
@@ -964,7 +968,9 @@ static int synaptics_i2c_rmi4_remove(struct i2c_client *client)
 	struct synaptics_i2c_rmi4_hw_platform_data *pdata =
 		client->dev.platform_data;
 
+#ifdef CONFIG_HAS_EARLYSUSPEND
 	unregister_early_suspend(&ts->early_suspend);
+#endif
 	if (ts->use_irq)
 		free_irq(client->irq, ts);
 	else
