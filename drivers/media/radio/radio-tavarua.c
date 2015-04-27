@@ -4360,27 +4360,6 @@ static int tavarua_vidioc_dqbuf(struct file *file, void *priv,
 }
 
 /*=============================================================================
-FUNCTION:  tavarua_vidioc_g_fmt_type_private
-=============================================================================*/
-/**
-  This function is here to make the v4l2 framework happy.
-  We cannot use private buffers without it.
-
-  @param file: File descriptor returned by open().
-  @param f: pointer to struct v4l2_format.
-
-  @return On success 0 is returned, else error code.
-  @return EINVAL: The tuner index is out of bounds or the value in the type
-  field is wrong.
-*/
-static int tavarua_vidioc_g_fmt_type_private(struct file *file, void *priv,
-						struct v4l2_format *f)
-{
-	return 0;
-
-}
-
-/*=============================================================================
 FUNCTION:  tavarua_vidioc_s_hw_freq_seek
 =============================================================================*/
 /**
@@ -4439,7 +4418,6 @@ static const struct v4l2_ioctl_ops tavarua_ioctl_ops = {
 	.vidioc_s_frequency           = tavarua_vidioc_s_frequency,
 	.vidioc_s_hw_freq_seek        = tavarua_vidioc_s_hw_freq_seek,
 	.vidioc_dqbuf                 = tavarua_vidioc_dqbuf,
-	.vidioc_g_fmt_type_private    = tavarua_vidioc_g_fmt_type_private,
 	.vidioc_s_ext_ctrls           = tavarua_vidioc_s_ext_ctrls,
 };
 
