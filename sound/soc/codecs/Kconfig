@@ -525,3 +525,10 @@ config SND_SOC_ML26124
 
 config SND_SOC_TPA6130A2
 	tristate
+
+config SND_SOC_TPA2028D1
+	bool "TPA2028D1 Audio Amplifier"
+	default n
+	help
+	  Texas Instruments 3-W Mono Class-D Audio Amplifier with Fast Gain Ramp
+	  SmartGainTM AGC/DRC.
