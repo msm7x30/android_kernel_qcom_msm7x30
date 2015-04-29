@@ -38,6 +38,7 @@ header-y += agpgart.h
 header-y += aio_abi.h
 header-y += android_pmem.h
 header-y += apm_bios.h
+header-y += aps-12d.h
 header-y += arcfb.h
 header-y += atalk.h
 header-y += atm.h
