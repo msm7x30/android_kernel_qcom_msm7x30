@@ -165,12 +165,7 @@ static int mdp4_map_sec_resource(struct msm_fb_data_type *mfd)
 		pr_err("IOMMU clock enabled failed while open");
 		return ret;
 	}
-	ret = msm_ion_secure_heap(ION_HEAP(ION_CP_MM_HEAP_ID));
-	if (ret)
-		pr_err("ION heap secure failed heap id %d ret %d\n",
-			   ION_CP_MM_HEAP_ID, ret);
-	else
-		mfd->sec_mapped = 1;
+	mfd->sec_mapped = 1;
 	mdp_disable_iommu_clocks();
 	return ret;
 }
@@ -196,7 +191,6 @@ int mdp4_unmap_sec_resource(struct msm_fb_data_type *mfd)
 		pr_err("IOMMU clock enabled failed while close\n");
 		return ret;
 	}
-	msm_ion_unsecure_heap(ION_HEAP(ION_CP_MM_HEAP_ID));
 	mfd->sec_mapped = 0;
 	mdp_disable_iommu_clocks();
 	return ret;
@@ -233,8 +227,6 @@ void mdp4_overlay_iommu_unmap_freelist(int mixer)
 			continue;
 		pr_debug("%s: mixer=%d i=%d ihdl=0x%p\n", __func__,
 					mixer, i, ihdl);
-		ion_unmap_iommu(display_iclient, ihdl, DISPLAY_READ_DOMAIN,
-							GEN_POOL);
 		mdp4_stat.iommu_unmap++;
 		pr_debug("%s: map=%d unmap=%d drop=%d\n", __func__,
 			(int)mdp4_stat.iommu_map, (int)mdp4_stat.iommu_unmap,
@@ -323,8 +315,6 @@ int mdp4_overlay_iommu_map_buf(int mem_id,
 	struct ion_handle **srcp_ihdl)
 {
 	struct mdp4_iommu_pipe_info *iom;
-	unsigned long size = 0, map_size = 0;
-	int ret;
 
 	if (!display_iclient)
 		return -EINVAL;
@@ -338,32 +328,11 @@ int mdp4_overlay_iommu_map_buf(int mem_id,
 	pr_debug("mixer %u, pipe %u, plane %u\n", pipe->mixer_num,
 		pipe->pipe_ndx, plane);
 
-	if(mdp4_overlay_format2type(pipe->src_format) == OVERLAY_TYPE_RGB) {
-		ret = ion_handle_get_size(display_iclient, *srcp_ihdl, &size);
-		if (ret)
-			pr_err("ion_handle_get_size failed with ret %d\n", ret);
-		map_size = mdp_iommu_max_map_size;
-		if(map_size < size)
-			map_size = size;
-
-		if (ion_map_iommu(display_iclient, *srcp_ihdl,
-				DISPLAY_READ_DOMAIN, GEN_POOL, SZ_4K, map_size, start,
-				len, 0, 0)) {
-			ion_free(display_iclient, *srcp_ihdl);
-			pr_err("%s(): ion_map_iommu() failed\n",
-					__func__);
-			return -EINVAL;
-		}
-	} else {
-
-		if (ion_map_iommu(display_iclient, *srcp_ihdl,
-				DISPLAY_READ_DOMAIN, GEN_POOL, SZ_4K, 0, start,
-				len, 0, 0)) {
-			ion_free(display_iclient, *srcp_ihdl);
-			pr_err("%s(): ion_map_iommu() failed\n",
-					__func__);
-			return -EINVAL;
-		}
+	if (ion_phys(display_iclient, *srcp_ihdl, (ion_phys_addr_t *)start,
+		(size_t *)len)) {
+		ion_free(display_iclient, *srcp_ihdl);
+		pr_err("%s(): ion_phys() failed\n", __func__);
+		return -EINVAL;
 	}
 	mutex_lock(&iommu_mutex);
 	iom = &pipe->iommu;
@@ -403,9 +372,6 @@ void mdp4_iommu_unmap(struct mdp4_overlay_pipe *pipe)
 					"prev_ihdl %p\n", __func__,
 					pipe->mixer_num, j + 1, i,
 					iom_pipe_info->prev_ihdl[i]);
-				ion_unmap_iommu(display_iclient,
-					iom_pipe_info->prev_ihdl[i],
-					DISPLAY_READ_DOMAIN, GEN_POOL);
 				ion_free(display_iclient,
 					iom_pipe_info->prev_ihdl[i]);
 				iom_pipe_info->prev_ihdl[i] = NULL;
@@ -417,9 +383,6 @@ void mdp4_iommu_unmap(struct mdp4_overlay_pipe *pipe)
 						"ihdl %p\n", __func__,
 						pipe->mixer_num, j + 1, i,
 						iom_pipe_info->ihdl[i]);
-					ion_unmap_iommu(display_iclient,
-						iom_pipe_info->ihdl[i],
-						DISPLAY_READ_DOMAIN, GEN_POOL);
 					ion_free(display_iclient,
 						iom_pipe_info->ihdl[i]);
 					iom_pipe_info->ihdl[i] = NULL;

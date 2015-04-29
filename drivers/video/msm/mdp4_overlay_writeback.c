@@ -547,7 +547,6 @@ static struct msmfb_writeback_data_list *get_if_registered(
 {
 	struct msmfb_writeback_data_list *temp;
 	bool found = false;
-	int domain;
 
 	if (!list_empty(&mfd->writeback_register_queue)) {
 		list_for_each_entry(temp,
@@ -579,24 +578,11 @@ static struct msmfb_writeback_data_list *get_if_registered(
 				goto register_ion_fail;
 			}
 
-			if (mdp_iommu_split_domain)
-				domain = DISPLAY_WRITE_DOMAIN;
-			else
-				domain = DISPLAY_READ_DOMAIN;
-
-			if (ion_map_iommu(mfd->iclient,
-					  srcp_ihdl,
-					  domain,
-					  GEN_POOL,
-					  SZ_4K,
-					  0,
-					  (ulong *)&temp->addr,
-					  (ulong *)&len,
-					  0,
-					  0)) {
+			if (ion_phys(mfd->iclient, srcp_ihdl,
+				(ulong *)&temp->addr, (ulong *)&len)) {
 				ion_free(mfd->iclient, srcp_ihdl);
-				pr_err("%s: unable to get ion mapping addr\n",
-				       __func__);
+				pr_err("%s: unable to get ion phys addr\n",
+					 __func__);
 				goto register_ion_fail;
 			}
 			temp->addr += data->offset;
@@ -687,7 +673,7 @@ int mdp4_writeback_dequeue_buffer(struct fb_info *info, struct msmfb_data *data)
 {
 	struct msm_fb_data_type *mfd = (struct msm_fb_data_type *)info->par;
 	struct msmfb_writeback_data_list *node = NULL;
-	int rc = 0, domain;
+	int rc = 0;
 
 	rc = is_wb_operation_allowed(mfd);
 	if (rc) {
@@ -715,15 +701,6 @@ int mdp4_writeback_dequeue_buffer(struct fb_info *info, struct msmfb_data *data)
 		memcpy(data, &node->buf_info, sizeof(struct msmfb_data));
 		if (!data->iova)
 			if (mfd->iclient && node->ihdl) {
-				if (mdp_iommu_split_domain)
-					domain = DISPLAY_WRITE_DOMAIN;
-				else
-					domain = DISPLAY_READ_DOMAIN;
-
-				ion_unmap_iommu(mfd->iclient,
-						node->ihdl,
-						domain,
-						GEN_POOL);
 				ion_free(mfd->iclient,
 					 node->ihdl);
 			}
