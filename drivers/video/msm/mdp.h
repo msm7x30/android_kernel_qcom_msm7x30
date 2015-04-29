@@ -120,7 +120,7 @@ typedef struct mdpImg_ {
 	int    sp_value;        /* sharpening strength */
 } MDPIMG;
 
-#define MDP_OUTP(addr, data) outpdw((addr), (data))
+#define MDP_OUTP(addr, data) outpdw((addr), data)
 
 #define MDP_BASE msm_mdp_base
 
