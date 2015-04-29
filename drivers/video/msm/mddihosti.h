@@ -73,7 +73,7 @@ do { \
 		__addr = (u32)msm_pmdh_base + MDDI_##reg; \
 	else \
 		__addr = (u32)msm_emdh_base + MDDI_##reg; \
-	writel((readl(__addr) & ~(mask)) | ((val) & (mask)), __addr); \
+	writel((readl(IOMEM(__addr)) & ~(mask)) | ((val) & (mask)), IOMEM(__addr)); \
 } while (0)
 
 #define xxxx_mddi_host_reg_out(reg, val) \
@@ -87,9 +87,9 @@ do { \
 #define mddi_host_reg_out(reg, val) \
 do { \
 	if (host_idx == MDDI_HOST_PRIM) \
-		writel(val, (u32)msm_pmdh_base + MDDI_##reg); \
+		writel(val, IOMEM((u32)msm_pmdh_base + MDDI_##reg)); \
 	else \
-		writel(val, (u32)msm_emdh_base + MDDI_##reg); \
+		writel(val, IOMEM((u32)msm_emdh_base + MDDI_##reg)); \
 } while (0)
 
 #define xxxx_mddi_host_reg_in(reg)  \
@@ -98,8 +98,8 @@ do { \
 
 #define mddi_host_reg_in(reg) \
 ((host_idx) ? \
-	readl((u32)msm_emdh_base + MDDI_##reg) : \
-	readl((u32)msm_pmdh_base + MDDI_##reg)) \
+	readl(IOMEM((u32)msm_emdh_base + MDDI_##reg)) : \
+	readl(IOMEM((u32)msm_pmdh_base + MDDI_##reg))) \
 
 #define xxxx_mddi_host_reg_inm(reg, mask)  \
   ((host_idx) ? \
@@ -108,8 +108,8 @@ do { \
 
 #define mddi_host_reg_inm(reg, mask) \
 ((host_idx) ? \
-	readl((u32)msm_emdh_base + MDDI_##reg) & (mask) : \
-	readl((u32)msm_pmdh_base + MDDI_##reg) & (mask)) \
+	readl(IOMEM((u32)msm_emdh_base + MDDI_##reg)) & (mask) : \
+	readl(IOMEM((u32)msm_pmdh_base + MDDI_##reg)) & (mask)) \
 
 /* Using non-cacheable pmem, so do nothing */
 #define mddi_invalidate_cache_lines(addr_start, num_bytes)
