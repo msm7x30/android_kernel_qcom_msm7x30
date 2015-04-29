@@ -744,20 +744,6 @@ long msm_ion_custom_ioctl(struct ion_client *client,
 			return ret;
 		break;
 	}
-	case ION_IOC_PREFETCH:
-	{
-		ion_walk_heaps(client, data.prefetch_data.heap_id,
-			(void *)data.prefetch_data.len,
-			ion_secure_cma_prefetch);
-		break;
-	}
-	case ION_IOC_DRAIN:
-	{
-		ion_walk_heaps(client, data.prefetch_data.heap_id,
-			(void *)data.prefetch_data.len,
-			ion_secure_cma_drain_pool);
-		break;
-	}
 
 	default:
 		return -ENOTTY;
@@ -901,11 +887,6 @@ static struct ion_heap *msm_ion_heap_create(struct ion_platform_heap *heap_data)
 	struct ion_heap *heap = NULL;
 
 	switch ((int)heap_data->type) {
-#ifdef CONFIG_CMA
-	case ION_HEAP_TYPE_SECURE_DMA:
-		heap = ion_secure_cma_heap_create(heap_data);
-		break;
-#endif
 	case ION_HEAP_TYPE_REMOVED:
 		heap = ion_removed_heap_create(heap_data);
 		break;
@@ -933,11 +914,6 @@ static void msm_ion_heap_destroy(struct ion_heap *heap)
 		return;
 
 	switch ((int)heap->type) {
-#ifdef CONFIG_CMA
-	case ION_HEAP_TYPE_SECURE_DMA:
-		ion_secure_cma_heap_destroy(heap);
-		break;
-#endif
 	case ION_HEAP_TYPE_REMOVED:
 		ion_removed_heap_destroy(heap);
 		break;

@@ -53,29 +53,6 @@ long msm_ion_custom_ioctl(struct ion_client *client,
 				unsigned int cmd,
 				unsigned long arg);
 
-#ifdef CONFIG_CMA
-struct ion_heap *ion_secure_cma_heap_create(struct ion_platform_heap *);
-void ion_secure_cma_heap_destroy(struct ion_heap *);
-
-int ion_secure_cma_prefetch(struct ion_heap *heap, void *data);
-
-int ion_secure_cma_drain_pool(struct ion_heap *heap, void *unused);
-
-#else
-static inline int ion_secure_cma_prefetch(struct ion_heap *heap, void *data)
-{
-	return -ENODEV;
-}
-
-static inline int ion_secure_cma_drain_pool(struct ion_heap *heap, void *unused)
-{
-	return -ENODEV;
-}
-
-
-
-#endif
-
 struct ion_heap *ion_removed_heap_create(struct ion_platform_heap *);
 void ion_removed_heap_destroy(struct ion_heap *);
 
