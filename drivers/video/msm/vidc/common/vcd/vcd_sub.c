@@ -37,8 +37,6 @@ static int vcd_pmem_alloc(size_t sz, u8 **kernel_vaddr, u8 **phy_addr,
 	u32 memtype, i = 0, flags = 0;
 	struct vcd_msm_map_buffer *map_buffer = NULL;
 	struct msm_mapped_buffer *mapped_buffer = NULL;
-	unsigned long iova = 0;
-	unsigned long buffer_size = 0;
 	int ret = 0;
 	unsigned long ionflag = 0;
 	ion_phys_addr_t phyaddr = 0;
@@ -110,34 +108,16 @@ static int vcd_pmem_alloc(size_t sz, u8 **kernel_vaddr, u8 **phy_addr,
 			pr_err("%s() ION map failed", __func__);
 			goto ion_free_bailout;
 		}
-		if (res_trk_get_core_type() != (u32)VCD_CORE_720P) {
-			ret = ion_map_iommu(cctxt->vcd_ion_client,
-				map_buffer->alloc_handle,
-				VIDEO_DOMAIN,
-				VIDEO_MAIN_POOL,
-				SZ_4K,
-				0,
-				(unsigned long *)&iova,
-				(unsigned long *)&buffer_size,
-				0, 0);
-			if (ret || !iova) {
-				pr_err(
-				"%s() ION iommu map failed, ret = %d, iova = 0x%lx",
-					__func__, ret, iova);
-				goto ion_map_bailout;
-			}
-			map_buffer->phy_addr = iova;
-		} else {
-			ret = ion_phys(cctxt->vcd_ion_client,
-				map_buffer->alloc_handle,
-				&phyaddr,
-				&len);
-			if (ret) {
-				pr_err("%s() ion_phys failed", __func__);
-				goto ion_map_bailout;
-			}
-			map_buffer->phy_addr = phyaddr;
+
+		ret = ion_phys(cctxt->vcd_ion_client,
+			map_buffer->alloc_handle,
+			&phyaddr,
+			&len);
+		if (ret) {
+			pr_err("%s() ion_phys failed", __func__);
+			goto ion_map_bailout;
 		}
+		map_buffer->phy_addr = phyaddr;
 		if (!map_buffer->phy_addr) {
 			pr_err("%s() acm alloc failed", __func__);
 			goto free_map_table;
@@ -202,11 +182,6 @@ static int vcd_pmem_free(u8 *kernel_vaddr, u8 *phy_addr,
 		if (map_buffer->alloc_handle) {
 			ion_unmap_kernel(cctxt->vcd_ion_client,
 					map_buffer->alloc_handle);
-			if (res_trk_get_core_type() != (u32)VCD_CORE_720P)
-				ion_unmap_iommu(cctxt->vcd_ion_client,
-					map_buffer->alloc_handle,
-					VIDEO_DOMAIN,
-					VIDEO_MAIN_POOL);
 			ion_free(cctxt->vcd_ion_client,
 			map_buffer->alloc_handle);
 		}
