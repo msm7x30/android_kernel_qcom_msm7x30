@@ -34,7 +34,6 @@
 #include <linux/err.h>
 #include <linux/sched.h>
 #include <linux/poll.h>
-#include <linux/wakelock.h>
 #include <asm/uaccess.h>
 #include <asm/byteorder.h>
 #include <linux/platform_device.h>
@@ -200,7 +199,6 @@ struct rpcrouter_xprt_info {
 	int remote_pid;
 	uint32_t initialized;
 	wait_queue_head_t read_wait;
-	struct wake_lock wakelock;
 	spinlock_t lock;
 	uint32_t need_len;
 	struct work_struct read_data;
@@ -630,8 +628,6 @@ struct msm_rpc_endpoint *msm_rpcrouter_create_local_endpoint(dev_t dev)
 	spin_lock_init(&ept->restart_lock);
 	init_waitqueue_head(&ept->restart_wait);
 	ept->restart_state = RESTART_NORMAL;
-	wake_lock_init(&ept->read_q_wake_lock, WAKE_LOCK_SUSPEND, "rpc_read");
-	wake_lock_init(&ept->reply_q_wake_lock, WAKE_LOCK_SUSPEND, "rpc_reply");
 	INIT_LIST_HEAD(&ept->incomplete);
 	spin_lock_init(&ept->incomplete_lock);
 
@@ -684,8 +680,6 @@ int msm_rpcrouter_destroy_local_endpoint(struct msm_rpc_endpoint *ept)
 	}
 	spin_unlock_irqrestore(&ept->reply_q_lock, flags);
 
-	wake_lock_destroy(&ept->read_q_wake_lock);
-	wake_lock_destroy(&ept->reply_q_wake_lock);
 	kfree(ept);
 	return 0;
 }
@@ -999,7 +993,6 @@ static int rr_read(struct rpcrouter_xprt_info *xprt_info,
 				return -EIO;
 		}
 		xprt_info->need_len = len;
-		wake_unlock(&xprt_info->wakelock);
 		spin_unlock_irqrestore(&xprt_info->lock, flags);
 
 		wait_event(xprt_info->read_wait,
@@ -1201,8 +1194,6 @@ static void do_read_data(struct work_struct *work)
 
 packet_complete:
 	spin_lock(&ept->read_q_lock);
-	D("%s: take read lock on ept %p\n", __func__, ept);
-	wake_lock(&ept->read_q_wake_lock);
 	list_add_tail(&pkt->list, &ept->read_q);
 	wake_up(&ept->wait_q);
 	spin_unlock(&ept->read_q_lock);
@@ -1549,8 +1540,6 @@ static void set_pend_reply(struct msm_rpc_endpoint *ept,
 {
 		unsigned long flags;
 		spin_lock_irqsave(&ept->reply_q_lock, flags);
-		D("%s: take reply lock on ept %p\n", __func__, ept);
-		wake_lock(&ept->reply_q_wake_lock);
 		list_add_tail(&reply->list, &ept->reply_pend_q);
 		spin_unlock_irqrestore(&ept->reply_q_lock, flags);
 }
@@ -1567,7 +1556,6 @@ int msm_rpc_write(struct msm_rpc_endpoint *ept, void *buffer, int count)
 	int rc;
 	int first_pkt = 1;
 	uint32_t mid;
-	unsigned long flags;
 
 	/* snoop the RPC packet and enforce permissions */
 
@@ -1666,7 +1654,6 @@ int msm_rpc_write(struct msm_rpc_endpoint *ept, void *buffer, int count)
 	}
 
  write_release_lock:
-	/* if reply, release wakelock after writing to the transport */
 	if (rq->type != 0) {
 		/* Upon failure, add reply tag to the pending list.
 		** Else add reply tag to the avail/free list. */
@@ -1674,13 +1661,6 @@ int msm_rpc_write(struct msm_rpc_endpoint *ept, void *buffer, int count)
 			set_pend_reply(ept, reply);
 		else
 			set_avail_reply(ept, reply);
-
-		spin_lock_irqsave(&ept->reply_q_lock, flags);
-		if (list_empty(&ept->reply_pend_q)) {
-			D("%s: release reply lock on ept %p\n", __func__, ept);
-			wake_unlock(&ept->reply_q_wake_lock);
-		}
-		spin_unlock_irqrestore(&ept->reply_q_lock, flags);
 	}
 
 	return count;
@@ -1902,10 +1882,8 @@ int __msm_rpc_read(struct msm_rpc_endpoint *ept,
 	if ((rc >= (sizeof(uint32_t) * 3)) && (rq->type == 0)) {
 		/* RPC CALL */
 		reply = get_avail_reply(ept);
-		if (!reply) {
-			rc = -ENOMEM;
-			goto read_release_lock;
-		}
+		if (!reply)
+			return -ENOMEM;
 		reply->cid = pkt->hdr.src_cid;
 		reply->pid = pkt->hdr.src_pid;
 		reply->xid = rq->xid;
@@ -1917,16 +1895,6 @@ int __msm_rpc_read(struct msm_rpc_endpoint *ept,
 	kfree(pkt);
 
 	IO("READ on ept %p (%d bytes)\n", ept, rc);
-
- read_release_lock:
-
-	/* release read wakelock after taking reply wakelock */
-	spin_lock_irqsave(&ept->read_q_lock, flags);
-	if (list_empty(&ept->read_q)) {
-		D("%s: release read lock on ept %p\n", __func__, ept);
-		wake_unlock(&ept->read_q_wake_lock);
-	}
-	spin_unlock_irqrestore(&ept->read_q_lock, flags);
 
 	return rc;
 }
@@ -2169,7 +2137,6 @@ static int msm_rpcrouter_close(void)
 
 		flush_workqueue(xprt_info->workqueue);
 		destroy_workqueue(xprt_info->workqueue);
-		wake_lock_destroy(&xprt_info->wakelock);
 		kfree(xprt_info);
 
 		mutex_lock(&xprt_info_list_lock);
@@ -2346,8 +2313,6 @@ static int msm_rpcrouter_add_xprt(struct rpcrouter_xprt *xprt)
 	xprt_info->remote_pid = -1;
 	init_waitqueue_head(&xprt_info->read_wait);
 	spin_lock_init(&xprt_info->lock);
-	wake_lock_init(&xprt_info->wakelock,
-		       WAKE_LOCK_SUSPEND, xprt->name);
 	xprt_info->need_len = 0;
 	xprt_info->abort_data_read = 0;
 	INIT_WORK(&xprt_info->read_data, do_read_data);
@@ -2405,7 +2370,6 @@ static void msm_rpcrouter_remove_xprt(struct rpcrouter_xprt *xprt)
 		/* cleanup workqueues and wakelocks */
 		flush_workqueue(xprt_info->workqueue);
 		destroy_workqueue(xprt_info->workqueue);
-		wake_lock_destroy(&xprt_info->wakelock);
 
 
 		/* free memory */
@@ -2477,13 +2441,8 @@ void msm_rpcrouter_xprt_notify(struct rpcrouter_xprt *xprt, unsigned event)
 	}
 
 	xprt_info = xprt->priv;
-	if (xprt_info) {
-		/* Check read_avail even for OPEN event to handle missed
-		   DATA events while processing the OPEN event*/
-		if (xprt->read_avail() >= xprt_info->need_len)
-			wake_lock(&xprt_info->wakelock);
+	if (xprt_info)
 		wake_up(&xprt_info->read_wait);
-	}
 }
 
 static int modem_restart_notifier_cb(struct notifier_block *this,
