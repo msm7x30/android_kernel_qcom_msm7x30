@@ -26,9 +26,10 @@
 #include <mach/msm_hsusb.h>
 #include <mach/semc_charger_usb.h>
 #include <linux/export.h>
+#include <linux/pm.h>
 
-#define CHGUSB_DISC_WAKELOCK_TIMEOUT (HZ * 2) /* 2sec */
-#define CHGUSB_CONN_WAKELOCK_TIMEOUT (HZ * 5) /* 5sec */
+#define CHGUSB_DISC_WAKEUP_SOURCE_TIMEOUT 2000 /* 2sec */
+#define CHGUSB_CONN_WAKEUP_SOURCE_TIMEOUT 5000 /* 5sec */
 
 struct semc_chg_usb_state {
 	struct power_supply supply_usb;
@@ -37,7 +38,7 @@ struct semc_chg_usb_state {
 	u8 connected;
 	int usb_chg_current_ma;
 	spinlock_t lock;
-	struct wake_lock chgusb_wake_lock;
+	struct wakeup_source chgusb_wakeup_source;
 };
 
 static int semc_chg_usb_get_property(struct power_supply *bat_ps,
@@ -189,8 +190,8 @@ int semc_charger_usb_init(int init)
 		INIT_WORK(&semc_chg_usb_state.external_change_work,
 			  semc_charger_external_power_changed_work);
 
-		wake_lock_init(&semc_chg_usb_state.chgusb_wake_lock,
-				WAKE_LOCK_SUSPEND, "chgusb");
+		wakeup_source_init(&semc_chg_usb_state.chgusb_wakeup_source,
+				"chgusb");
 
 		power_supply_register(NULL, &semc_chg_usb_state.supply_usb);
 		power_supply_register(NULL, &semc_chg_usb_state.supply_ac);
@@ -244,12 +245,12 @@ void semc_charger_usb_connected(enum chg_type chgtype)
 		else
 			power_supply_changed(&semc_chg_usb_state.supply_usb);
 
-		wake_lock_timeout(&semc_chg_usb_state.chgusb_wake_lock,
-			CHGUSB_DISC_WAKELOCK_TIMEOUT);
+		__pm_wakeup_event(&semc_chg_usb_state.chgusb_wakeup_source,
+			CHGUSB_DISC_WAKEUP_SOURCE_TIMEOUT);
 		goto usb_connected_end;
 	}
-	wake_lock_timeout(&semc_chg_usb_state.chgusb_wake_lock,
-		CHGUSB_CONN_WAKELOCK_TIMEOUT);
+	__pm_wakeup_event(&semc_chg_usb_state.chgusb_wakeup_source,
+		CHGUSB_CONN_WAKEUP_SOURCE_TIMEOUT);
 
 	pr_info("\nCharger Type: %s\n", chg_types[chgtype]);
 
