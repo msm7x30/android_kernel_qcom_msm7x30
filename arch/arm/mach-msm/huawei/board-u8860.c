@@ -2835,10 +2835,6 @@ static void __init msm7x30_init_irq(void)
 	msm_init_irq();
 }
 
-#if (defined(CONFIG_MMC_MSM_SDC2_SUPPORT)\
-	|| defined(CONFIG_MMC_MSM_SDC3_SUPPORT)\
-	|| defined(CONFIG_MMC_MSM_SDC4_SUPPORT))
-
 struct sdcc_gpio {
 	struct msm_gpio *cfg_data;
 	uint32_t size;
@@ -2927,6 +2923,10 @@ static struct sdcc_gpio sdcc_cfg_data[] = {
 };
 
 static struct regulator *sdcc_vreg_data[ARRAY_SIZE(sdcc_cfg_data)];
+
+#if (defined(CONFIG_MMC_MSM_SDC2_SUPPORT)\
+	|| defined(CONFIG_MMC_MSM_SDC3_SUPPORT)\
+	|| defined(CONFIG_MMC_MSM_SDC4_SUPPORT))
 
 static unsigned long vreg_sts, gpio_sts;
 
