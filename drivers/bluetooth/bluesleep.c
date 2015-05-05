@@ -426,22 +426,26 @@ static struct uart_port *bluesleep_get_uart_port(void)
 	return uport;
 }
 
-static int bluesleep_read_proc_lpm(char *page, char **start, off_t offset,
-					int count, int *eof, void *data)
+static int bluesleep_read_proc_lpm(struct seq_file *m, void *v)
 {
-	*eof = 1;
-	return sprintf(page, "unsupported to read\n");
+	seq_printf(m, "unsupported to read\n");
+	return 0;
 }
 
-static int bluesleep_write_proc_lpm(struct file *file, const char *buffer,
-					unsigned long count, void *data)
+static int bluepower_open_proc_lpm(struct inode *inodp, struct file *filp)
+{
+	return single_open(filp, bluesleep_read_proc_lpm, PDE_DATA(inodp));
+}
+
+static int bluesleep_write_proc_lpm(struct file *filp,
+	const char __user *buf, size_t count, loff_t *ppos)
 {
 	char b;
 
 	if (count < 1)
 	return -EINVAL;
 
-	if (copy_from_user(&b, buffer, 1))
+	if (copy_from_user(&b, buf, 1))
 		return -EFAULT;
 
 	if (b == '0') {
@@ -462,22 +466,26 @@ static int bluesleep_write_proc_lpm(struct file *file, const char *buffer,
 	return count;
 }
 
-static int bluesleep_read_proc_btwrite(char *page, char **start, off_t offset,
-					int count, int *eof, void *data)
+static int bluesleep_read_proc_btwrite(struct seq_file *m, void *v)
 {
-	*eof = 1;
-	return sprintf(page, "unsupported to read\n");
+	seq_printf(m, "unsupported to read\n");
+	return 0;
 }
 
-static int bluesleep_write_proc_btwrite(struct file *file, const char *buffer,
-					unsigned long count, void *data)
+static int bluepower_open_proc_btwrite(struct inode *inodp, struct file *filp)
+{
+	return single_open(filp, bluesleep_read_proc_btwrite, PDE_DATA(inodp));
+}
+
+static int bluesleep_write_proc_btwrite(struct file *filp,
+	const char __user *buf, size_t count, loff_t *ppos)
 {
 	char b;
 
 	if (count < 1)
 		return -EINVAL;
 
-	if (copy_from_user(&b, buffer, 1))
+	if (copy_from_user(&b, buf, 1))
 		return -EFAULT;
 
 	/* HCI_DEV_WRITE */
@@ -501,11 +509,14 @@ static int bluesleep_write_proc_btwrite(struct file *file, const char *buffer,
  * @param data Not used.
  * @return The number of bytes written.
  */
-static int bluepower_read_proc_btwake(char *page, char **start, off_t offset,
-					int count, int *eof, void *data)
+static int bluepower_read_proc_btwake(struct seq_file *m, void *v)
 {
-	*eof = 1;
-	return sprintf(page, "btwake:%u\n", gpio_get_value(bsi->ext_wake));
+	return seq_printf(m, "btwake:%u\n", gpio_get_value(bsi->ext_wake));
+}
+
+static int bluepower_open_proc_btwake(struct inode *inodp, struct file *filp)
+{
+	return single_open(filp, bluepower_read_proc_btwake, PDE_DATA(inodp));
 }
 
 /**
@@ -517,33 +528,22 @@ static int bluepower_read_proc_btwake(char *page, char **start, off_t offset,
  * @return On success, the number of bytes written. On error, -1, and
  * <code>errno</code> is set appropriately.
  */
-static int bluepower_write_proc_btwake(struct file *file, const char *buffer,
-					unsigned long count, void *data)
+static int bluepower_write_proc_btwake(struct file *filp,
+	const char __user *buf, size_t count, loff_t *ppos)
 {
-	char *buf;
+	char btwake;
 
 	if (count < 1)
 		return -EINVAL;
 
-	buf = kmalloc(count, GFP_KERNEL);
-	if (!buf)
-		return -ENOMEM;
-
-	if (copy_from_user(buf, buffer, count)) {
-		kfree(buf);
+	if (copy_from_user(&btwake, buf, 1))
 		return -EFAULT;
-	}
 
-	if (buf[0] == '0') {
+	if (btwake == '0')
 		gpio_set_value(bsi->ext_wake, 0);
-	} else if (buf[0] == '1') {
+	else
 		gpio_set_value(bsi->ext_wake, 1);
-	} else {
-		kfree(buf);
-		return -EINVAL;
-	}
 
-	kfree(buf);
 	return count;
 }
 
@@ -559,11 +559,14 @@ static int bluepower_write_proc_btwake(struct file *file, const char *buffer,
  * @param data Not used.
  * @return The number of bytes written.
  */
-static int bluepower_read_proc_hostwake(char *page, char **start, off_t offset,
-					int count, int *eof, void *data)
+static int bluepower_read_proc_hostwake(struct seq_file *m, void *v)
 {
-	*eof = 1;
-	return sprintf(page, "hostwake: %u \n", gpio_get_value(bsi->host_wake));
+	return seq_printf(m, "hostwake: %u \n", gpio_get_value(bsi->host_wake));
+}
+
+static int bluepower_open_proc_hostwake(struct inode *inodp, struct file *filp)
+{
+	return single_open(filp, bluepower_read_proc_hostwake, PDE_DATA(inodp));
 }
 
 void bluesleep_setup_uart_port(struct platform_device *uart_dev)
@@ -583,14 +586,17 @@ void bluesleep_setup_uart_port(struct platform_device *uart_dev)
  * @param data Not used.
  * @return The number of bytes written.
  */
-static int bluesleep_read_proc_asleep(char *page, char **start, off_t offset,
-					int count, int *eof, void *data)
+static int bluesleep_read_proc_asleep(struct seq_file *m, void *v)
 {
 	unsigned int asleep;
 
 	asleep = test_bit(BT_ASLEEP, &flags) ? 1 : 0;
-	*eof = 1;
-	return sprintf(page, "asleep: %u\n", asleep);
+	return seq_printf(m, "asleep: %u\n", asleep);
+}
+
+static int bluepower_open_proc_asleep(struct inode *inodp, struct file *filp)
+{
+	return single_open(filp, bluesleep_read_proc_asleep, PDE_DATA(inodp));
 }
 
 /**
@@ -605,14 +611,17 @@ static int bluesleep_read_proc_asleep(char *page, char **start, off_t offset,
  * @param data Not used.
  * @return The number of bytes written.
  */
-static int bluesleep_read_proc_proto(char *page, char **start, off_t offset,
-					int count, int *eof, void *data)
+static int bluesleep_read_proc_proto(struct seq_file *m, void *v)
 {
 	unsigned int proto;
 
 	proto = test_bit(BT_PROTO, &flags) ? 1 : 0;
-	*eof = 1;
-	return sprintf(page, "proto: %u\n", proto);
+	return seq_printf(m, "proto: %u\n", proto);
+}
+
+static int bluepower_open_proc_proto(struct inode *inodp, struct file *filp)
+{
+	return single_open(filp, bluesleep_read_proc_proto, PDE_DATA(inodp));
 }
 
 /**
@@ -624,15 +633,15 @@ static int bluesleep_read_proc_proto(char *page, char **start, off_t offset,
  * @return On success, the number of bytes written. On error, -1, and
  * <code>errno</code> is set appropriately.
  */
-static int bluesleep_write_proc_proto(struct file *file, const char *buffer,
-					unsigned long count, void *data)
+static int bluesleep_write_proc_proto(struct file *filp,
+	const char __user *buf, size_t count, loff_t *ppos)
 {
 	char proto;
 
 	if (count < 1)
 		return -EINVAL;
 
-	if (copy_from_user(&proto, buffer, 1))
+	if (copy_from_user(&proto, buf, 1))
 		return -EFAULT;
 
 	if (proto == '0')
@@ -643,6 +652,58 @@ static int bluesleep_write_proc_proto(struct file *file, const char *buffer,
 	/* claim that we wrote everything */
 	return count;
 }
+
+static struct file_operations btwake_proc_ops = {
+	.owner = THIS_MODULE,
+	.open = bluepower_open_proc_btwake,
+	.read = seq_read,
+	.llseek = seq_lseek,
+	.release = single_release,
+	.write = bluepower_write_proc_btwake,
+};
+
+static struct file_operations hostwake_proc_ops = {
+	.owner = THIS_MODULE,
+	.open = bluepower_open_proc_hostwake,
+	.read = seq_read,
+	.llseek = seq_lseek,
+	.release = single_release,
+};
+
+static struct file_operations proto_proc_ops = {
+	.owner = THIS_MODULE,
+	.open = bluepower_open_proc_proto,
+	.read = seq_read,
+	.llseek = seq_lseek,
+	.release = single_release,
+	.write = bluesleep_write_proc_proto,
+};
+
+static struct file_operations asleep_proc_ops = {
+	.owner = THIS_MODULE,
+	.open = bluepower_open_proc_asleep,
+	.read = seq_read,
+	.llseek = seq_lseek,
+	.release = single_release,
+};
+
+static struct file_operations lpm_proc_ops = {
+	.owner = THIS_MODULE,
+	.open = bluepower_open_proc_lpm,
+	.read = seq_read,
+	.llseek = seq_lseek,
+	.release = single_release,
+	.write = bluesleep_write_proc_lpm,
+};
+
+static struct file_operations btwrite_proc_ops = {
+	.owner = THIS_MODULE,
+	.open = bluepower_open_proc_btwrite,
+	.read = seq_read,
+	.llseek = seq_lseek,
+	.release = single_release,
+	.write = bluesleep_write_proc_btwrite,
+};
 
 static int __init bluesleep_probe(struct platform_device *pdev)
 {
@@ -764,36 +825,32 @@ static int __init bluesleep_init(void)
 	}
 
 	/* Creating read/write "btwake" entry */
-	ent = create_proc_entry("btwake", 0, sleep_dir);
+	ent = proc_create_data("btwake", 0, sleep_dir, &btwake_proc_ops, NULL);
 	if (ent == NULL) {
 		BT_ERR("Unable to create /proc/%s/btwake entry", PROC_DIR);
 		retval = -ENOMEM;
 		goto fail;
 	}
-	ent->read_proc = bluepower_read_proc_btwake;
-	ent->write_proc = bluepower_write_proc_btwake;
 
 	/* read only proc entries */
-	if (create_proc_read_entry("hostwake", 0, sleep_dir,
-				bluepower_read_proc_hostwake, NULL) == NULL) {
+	if (proc_create_data("hostwake", 0, sleep_dir,
+				&hostwake_proc_ops, NULL) == NULL) {
 		BT_ERR("Unable to create /proc/%s/hostwake entry", PROC_DIR);
 		retval = -ENOMEM;
 		goto fail;
 	}
 
 	/* read/write proc entries */
-	ent = create_proc_entry("proto", 0, sleep_dir);
+	ent = proc_create_data("proto", 0, sleep_dir, &proto_proc_ops, NULL);
 	if (ent == NULL) {
 		BT_ERR("Unable to create /proc/%s/proto entry", PROC_DIR);
 		retval = -ENOMEM;
 		goto fail;
 	}
-	ent->read_proc = bluesleep_read_proc_proto;
-	ent->write_proc = bluesleep_write_proc_proto;
 
 	/* read only proc entries */
-	if (create_proc_read_entry("asleep", 0,
-			sleep_dir, bluesleep_read_proc_asleep, NULL) == NULL) {
+	if (proc_create_data("asleep", 0,
+			sleep_dir, &asleep_proc_ops, NULL) == NULL) {
 		BT_ERR("Unable to create /proc/%s/asleep entry", PROC_DIR);
 		retval = -ENOMEM;
 		goto fail;
@@ -801,24 +858,21 @@ static int __init bluesleep_init(void)
 
 #if BT_BLUEDROID_SUPPORT
 	/* read/write proc entries */
-	ent = create_proc_entry("lpm", 0, sleep_dir);
+	ent = proc_create_data("lpm", 0, sleep_dir, &lpm_proc_ops, NULL);
 	if (ent == NULL) {
 		BT_ERR("Unable to create /proc/%s/lpm entry", PROC_DIR);
 		retval = -ENOMEM;
 		goto fail;
 	}
-	ent->read_proc = bluesleep_read_proc_lpm;
-	ent->write_proc = bluesleep_write_proc_lpm;
 
 	/* read/write proc entries */
-	ent = create_proc_entry("btwrite", 0, sleep_dir);
+	ent = proc_create_data("btwrite", 0, sleep_dir, &btwrite_proc_ops,
+		NULL);
 	if (ent == NULL) {
 		BT_ERR("Unable to create /proc/%s/btwrite entry", PROC_DIR);
 		retval = -ENOMEM;
 		goto fail;
 	}
-	ent->read_proc = bluesleep_read_proc_btwrite;
-	ent->write_proc = bluesleep_write_proc_btwrite;
 #endif
 
 	flags = 0; /* clear all status bits */
