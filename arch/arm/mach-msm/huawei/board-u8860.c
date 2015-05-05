@@ -3225,6 +3225,7 @@ static struct msm_spm_platform_data msm_spm_data __initdata = {
 static void __init msm7x30_init(void)
 {
 	unsigned smem_size;
+	unsigned int boot_reason;
 
 	msm_clock_init(&msm7x30_clock_init_data);
 #ifdef CONFIG_SERIAL_MSM_CONSOLE
