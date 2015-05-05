@@ -3386,6 +3386,7 @@ int zeus_get_wlanmac(uint8_t *wlanmac)
 static void __init msm7x30_init(void)
 {
 	unsigned smem_size;
+	unsigned int boot_reason;
 
 	msm_clock_init(&msm7x30_clock_init_data);
 #ifdef CONFIG_SERIAL_MSM_CONSOLE

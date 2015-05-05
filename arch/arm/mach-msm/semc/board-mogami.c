@@ -3726,6 +3726,7 @@ struct platform_device semc_reset_keys_device = {
 static void __init msm7x30_init(void)
 {
 	unsigned smem_size;
+	unsigned int boot_reason;
 
 	wlan_init_seq();
 
