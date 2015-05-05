@@ -3484,6 +3484,7 @@ device_initcall(i2c_touch_init);
 static void __init msm7x30_init(void)
 {
 	unsigned smem_size;
+	unsigned int boot_reason;
 
 	msm_clock_init(&msm7x30_clock_init_data);
 #ifdef CONFIG_SERIAL_MSM_CONSOLE
