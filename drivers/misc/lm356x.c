@@ -1352,7 +1352,7 @@ static void remove_sysfs_interfaces(struct device *dev)
  *   probe, init/exit, remove
  ******************************************************************************
  */
-static int __devinit lm356x_probe(struct i2c_client *client,
+static int lm356x_probe(struct i2c_client *client,
 	  const struct i2c_device_id *id, struct lm356x_drv_data **data)
 {
 	struct i2c_adapter *adapter = to_i2c_adapter(client->dev.parent);
@@ -1405,7 +1405,7 @@ err_setup:
 }
 
 
-static int __devinit lm3560_probe(struct i2c_client *client,
+static int lm3560_probe(struct i2c_client *client,
 					const struct i2c_device_id *id)
 {
 	struct lm356x_platform_data *pdata = client->dev.platform_data;
@@ -1465,7 +1465,7 @@ err_chip_init:
 	return result;
 }
 
-static int __devinit lm3561_probe(struct i2c_client *client,
+static int lm3561_probe(struct i2c_client *client,
 					const struct i2c_device_id *id)
 {
 	struct lm356x_platform_data *pdata = client->dev.platform_data;
@@ -1508,7 +1508,7 @@ err_chip_init:
 }
 
 
-static int __devexit lm356x_remove(struct i2c_client *client)
+static int lm356x_remove(struct i2c_client *client)
 {
 	struct lm356x_drv_data *data = dev_get_drvdata(&client->dev);
 	struct lm356x_platform_data *pdata = client->dev.platform_data;
@@ -1599,7 +1599,7 @@ static struct i2c_driver lm3560_driver = {
 		.pm = &lm356x_pm,
 	},
 	.probe	= lm3560_probe,
-	.remove	= __devexit_p(lm356x_remove),
+	.remove	= lm356x_remove,
 	.id_table = lm3560_id,
 };
 
@@ -1628,7 +1628,7 @@ static struct i2c_driver lm3561_driver = {
 		.pm = &lm356x_pm,
 	},
 	.probe	= lm3561_probe,
-	.remove	= __devexit_p(lm356x_remove),
+	.remove	= lm356x_remove,
 	.id_table = lm3561_id,
 };
 
