@@ -474,7 +474,7 @@ static int hs_cb_func(struct msm_rpc_client *client, void *buffer, int in_size)
 	return 0;
 }
 
-static int __init hs_rpc_cb_init(void)
+static int hs_rpc_cb_init(void)
 {
 	int rc = 0;
 	int i;
@@ -506,7 +506,7 @@ static int __init hs_rpc_cb_init(void)
 	return rc;
 }
 
-static int __devinit hs_rpc_init(void)
+static int hs_rpc_init(void)
 {
 	int rc;
 
@@ -521,7 +521,7 @@ static int __devinit hs_rpc_init(void)
 	return 0;
 }
 
-static void __devexit hs_rpc_deinit(void)
+static void hs_rpc_deinit(void)
 {
 	if (rpc_client)
 		msm_rpc_unregister_client(rpc_client);
@@ -529,7 +529,7 @@ static void __devexit hs_rpc_deinit(void)
 	semc_rpc_srv_hs_clear_event_list();
 }
 
-static int __devinit hs_probe(struct platform_device *pdev)
+static int hs_probe(struct platform_device *pdev)
 {
 	int rc;
 	if (NULL == pdev->dev.platform_data)
@@ -548,7 +548,7 @@ err_hs_rpc_init:
 	return rc;
 }
 
-static int __devexit hs_remove(struct platform_device *pdev)
+static int hs_remove(struct platform_device *pdev)
 {
 	hs_rpc_deinit();
 	return 0;
@@ -556,7 +556,7 @@ static int __devexit hs_remove(struct platform_device *pdev)
 
 static struct platform_driver hs_driver = {
 	.probe		= hs_probe,
-	.remove		= __devexit_p(hs_remove),
+	.remove		= hs_remove,
 	.driver		= {
 		.name	= SEMC_HANDSET_DRIVER_NAME,
 		.owner	= THIS_MODULE,
