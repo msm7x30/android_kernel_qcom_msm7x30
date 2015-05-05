@@ -77,7 +77,6 @@
 
 #ifdef CONFIG_ION_MSM
 #include <linux/msm_ion.h>
-#include <mach/ion.h>
 #endif
 
 #include "board-semc7x30-regulator.h"
