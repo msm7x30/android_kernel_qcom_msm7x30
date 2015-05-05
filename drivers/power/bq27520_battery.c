@@ -30,6 +30,7 @@
 #include <linux/workqueue.h>
 #include <linux/slab.h>
 #include <linux/err.h>
+#include <linux/pm.h>
 
 #include <linux/i2c/bq27520_battery.h>
 
@@ -133,9 +134,8 @@
 #define INVALID_BATT_VOLTAGE_LOWER_LIMIT 2000
 #define INVALID_BATT_VOLTAGE_UPPER_LIMIT 4300
 
-#define SHUTDOWN_WAKELOCK_TIMEOUT (HZ * 5) /* 5sec */
-#define RECHARGE_WAKELOCK_TIMEOUT (HZ * 5) /* 5sec */
-
+#define SHUTDOWN_WAKEUP_SOURCE_TIMEOUT 5000 /* 5sec */
+#define RECHARGE_WAKEUP_SOURCE_TIMEOUT 5000 /* 5sec */
 
 #define IS_CHG_CONNECTED(old_status, new_status) \
 			(!old_status && new_status)
@@ -197,8 +197,8 @@ struct bq27520_data {
 	struct mutex int_lock;
 	struct mutex data_flash_lock;
 	struct mutex control_reg_lock;
-	struct wake_lock wake_lock;
-	struct wake_lock recharge_wake_lock;
+	struct wakeup_source wakeup_source;
+	struct wakeup_source recharge_wakeup_source;
 	int got_technology;
 	int lipo_bat_max_volt;
 	int lipo_bat_min_volt;
@@ -1740,8 +1740,8 @@ static void stop_read_fc(struct bq27520_data *bd)
 	dev_dbg(&bd->clientp->dev, "%s()\n", __func__);
 	if (delayed_work_pending(&bd->fc_work)) {
 		if (bd->chg_connected)
-			wake_lock_timeout(&bd->recharge_wake_lock,
-				RECHARGE_WAKELOCK_TIMEOUT);
+			__pm_wakeup_event(&bd->recharge_wakeup_source,
+				RECHARGE_WAKEUP_SOURCE_TIMEOUT);
 		cancel_delayed_work_sync(&bd->fc_work);
 	}
 }
@@ -1896,8 +1896,8 @@ static void bq27520_handle_soc_worker(struct work_struct *work)
 		}
 
 		if (bd->curr_capacity == 0)
-			wake_lock_timeout(&bd->wake_lock,
-				SHUTDOWN_WAKELOCK_TIMEOUT);
+			__pm_wakeup_event(&bd->wakeup_source,
+				SHUTDOWN_WAKEUP_SOURCE_TIMEOUT);
 
 		bd->cap_scale.scaled_capacity =	calculate_scaled_capacity(bd);
 
@@ -2305,9 +2305,9 @@ static int bq27520_probe(struct i2c_client *client,
 	INIT_WORK(&bd->ext_pwr_change_work, bq27520_ext_pwr_change_worker);
 	INIT_WORK(&bd->soc_int_work, bq27520_handle_soc_worker);
 	INIT_DELAYED_WORK(&bd->fc_work, bq27520_read_fc_worker);
-	wake_lock_init(&bd->wake_lock, WAKE_LOCK_SUSPEND,
+	wakeup_source_init(&bd->wakeup_source,
 		       "bq27520_shutdown_lock");
-	wake_lock_init(&bd->recharge_wake_lock, WAKE_LOCK_SUSPEND,
+	wakeup_source_init(&bd->recharge_wakeup_source,
 		       "bq27520_recharge_lock");
 
 	rc = power_supply_register(&client->dev, &bd->bat_ps);
