@@ -370,9 +370,9 @@ static const struct i2c_device_id novatek_i2c_idtable[] = {
 
 MODULE_DEVICE_TABLE(i2c, novatek_i2c_idtable);
 
-static int __devinit novatek_i2c_probe(struct i2c_client *,
+static int novatek_i2c_probe(struct i2c_client *,
 		const struct i2c_device_id *);
-static int __devexit novatek_i2c_remove(struct i2c_client *);
+static int novatek_i2c_remove(struct i2c_client *);
 
 static struct i2c_driver novatek_i2c_driver = {
 	.driver = {
@@ -380,18 +380,18 @@ static struct i2c_driver novatek_i2c_driver = {
 		.name = MDDI_NOVATEK_I2C_NAME,
 	},
 	.probe   = novatek_i2c_probe,
-	.remove  = __devexit_p(novatek_i2c_remove),
+	.remove  = novatek_i2c_remove,
 	.id_table = novatek_i2c_idtable,
 };
 
-static int __devexit novatek_i2c_remove(struct i2c_client *client)
+static int novatek_i2c_remove(struct i2c_client *client)
 {
 	device_init_wakeup(&client->dev, 0);
 
 	return 0;
 }
 
-static int __devinit novatek_i2c_probe(struct i2c_client *client,
+static int novatek_i2c_probe(struct i2c_client *client,
 		const struct i2c_device_id *id)
 {
 	int	n = 0;
@@ -418,7 +418,7 @@ static int __devinit novatek_i2c_probe(struct i2c_client *client,
 	return ret;
 }
 
-static int __devexit novatek_controller_remove(struct platform_device *pdev)
+static int novatek_controller_remove(struct platform_device *pdev)
 {
 	struct novatek_record *rd;
 
@@ -431,7 +431,7 @@ static int __devexit novatek_controller_remove(struct platform_device *pdev)
 	return 0;
 }
 
-static int __devinit novatek_controller_probe(struct platform_device *pdev)
+static int novatek_controller_probe(struct platform_device *pdev)
 {
 	int rc;
 	struct msm_panel_info *pinfo;
