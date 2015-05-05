@@ -244,7 +244,7 @@ static const struct file_operations dbfs_fops = {
 	.write	= bma150_dbfs_write,
 };
 
-static void __devinit bma150_create_dbfs_entry(struct driver_data *dd)
+static void bma150_create_dbfs_entry(struct driver_data *dd)
 {
 	char buf[16];
 
@@ -271,7 +271,7 @@ dbfs_err_root:
 	return;
 }
 
-static void __devexit bma150_remove_dbfs_entry(struct driver_data *dd)
+static void bma150_remove_dbfs_entry(struct driver_data *dd)
 {
 	if (dd->dbfs_regs)
 		debugfs_remove(dd->dbfs_regs);
@@ -279,9 +279,9 @@ static void __devexit bma150_remove_dbfs_entry(struct driver_data *dd)
 		debugfs_remove(dd->dbfs_root);
 }
 #else
-static void __devinit bma150_create_dbfs_entry(struct driver_data *dd) { }
+static void bma150_create_dbfs_entry(struct driver_data *dd) { }
 
-static void __devexit bma150_remove_dbfs_entry(struct driver_data *dd) { }
+static void bma150_remove_dbfs_entry(struct driver_data *dd) { }
 #endif
 
 static int bma150_power_down(struct driver_data *dd)
@@ -592,7 +592,7 @@ static const char *get_phys_path(struct device *dev)
 	return ret;
 }
 
-static int __devinit bma150_probe(struct i2c_client *ic_dev,
+static int bma150_probe(struct i2c_client *ic_dev,
 		const struct i2c_device_id *id)
 {
 	struct driver_data *dd;
@@ -702,7 +702,7 @@ probe_exit:
 	return rc;
 }
 
-static int __devexit bma150_remove(struct i2c_client *ic_dev)
+static int bma150_remove(struct i2c_client *ic_dev)
 {
 	struct driver_data *dd = i2c_get_clientdata(ic_dev);
 	const char *phys_path;
@@ -743,7 +743,7 @@ static struct i2c_driver bma150_driver = {
 #endif
 	},
 	.probe		= bma150_probe,
-	.remove		= __devexit_p(bma150_remove),
+	.remove		= bma150_remove,
 	.id_table	= bma150_i2c_id,
 };
 
