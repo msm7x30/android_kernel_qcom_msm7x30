@@ -2376,7 +2376,7 @@ static void apds9702_power_mode(int enable)
 {
 	vreg_helper("wlan", APDS9702_VDD_VOLTAGE, enable);
 
-	usleep(APDS9702_WAIT_TIME);
+	usleep_range(APDS9702_WAIT_TIME, APDS9702_WAIT_TIME);
 }
 
 static struct apds9702_platform_data apds9702_pdata = {
