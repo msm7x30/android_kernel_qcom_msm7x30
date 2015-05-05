@@ -1671,16 +1671,9 @@ static struct platform_device msm_device_adspdec = {
 };
 
 #ifdef CONFIG_USB_G_ANDROID
-static struct android_usb_platform_data android_usb_pdata = {
-	.internal_ums = true,
-};
-
 static struct platform_device android_usb_device = {
 	.name	= "android_usb",
 	.id	= -1,
-	.dev	= {
-		.platform_data = &android_usb_pdata,
-	},
 };
 #endif
 
