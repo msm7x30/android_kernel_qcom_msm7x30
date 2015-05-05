@@ -511,7 +511,7 @@ static int bq27520_get_control_status(struct bq27520_data *bd)
 		goto exit;
 	}
 
-	usleep(WAIT_ON_READ_SUB_CMD_US);
+	usleep_range(WAIT_ON_READ_SUB_CMD_US, WAIT_ON_READ_SUB_CMD_US);
 
 	rc = i2c_smbus_read_word_data(bd->clientp, REG_CMD_CONTROL);
 	if (rc < 0) {
@@ -633,7 +633,7 @@ static int bq27520_get_fw_version(struct bq27520_data *bd,
 		goto exit;
 	}
 
-	usleep(WAIT_ON_READ_SUB_CMD_US);
+	usleep_range(WAIT_ON_READ_SUB_CMD_US, WAIT_ON_READ_SUB_CMD_US);
 
 	rc = i2c_smbus_read_word_data(bd->clientp, REG_CMD_CONTROL);
 	if (rc < 0) {
