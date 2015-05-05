@@ -93,7 +93,7 @@
 #ifdef CONFIG_CHARGER_BQ24185
 #include <linux/i2c/bq24185_charger.h>
 #endif
-#ifdef CONFIG_BATTERY_BQ27520_SEMC
+#ifdef CONFIG_BATTERY_BQ27520
 #include <linux/i2c/bq27520_battery.h>
 #endif
 #ifdef CONFIG_BATTERY_CHARGALG
@@ -2129,7 +2129,7 @@ static struct platform_device bdata_driver = {
 };
 #endif
 
-#ifdef CONFIG_BATTERY_BQ27520_SEMC
+#ifdef CONFIG_BATTERY_BQ27520
 #define GPIO_BQ27520_SOC_INT 20
 #define LIPO_BAT_MAX_VOLTAGE 4200
 #define LIPO_BAT_MIN_VOLTAGE 3000
@@ -2437,7 +2437,7 @@ static struct i2c_board_info msm_i2c_board_info[] = {
 		.platform_data = &as3676_platform_data,
 	},
 #endif
-#ifdef CONFIG_BATTERY_BQ27520_SEMC
+#ifdef CONFIG_BATTERY_BQ27520
 	{
 		I2C_BOARD_INFO(BQ27520_NAME, 0xAA >> 1),
 		.irq = MSM_GPIO_TO_INT(GPIO_BQ27520_SOC_INT),
