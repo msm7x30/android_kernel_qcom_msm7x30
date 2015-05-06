@@ -430,7 +430,7 @@ int msm_chg_usb_i_is_available(uint32_t sample)
 		pr_debug("msm_chg_usb_i_is_available(%u)\n", sample);
 
 #ifdef CONFIG_BOARD_SEMC_ZEUS
-	usleep(3000);
+	usleep_range(3000, 3000);
 #endif
 
 	return rc;
