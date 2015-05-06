@@ -682,15 +682,10 @@ static void adreno_iommu_setstate(struct kgsl_device *device,
 		device->mmu.setstate_memory.gpuaddr +
 		KGSL_IOMMU_SETSTATE_NOP_OFFSET);
 
-	if (cpu_is_msm8960())
-		cmds += adreno_add_change_mh_phys_limit_cmds(cmds, 0xFFFFF000,
-					device->mmu.setstate_memory.gpuaddr +
-					KGSL_IOMMU_SETSTATE_NOP_OFFSET);
-	else
-		cmds += adreno_add_bank_change_cmds(cmds,
-					KGSL_IOMMU_CONTEXT_USER,
-					device->mmu.setstate_memory.gpuaddr +
-					KGSL_IOMMU_SETSTATE_NOP_OFFSET);
+	cmds += adreno_add_bank_change_cmds(cmds,
+		KGSL_IOMMU_CONTEXT_USER,
+		device->mmu.setstate_memory.gpuaddr +
+		KGSL_IOMMU_SETSTATE_NOP_OFFSET);
 
 	cmds += adreno_add_idle_cmds(adreno_dev, cmds);
 
@@ -761,17 +756,10 @@ static void adreno_iommu_setstate(struct kgsl_device *device,
 	/* Release GPU-CPU sync Lock here */
 	cmds += kgsl_mmu_sync_unlock(&device->mmu, cmds);
 
-	if (cpu_is_msm8960())
-		cmds += adreno_add_change_mh_phys_limit_cmds(cmds,
-			kgsl_mmu_get_reg_gpuaddr(&device->mmu, 0,
-						0, KGSL_IOMMU_GLOBAL_BASE),
-			device->mmu.setstate_memory.gpuaddr +
-			KGSL_IOMMU_SETSTATE_NOP_OFFSET);
-	else
-		cmds += adreno_add_bank_change_cmds(cmds,
-			KGSL_IOMMU_CONTEXT_PRIV,
-			device->mmu.setstate_memory.gpuaddr +
-			KGSL_IOMMU_SETSTATE_NOP_OFFSET);
+	cmds += adreno_add_bank_change_cmds(cmds,
+		KGSL_IOMMU_CONTEXT_PRIV,
+		device->mmu.setstate_memory.gpuaddr +
+		KGSL_IOMMU_SETSTATE_NOP_OFFSET);
 
 	cmds += adreno_add_idle_cmds(adreno_dev, cmds);
 
@@ -956,23 +944,13 @@ a2xx_getchipid(struct kgsl_device *device)
 	* adreno 22x gpus are indicated by coreid 2,
 	* but REG_RBBM_PERIPHID1 always contains 0 for this field
 	*/
-	if (cpu_is_msm8x60())
-		chipid = 2 << 24;
-	else
-		chipid = (coreid & 0xF) << 24;
+	chipid = (coreid & 0xF) << 24;
 
 	chipid |= ((majorid >> 4) & 0xF) << 16;
 
 	minorid = ((revid >> 0)  & 0xFF);
 
 	patchid = ((revid >> 16) & 0xFF);
-
-	/* 8x50 returns 0 for patch release, but it should be 1 */
-	/* 8x25 returns 0 for minor id, but it should be 1 */
-	if (cpu_is_qsd8x50())
-		patchid = 1;
-	else if (cpu_is_msm8625() && minorid == 0)
-		minorid = 1;
 
 	chipid |= (minorid << 8) | patchid;
 
@@ -2143,7 +2121,7 @@ _adreno_ft_restart_device(struct kgsl_device *device,
 		KGSL_FT_ERR(device, "Device stop failed\n");
 		return 1;
 	}
-	
+
 	if (adreno_init(device)) {
 		KGSL_FT_ERR(device, "Device start failed\n");
 		return 1;
