@@ -59,7 +59,6 @@
 #include <asm/atomic.h>
 #include <asm/irq.h>
 
-#include <mach/hardware.h>
 #include <mach/dma.h>
 #include <mach/msm_serial_hs.h>
 
