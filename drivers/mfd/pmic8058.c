@@ -691,7 +691,7 @@ pm8058_add_subdevices(const struct pm8058_platform_data *pdata,
 		keypad_pmic_cell.pdata_size =
 			sizeof(struct keypad_pmic_platform_data);
 		rc = mfd_add_devices(pmic->dev, 0, &keypad_pmic_cell,
-						1, NULL, irq_base);
+						1, NULL, irq_base, NULL);
 		if (rc) {
 			pr_err("Failed to add keypad pmic subdevice"
 			       "ret=%d\n", rc);
