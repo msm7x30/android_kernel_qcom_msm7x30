@@ -539,7 +539,7 @@ exit_point:
 	return ret;
 }
 
-static int __devexit mddi_sii_lcd_remove(struct platform_device *pdev)
+static int mddi_sii_lcd_remove(struct platform_device *pdev)
 {
 	struct sii_record *rd;
 
@@ -554,7 +554,7 @@ static int __devexit mddi_sii_lcd_remove(struct platform_device *pdev)
 
 static struct platform_driver this_driver = {
 	.probe  = mddi_sii_lcd_probe,
-	.remove = __devexit_p(mddi_sii_lcd_remove),
+	.remove = mddi_sii_lcd_remove,
 	.driver = {
 		.name = MDDI_SII_R61529_HVGA_NAME,
 	},

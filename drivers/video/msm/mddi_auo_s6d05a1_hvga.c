@@ -602,7 +602,7 @@ exit_point:
 	return ret;
 }
 
-static int __devexit mddi_auo_lcd_remove(struct platform_device *pdev)
+static int mddi_auo_lcd_remove(struct platform_device *pdev)
 {
 	struct auo_record *rd;
 
@@ -617,7 +617,7 @@ static int __devexit mddi_auo_lcd_remove(struct platform_device *pdev)
 
 static struct platform_driver this_driver = {
 	.probe  = mddi_auo_lcd_probe,
-	.remove = __devexit_p(mddi_auo_lcd_remove),
+	.remove = mddi_auo_lcd_remove,
 	.driver = {
 		.name = MDDI_AUO_S6D05A1_HVGA_NAME,
 	},

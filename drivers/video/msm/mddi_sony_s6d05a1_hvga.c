@@ -619,7 +619,7 @@ exit_point:
 	return ret;
 }
 
-static int __devexit mddi_sony_lcd_remove(struct platform_device *pdev)
+static int mddi_sony_lcd_remove(struct platform_device *pdev)
 {
 	struct sony_record *rd;
 
@@ -634,7 +634,7 @@ static int __devexit mddi_sony_lcd_remove(struct platform_device *pdev)
 
 static struct platform_driver this_driver = {
 	.probe  = mddi_sony_lcd_probe,
-	.remove = __devexit_p(mddi_sony_lcd_remove),
+	.remove = mddi_sony_lcd_remove,
 	.driver = {
 		.name = MDDI_SONY_S6D05A1_HVGA_NAME,
 	},
