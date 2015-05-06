@@ -48,8 +48,6 @@
 #include <asm/system.h>
 #include <asm/mach-types.h>
 
-#include <mach/hardware.h>
-
 
 typedef s64 int64;
 typedef s32 int32;

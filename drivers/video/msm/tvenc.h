@@ -20,8 +20,6 @@
 #include <linux/init.h>
 #include <linux/interrupt.h>
 #include <linux/fb.h>
-
-#include <mach/hardware.h>
 #include <linux/io.h>
 
 #include <asm/system.h>

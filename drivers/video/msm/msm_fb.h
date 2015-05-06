@@ -22,7 +22,6 @@
 #include <linux/interrupt.h>
 #include "linux/proc_fs.h"
 
-#include <mach/hardware.h>
 #include <linux/io.h>
 #include <mach/board.h>
 

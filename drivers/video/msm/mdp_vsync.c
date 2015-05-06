@@ -21,8 +21,6 @@
 #include <linux/hrtimer.h>
 #include <linux/vmalloc.h>
 #include <linux/clk.h>
-
-#include <mach/hardware.h>
 #include <linux/io.h>
 
 #include <asm/system.h>

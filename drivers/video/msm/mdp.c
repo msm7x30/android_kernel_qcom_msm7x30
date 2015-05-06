@@ -24,7 +24,6 @@
 #include <linux/spinlock.h>
 #include <linux/hrtimer.h>
 #include <linux/clk.h>
-#include <mach/hardware.h>
 #include <linux/io.h>
 #include <linux/debugfs.h>
 #include <linux/delay.h>

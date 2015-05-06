@@ -25,7 +25,6 @@
 #include <linux/uaccess.h>
 #include <asm/system.h>
 #include <asm/mach-types.h>
-#include <mach/hardware.h>
 
 #include "mdp.h"
 #include "msm_fb.h"

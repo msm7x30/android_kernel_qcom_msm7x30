@@ -28,7 +28,6 @@
 #include <linux/msm_mdp.h>
 #include <asm/system.h>
 #include <asm/mach-types.h>
-#include <mach/hardware.h>
 #include "mdp.h"
 #include "msm_fb.h"
 #include "mdp4.h"
