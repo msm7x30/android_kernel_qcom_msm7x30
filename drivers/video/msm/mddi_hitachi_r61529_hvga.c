@@ -541,7 +541,7 @@ exit_point:
 	return ret;
 }
 
-static int __devexit mddi_hitachi_lcd_remove(struct platform_device *pdev)
+static int mddi_hitachi_lcd_remove(struct platform_device *pdev)
 {
 	struct hitachi_record *rd;
 
@@ -556,7 +556,7 @@ static int __devexit mddi_hitachi_lcd_remove(struct platform_device *pdev)
 
 static struct platform_driver this_driver = {
 	.probe  = mddi_hitachi_lcd_probe,
-	.remove = __devexit_p(mddi_hitachi_lcd_remove),
+	.remove = mddi_hitachi_lcd_remove,
 	.driver = {
 		.name = MDDI_HITACH_R61529_HVGA_NAME,
 	},
