@@ -1273,7 +1273,9 @@ static int synaptics_touchpad_remove_i2c(struct i2c_client *i2c)
 	struct synaptics_touchpad *this = dev_get_drvdata(&i2c->dev);
 
 	free_irq(this->i2c->irq, &this->i2c->dev);
+#ifdef CONFIG_HAS_EARLYSUSPEND
 	unregister_early_suspend(&this->early_suspend);
+#endif
 	misc_deregister(&synaptics_touchpad_ctrl);
 	if (this->input)
 		input_unregister_device(this->input);
