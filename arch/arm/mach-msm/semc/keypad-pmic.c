@@ -163,7 +163,7 @@ static void kp_device_close(struct input_dev *dev)
 	}
 }
 
-static int __devinit kp_probe(struct platform_device *pdev)
+static int kp_probe(struct platform_device *pdev)
 {
 	struct keypad_pmic_platform_data *pdata = pdev->dev.platform_data;
 	struct kp_data *dt;
@@ -280,7 +280,7 @@ static int __devinit kp_probe(struct platform_device *pdev)
 }
 
 
-static int __devexit kp_remove(struct platform_device *pdev)
+static int kp_remove(struct platform_device *pdev)
 {
 	struct kp_data *dt = platform_get_drvdata(pdev);
 	int i;
@@ -300,7 +300,7 @@ static int __devexit kp_remove(struct platform_device *pdev)
 
 static struct platform_driver kp_driver = {
 	.probe		= kp_probe,
-	.remove		= __devexit_p(kp_remove),
+	.remove		= kp_remove,
 	.driver		= {
 		.name = KP_NAME,
 		.owner = THIS_MODULE,
