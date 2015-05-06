@@ -62,11 +62,6 @@
 #define YAFFS_NEW_FOLLOW_LINK 0
 #endif
 
-#if (LINUX_VERSION_CODE < KERNEL_VERSION(3, 6, 0))
-#define YAFFS_HAS_WRITE_SUPER
-#endif
-
-
 #if (LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 19))
 #include <linux/config.h>
 #endif
@@ -146,11 +141,6 @@
 #else
 #define YAFFS_USE_WRITE_BEGIN_END 0
 #endif
-
-#if (LINUX_VERSION_CODE < KERNEL_VERSION(3, 6, 0))
-#define YAFFS_SUPER_HAS_DIRTY
-#endif
-
 
 #if (LINUX_VERSION_CODE < KERNEL_VERSION(3, 2, 0))
 #define set_nlink(inode, count)  do { (inode)->i_nlink = (count); } while(0)
@@ -232,21 +222,14 @@ MODULE_PARM(yaffs_gc_control, "i");
 #define yaffs_super_to_dev(sb)	((struct yaffs_dev *)sb->u.generic_sbp)
 #endif
 
-#if (LINUX_VERSION_CODE >= KERNEL_VERSION(3, 5, 0))
 #define Y_CLEAR_INODE(i) clear_inode(i)
-#else
-#define Y_CLEAR_INODE(i) end_writeback(i)
-#endif
 
 #if (LINUX_VERSION_CODE >= KERNEL_VERSION(3, 12, 0))
 #define YAFFS_USE_DIR_ITERATE
 #endif
 
-#if (LINUX_VERSION_CODE >= KERNEL_VERSION(3, 10, 0))
 #define YAFFS_NEW_PROCFS
 #include <linux/seq_file.h>
-#endif
-
 
 #define update_dir_time(dir) do {\
 			(dir)->i_ctime = (dir)->i_mtime = CURRENT_TIME; \
