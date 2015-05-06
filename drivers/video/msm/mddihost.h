@@ -24,7 +24,6 @@
 #include <linux/dma-mapping.h>
 #include <linux/clk.h>
 
-#include <mach/hardware.h>
 #include <linux/io.h>
 
 #include <asm/system.h>
