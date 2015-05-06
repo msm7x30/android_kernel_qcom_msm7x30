@@ -2322,8 +2322,8 @@ static int bq27520_probe(struct i2c_client *client,
 	bd->started_worker = 0;
 	rc = request_threaded_irq(client->irq,
 				NULL, bq27520_soc_thread_irq,
-				IRQF_TRIGGER_FALLING | IRQF_DISABLED,
-				BQ27520_NAME,
+				IRQF_TRIGGER_FALLING | IRQF_DISABLED |
+				IRQF_ONESHOT, BQ27520_NAME,
 				bd);
 	if (rc) {
 		dev_err(&client->dev, "Failed requesting IRQ\n");
