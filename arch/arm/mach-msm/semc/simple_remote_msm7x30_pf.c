@@ -1444,7 +1444,7 @@ static int simple_remote_pf_register_plug_detect_interrupt(irq_handler_t func,
 	if (0 <= irq) {
 		err = request_threaded_irq(irq, NULL, regfunc,
 					   IRQF_TRIGGER_FALLING |
-					   IRQF_TRIGGER_RISING,
+					   IRQF_TRIGGER_RISING | IRQF_ONESHOT,
 					   "simple_remote_plug_detect",
 					   data);
 
