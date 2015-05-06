@@ -1388,7 +1388,7 @@ err_gpio_setup:
 	return err;
 };
 
-static int __devexit cy8ctma300_touch_remove(struct spi_device *spi)
+static int cy8ctma300_touch_remove(struct spi_device *spi)
 {
 	struct cy8ctma300_touch	*this = dev_get_drvdata(&spi->dev);
 	struct cypress_touch_platform_data	*pdata = spi->dev.platform_data;
@@ -1441,7 +1441,7 @@ static struct spi_driver cy8ctma300_touch_driver = {
 		.owner	= THIS_MODULE,
 	},
 	.probe		= cy8ctma300_touch_probe,
-	.remove		= __devexit_p(cy8ctma300_touch_remove),
+	.remove		= cy8ctma300_touch_remove,
 #ifndef CONFIG_PM
 	.suspend	= cy8ctma300_touch_suspend,
 	.resume		= cy8ctma300_touch_resume,
