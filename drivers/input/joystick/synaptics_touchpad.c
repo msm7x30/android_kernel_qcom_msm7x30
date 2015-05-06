@@ -1178,7 +1178,7 @@ static void synaptics_touchpad_late_resume(struct early_suspend *handler)
 }
 #endif
 
-static int __devinit synaptics_touchpad_probe_i2c(struct i2c_client *i2c,
+static int synaptics_touchpad_probe_i2c(struct i2c_client *i2c,
 		const struct i2c_device_id *id)
 {
 	struct synaptics_touchpad *this;
@@ -1268,7 +1268,7 @@ err_free:
 	return rc;
 }
 
-static int __devexit synaptics_touchpad_remove_i2c(struct i2c_client *i2c)
+static int synaptics_touchpad_remove_i2c(struct i2c_client *i2c)
 {
 	struct synaptics_touchpad *this = dev_get_drvdata(&i2c->dev);
 
@@ -1303,7 +1303,7 @@ static struct i2c_driver synaptics_touchpad_i2c_driver = {
 		.pm	= &synaptics_touchpad_pm,
 	},
 	.probe		= synaptics_touchpad_probe_i2c,
-	.remove		= __devexit_p(synaptics_touchpad_remove_i2c),
+	.remove		= synaptics_touchpad_remove_i2c,
 	.id_table	= synaptics_touchpad_i2c_id,
 };
 
