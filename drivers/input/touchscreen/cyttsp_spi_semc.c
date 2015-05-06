@@ -219,7 +219,7 @@ static s32 ttsp_spi_tch_ext(void *handle, void *values)
 	return retval;
 }
 
-static int __devinit cyttsp_spi_probe(struct spi_device *spi)
+static int cyttsp_spi_probe(struct spi_device *spi)
 {
 	struct cyttsp_spi *ts_spi;
 	int retval;
@@ -263,7 +263,7 @@ error_alloc_data_failed:
 }
 
 /* registered in driver struct */
-static int __devexit cyttsp_spi_remove(struct spi_device *spi)
+static int cyttsp_spi_remove(struct spi_device *spi)
 {
 	struct cyttsp_spi *ts_spi = dev_get_drvdata(&spi->dev);
 	DBG(printk(KERN_INFO"%s: Enter\n", __func__);)
@@ -280,7 +280,7 @@ static struct spi_driver cyttsp_spi_driver = {
 		.owner = THIS_MODULE,
 	},
 	.probe = cyttsp_spi_probe,
-	.remove = __devexit_p(cyttsp_spi_remove),
+	.remove = cyttsp_spi_remove,
 };
 
 static int __init cyttsp_spi_init(void)
