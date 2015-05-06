@@ -15,7 +15,6 @@
 #include <mach/gpio.h>
 #include <mach/gpiomux.h>
 #include <mach/socinfo.h>
-#include "devices.h"
 
 #include "board-hw7x30.h"
 

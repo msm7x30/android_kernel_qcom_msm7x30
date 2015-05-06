@@ -27,7 +27,6 @@
 #include <mach/board.h>
 #include <asm/clkdev.h>
 #include <linux/msm_ion.h>
-#include "devices.h"
 #include "footswitch.h"
 
 #include <asm/mach/mmc.h>
