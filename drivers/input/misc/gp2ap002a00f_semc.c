@@ -155,7 +155,7 @@ static struct i2c_driver gp2a_i2c_driver = {
 		.owner = THIS_MODULE,
 	},
 	.probe		= gp2a_probe,
-	.remove		= __devexit_p(gp2a_remove),
+	.remove		= gp2a_remove,
 	.id_table	= gp2a_i2c_id,
 };
 
