@@ -1788,7 +1788,7 @@ static bool is_ttsp_fwwr_done(struct cyttsp *ts)
 			!(ts->bl_data.bl_error & ~CY_BL_RECEPTIVE);
 }
 
-static ssize_t firmware_write(struct kobject *kobj,
+static ssize_t firmware_write(struct file *ffile, struct kobject *kobj,
 				struct bin_attribute *bin_attr,
 				char *buf, loff_t pos, size_t size)
 {
@@ -1811,7 +1811,7 @@ static ssize_t firmware_write(struct kobject *kobj,
 	return -EAGAIN;
 }
 
-static ssize_t firmware_read(struct kobject *kobj,
+static ssize_t firmware_read(struct file *ffile, struct kobject *kobj,
 	struct bin_attribute *ba,
 	char *buf, loff_t pos, size_t size)
 {
