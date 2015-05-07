@@ -40,6 +40,7 @@
 #include <linux/earlysuspend.h>
 #include <linux/input/cyttsp_semc.h>
 #include <linux/ctype.h>
+#include <linux/sched.h>
 #include "cyttsp_core_semc.h"
 
 #define DBG(x)
