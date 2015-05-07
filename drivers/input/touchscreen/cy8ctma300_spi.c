@@ -25,12 +25,13 @@
 #include <linux/syscalls.h>
 #include <linux/cdev.h>
 #include <linux/device.h>
-#include <mach/gpio.h>
+#include <linux/gpio.h>
 #include <asm/irq.h>
 #include <linux/uaccess.h>
 #include <linux/kthread.h>
 #include <linux/irq.h>
 #include <linux/timer.h>
+#include <linux/module.h>
 
 #ifdef CONFIG_EARLYSUSPEND
 #include <linux/earlysuspend.h>
