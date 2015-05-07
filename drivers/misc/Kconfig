@@ -574,6 +574,7 @@ config PMIC8XXX_VIBRATOR
 config PMIC8XXX_VIBRATOR_VOLTAGE
 	int "PMIC8XXX vibrator default voltage"
 	depends on PMIC8XXX_VIBRATOR
+	default 3000
 	help
 	  Set the default voltage value in millivolts(mV).
 
