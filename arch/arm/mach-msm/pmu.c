@@ -16,6 +16,16 @@
 #include <mach/irqs.h>
 #include <mach/socinfo.h>
 
+/*
+ * Types of PMUs that can be accessed directly and require mutual
+ * exclusion between profiling tools.
+ */
+enum arm_pmu_type {
+	ARM_PMU_DEVICE_CPU	= 0,
+	ARM_PMU_DEVICE_L2CC	= 1,
+	ARM_NUM_PMU_DEVICES,
+};
+
 static struct resource cpu_pmu_resource[] = {
 	{
 		.start = INT_ARMQC_PERFMON,
