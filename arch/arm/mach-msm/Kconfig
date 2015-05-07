@@ -49,6 +49,7 @@ config MACH_MSM_DUMMY
 endmenu
 
 source "arch/arm/mach-msm/huawei/Kconfig"
+source "arch/arm/mach-msm/semc/Kconfig"
 
 config MSM_STACKED_MEMORY
 	bool "Stacked Memory"

@@ -69,6 +69,7 @@ obj-$(CONFIG_ARCH_MSM7X30) += acpuclock-7x30.o clock-7x30.o clock-local.o clock-
 obj-$(CONFIG_ARCH_MSM7X30) += gpiomux-v1.o gpiomux.o
 
 obj-$(CONFIG_MACH_HUAWEI) += huawei/
+obj-$(CONFIG_MACH_SEMC) += semc/
 
 obj-$(CONFIG_MSM_RMT_STORAGE_CLIENT) += rmt_storage_client.o
 obj-$(CONFIG_MSM_SHOW_RESUME_IRQ) += msm_show_resume_irq.o
