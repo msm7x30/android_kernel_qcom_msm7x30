@@ -866,23 +866,20 @@ static int synaptics_i2c_rmi4_probe(
 	}
 
 	if (ts->hasF11) {
-		for (i = 0; i < ts->f11.points_supported; ++i) {
-			input_set_abs_params(ts->input_dev, ABS_MT_TRACKING_ID,
-				1, ts->f11.points_supported, 0, 0);
-			input_set_abs_params(ts->input_dev, ABS_MT_POSITION_X,
-				0, pdata->display_x - 1, 0, 0);
-			input_set_abs_params(ts->input_dev, ABS_MT_POSITION_Y,
-				0, pdata->display_y - 1, 0, 0);
-			input_set_abs_params(ts->input_dev, ABS_MT_TOUCH_MAJOR,
-				0, 0xF, 0, 0);
-			input_set_abs_params(ts->input_dev, ABS_MT_TOUCH_MINOR,
-				0, 0xF, 0, 0);
-			input_set_abs_params(ts->input_dev, ABS_MT_ORIENTATION,
-				0, 1, 0, 0);
-			input_set_abs_params(ts->input_dev, ABS_MT_PRESSURE,
-				0, 255, 0, 0);
-
-		}
+		input_set_abs_params(ts->input_dev, ABS_MT_TRACKING_ID,
+			1, ts->f11.points_supported, 0, 0);
+		input_set_abs_params(ts->input_dev, ABS_MT_POSITION_X,
+			0, pdata->display_x - 1, 0, 0);
+		input_set_abs_params(ts->input_dev, ABS_MT_POSITION_Y,
+			0, pdata->display_y - 1, 0, 0);
+		input_set_abs_params(ts->input_dev, ABS_MT_TOUCH_MAJOR,
+			0, 0xF, 0, 0);
+		input_set_abs_params(ts->input_dev, ABS_MT_TOUCH_MINOR,
+			0, 0xF, 0, 0);
+		input_set_abs_params(ts->input_dev, ABS_MT_ORIENTATION,
+			0, 1, 0, 0);
+		input_set_abs_params(ts->input_dev, ABS_MT_PRESSURE,
+			0, 255, 0, 0);
 		if (ts->hasEgrPalmDetect)
 			set_bit(BTN_DEAD, ts->input_dev->keybit);
 		if (ts->hasEgrFlick) {
