@@ -24,7 +24,6 @@
 #include <mach/qdsp5v2/mi2s.h>
 #include <mach/qdsp5v2/afe.h>
 #include <mach/qdsp5v2/lpa.h>
-#include <mach/qdsp5v2/marimba_profile.h>
 #include <mach/vreg.h>
 #include <mach/pmic.h>
 #include <linux/wakelock.h>
