@@ -48,7 +48,6 @@
 #include <mach/qdsp5v2/aux_pcm.h>
 #include <mach/qdsp5v2/mi2s.h>
 #include <mach/qdsp5v2/audio_dev_ctl.h>
-#include <linux/power/bq2415x_charger.h>
 #include <mach/rpc_server_handset.h>
 #include <mach/msm_tsif.h>
 #include <mach/socinfo.h>
@@ -80,6 +79,7 @@
 #include <linux/input/lsm303dlh.h>
 #include <sound/tpa2028d1.h>
 #include <linux/huawei_battery.h>
+#include "bq2415x_boost.h"
 
 
 #ifdef CONFIG_FB_MSM_TRIPLE_BUFFER
