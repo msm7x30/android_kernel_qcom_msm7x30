@@ -1149,7 +1149,7 @@ static void vfe31_start_common(void)
 static int vfe31_start_recording(void)
 {
 	msm_camio_set_perf_lvl(S_VIDEO);
-	usleep(1000);
+	usleep_range(1000, 1000);
 	vfe31_ctrl->recording_state = VFE_REC_STATE_START_REQUESTED;
 	msm_io_w_mb(1, vfe31_ctrl->vfebase + VFE_REG_UPDATE_CMD);
 	return 0;
@@ -1226,7 +1226,7 @@ static int vfe31_zsl(void)
 	msm_io_w(irq_comp_mask, vfe31_ctrl->vfebase + VFE_IRQ_COMP_MASK);
 	vfe31_start_common();
 	msm_camio_set_perf_lvl(S_ZSL);
-	usleep(1000);
+	usleep_range(1000, 1000);
 	/* for debug */
 	msm_io_w(1, vfe31_ctrl->vfebase + 0x18C);
 	msm_io_w(1, vfe31_ctrl->vfebase + 0x188);
@@ -1289,7 +1289,7 @@ static int vfe31_capture(uint32_t num_frames_capture)
 	else
 		msm_camio_set_perf_lvl(S_CAPTURE);
 
-	usleep(1000);
+	usleep_range(1000, 1000);
 	vfe31_start_common();
 	return 0;
 }
@@ -1329,7 +1329,7 @@ static int vfe31_start(void)
 	else
 		msm_camio_set_perf_lvl(S_PREVIEW);
 
-	usleep(1000);
+	usleep_range(1000, 1000);
 	vfe31_start_common();
 	return 0;
 }
