@@ -20,3 +20,10 @@ config MSM_HUAWEI_RMT_OEMINFO
 	help
 	  Provide RPC mechanism for remote processors to access oeminfo storage
 	  device on apps processor.
+
+config BQ2415X_BOOST
+	bool "TI BQ2415X Boost Switcher"
+	depends on MACH_HUAWEI && I2C
+	help
+	  Provide simple I2C client for the TI BQ2415X chips, with the sole
+	  purpose of configuring boost status.
