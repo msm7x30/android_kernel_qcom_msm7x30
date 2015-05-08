@@ -14,6 +14,16 @@
 #ifndef _MSM_H
 #define _MSM_H
 
+#define MSM_CSIPHY_DRV_NAME "msm_csiphy"
+#define MSM_CSID_DRV_NAME "msm_csid"
+#define MSM_CSIC_DRV_NAME "msm_csic"
+#define MSM_ISPIF_DRV_NAME "msm_ispif"
+#define MSM_VFE_DRV_NAME "msm_vfe"
+#define MSM_VPE_DRV_NAME "msm_vpe"
+#define MSM_GEMINI_DRV_NAME "msm_gemini"
+
+#ifdef CONFIG_MSM_CAMERA_V4L2
+
 #ifdef __KERNEL__
 
 /* Header files */
@@ -40,14 +50,6 @@
 				__func__, __LINE__, ((to) ? "to" : "from"))
 #define ERR_COPY_FROM_USER() ERR_USER_COPY(0)
 #define ERR_COPY_TO_USER() ERR_USER_COPY(1)
-
-#define MSM_CSIPHY_DRV_NAME "msm_csiphy"
-#define MSM_CSID_DRV_NAME "msm_csid"
-#define MSM_CSIC_DRV_NAME "msm_csic"
-#define MSM_ISPIF_DRV_NAME "msm_ispif"
-#define MSM_VFE_DRV_NAME "msm_vfe"
-#define MSM_VPE_DRV_NAME "msm_vpe"
-#define MSM_GEMINI_DRV_NAME "msm_gemini"
 
 /* msm queue management APIs*/
 
@@ -531,5 +533,7 @@ int msm_mctl_pp_mctl_divert_done(struct msm_cam_media_controller *p_mctl,
 					void __user *arg);
 void msm_release_ion_client(struct kref *ref);
 #endif /* __KERNEL__ */
+
+#endif /* CONFIG_MSM_CAMERA_V4L2 */
 
 #endif /* _MSM_H */
