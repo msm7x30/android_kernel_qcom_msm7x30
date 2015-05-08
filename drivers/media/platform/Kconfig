@@ -146,6 +146,18 @@ config MSM_CAMERA_DEBUG
 	help
 	  Enable printk() debug for msm camera
 
+config MSM_CAMERA_HUAWEI
+	bool "Qualcomm MSM camera and video capture support for Huawei"
+	depends on MSM_CAMERA && MACH_HUAWEI
+	default y
+	help
+	  Say Y here to enable selecting the video adapters for
+	  Qualcomm msm camera and video encoding for Huawei
+
+if MSM_CAMERA_HUAWEI
+source "drivers/media/platform/msm_huawei/Kconfig"
+endif
+
 endif # V4L_PLATFORM_DRIVERS
 
 menuconfig V4L_MEM2MEM_DRIVERS
