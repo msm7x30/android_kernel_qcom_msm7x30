@@ -432,8 +432,13 @@ static void msm_rotator_imem_clk_work_f(struct work_struct *work)
 /* enable clocks needed by rotator block */
 static void enable_rot_clks(void)
 {
+	int err = 0;
+
 	if (msm_rotator_dev->regulator)
-		regulator_enable(msm_rotator_dev->regulator);
+		err = regulator_enable(msm_rotator_dev->regulator);
+		if (err)
+			pr_err("%s: regulator_enable failed: %d\n",
+					__func__, err);
 	if (msm_rotator_dev->core_clk != NULL)
 		clk_prepare_enable(msm_rotator_dev->core_clk);
 	if (msm_rotator_dev->pclk != NULL)
