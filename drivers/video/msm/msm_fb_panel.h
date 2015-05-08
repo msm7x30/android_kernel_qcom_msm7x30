@@ -29,16 +29,11 @@ typedef struct panel_id_s {
 /* panel type list */
 #define NO_PANEL		0xffff	/* No Panel */
 #define MDDI_PANEL		1	/* MDDI */
-#define EBI2_PANEL		2	/* EBI2 */
 #define LCDC_PANEL		3	/* internal LCDC type */
-#define EXT_MDDI_PANEL		4	/* Ext.MDDI */
 #define TV_PANEL		5	/* TV */
 #define HDMI_PANEL		6	/* HDMI TV */
 #define DTV_PANEL		7	/* DTV */
-#define MIPI_VIDEO_PANEL	8	/* MIPI */
-#define MIPI_CMD_PANEL		9	/* MIPI */
 #define WRITEBACK_PANEL		10	/* Wifi display */
-#define LVDS_PANEL		11	/* LVDS */
 
 /* panel class */
 typedef enum {
@@ -97,65 +92,6 @@ struct mddi_panel_info {
 	boolean is_type1;
 };
 
-struct mipi_panel_info {
-	char mode;		/* video/cmd */
-	char interleave_mode;
-	char crc_check;
-	char ecc_check;
-	char dst_format;	/* shared by video and command */
-	char data_lane0;
-	char data_lane1;
-	char data_lane2;
-	char data_lane3;
-	char dlane_swap;	/* data lane swap */
-	char rgb_swap;
-	char b_sel;
-	char g_sel;
-	char r_sel;
-	char rx_eot_ignore;
-	char tx_eot_append;
-	char t_clk_post; /* 0xc0, DSI_CLKOUT_TIMING_CTRL */
-	char t_clk_pre;  /* 0xc0, DSI_CLKOUT_TIMING_CTRL */
-	char vc;	/* virtual channel */
-	struct mipi_dsi_phy_ctrl *dsi_phy_db;
-	/* video mode */
-	char pulse_mode_hsa_he;
-	char hfp_power_stop;
-	char hbp_power_stop;
-	char hsa_power_stop;
-	char eof_bllp_power_stop;
-	char bllp_power_stop;
-	char traffic_mode;
-	char frame_rate;
-	/* command mode */
-	char interleave_max;
-	char insert_dcs_cmd;
-	char wr_mem_continue;
-	char wr_mem_start;
-	char te_sel;
-	char stream;	/* 0 or 1 */
-	char mdp_trigger;
-	char dma_trigger;
-	uint32 dsi_pclk_rate;
-	/* byte to esc clk ratio */
-	uint32 esc_byte_ratio;
-	/* The packet-size should not bet changed */
-	char no_max_pkt_size;
-	/* Clock required during LP commands */
-	char force_clk_lane_hs;
-};
-
-enum lvds_mode {
-	LVDS_SINGLE_CHANNEL_MODE,
-	LVDS_DUAL_CHANNEL_MODE,
-};
-
-struct lvds_panel_info {
-	enum lvds_mode channel_mode;
-	/* Channel swap in dual mode */
-	char channel_swap;
-};
-
 struct msm_panel_info {
 	__u32 xres;
 	__u32 yres;
@@ -180,8 +116,6 @@ struct msm_panel_info {
 	struct mddi_panel_info mddi;
 	struct lcd_panel_info lcd;
 	struct lcdc_panel_info lcdc;
-	struct mipi_panel_info mipi;
-	struct lvds_panel_info lvds;
 	__u32 xres_aligned;
 	__u32 yres_aligned;
 };

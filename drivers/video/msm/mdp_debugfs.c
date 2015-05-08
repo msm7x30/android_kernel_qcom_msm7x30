@@ -339,39 +339,7 @@ static ssize_t mdp_stat_read(
 					mdp4_stat.intr_rdptr);
 	bp += len;
 	dlen -= len;
-	len = snprintf(bp, dlen, "dsi:\n");
-	bp += len;
-	dlen -= len;
-	len = snprintf(bp, dlen, "int_total: %08lu\tmdp_start: %08lu\n",
-			mdp4_stat.intr_dsi, mdp4_stat.dsi_mdp_start);
-	bp += len;
-	dlen -= len;
-	len = snprintf(bp, dlen, "int_cmd: %08lu\t",
-					mdp4_stat.intr_dsi_cmd);
 
-	bp += len;
-	dlen -= len;
-	len = snprintf(bp, dlen, "int_mdp: %08lu\t",
-					mdp4_stat.intr_dsi_mdp);
-
-	bp += len;
-	dlen -= len;
-
-	len = snprintf(bp, dlen, "int_err: %08lu\n",
-					mdp4_stat.intr_dsi_err);
-
-	bp += len;
-	dlen -= len;
-	len = snprintf(bp, dlen, "clk_on : %08lu\t",
-					mdp4_stat.dsi_clk_on);
-
-	bp += len;
-	dlen -= len;
-	len = snprintf(bp, dlen, "clk_off: %08lu\n\n",
-					mdp4_stat.dsi_clk_off);
-
-	bp += len;
-	dlen -= len;
 	len = snprintf(bp, dlen, "kickoff:\n");
 	bp += len;
 	dlen -= len;
@@ -507,16 +475,6 @@ static ssize_t mdp_stat_read(
 	dlen -= len;
 
 	len = snprintf(bp, dlen, "writeback:\n");
-	bp += len;
-	dlen -= len;
-
-	len = snprintf(bp, dlen, "dsi_cmd: %08lu\t",
-					mdp4_stat.blt_dsi_cmd);
-	bp += len;
-	dlen -= len;
-
-	len = snprintf(bp, dlen, "dsi_video: %08lu\n",
-					mdp4_stat.blt_dsi_video);
 	bp += len;
 	dlen -= len;
 
@@ -838,20 +796,9 @@ static ssize_t dbg_base_read(
 				(int)msm_pmdh_base);
 	bp += len;
 	dlen -= len;
-	len = snprintf(bp, dlen, "emdh_base :    %08x\n",
-				(int)msm_emdh_base);
-	bp += len;
-	dlen -= len;
 #ifdef CONFIG_FB_MSM_TVOUT
-	len = snprintf(bp, dlen, "tvenv_base:    %08x\n",
+	len = snprintf(bp, dlen, "tvenc_base:    %08x\n",
 				(int)tvenc_base);
-	bp += len;
-	dlen -= len;
-#endif
-
-#ifdef CONFIG_FB_MSM_MIPI_DSI
-	len = snprintf(bp, dlen, "mipi_dsi_base: %08x\n",
-				(int)mipi_dsi_base);
 	bp += len;
 	dlen -= len;
 #endif

@@ -59,32 +59,13 @@ static void mdp_dma2_update_lcd(struct msm_fb_data_type *mfd)
 	uint8 *src;
 	uint32 mddi_ld_param;
 	uint16 mddi_vdo_packet_reg;
-#ifndef CONFIG_FB_MSM_MDP303
 	struct msm_fb_panel_data *pdata =
 	    (struct msm_fb_panel_data *)mfd->pdev->dev.platform_data;
-#endif
 	uint32 ystride = mfd->fbi->fix.line_length;
 	uint32 mddi_pkt_desc;
 
 	dma2_cfg_reg = DMA_PACK_ALIGN_LSB |
 		    DMA_OUT_SEL_AHB | DMA_IBUF_NONCONTIGUOUS;
-
-#ifdef CONFIG_FB_MSM_MDP22
-	dma2_cfg_reg |= DMA_PACK_TIGHT;
-#endif
-
-#ifdef CONFIG_FB_MSM_MDP30
-	/*
-	 * Software workaround:  On 7x25/7x27, the MDP will not
-	 * respond if dma_w is 1 pixel.  Set the update width to
-	 * 2 pixels and adjust the x offset if needed.
-	 */
-	if (iBuf->dma_w == 1) {
-		iBuf->dma_w = 2;
-		if (iBuf->dma_x == (iBuf->ibuf_width - 2))
-			iBuf->dma_x--;
-	}
-#endif
 
 	if (mfd->fb_imgType == MDP_BGR_565)
 		dma2_cfg_reg |= DMA_PACK_PATTERN_BGR;
@@ -104,8 +85,7 @@ static void mdp_dma2_update_lcd(struct msm_fb_data_type *mfd)
 	mddi_ld_param = 0;
 	mddi_vdo_packet_reg = mfd->panel_info.mddi.vdopkt;
 
-	if ((mfd->panel_info.type == MDDI_PANEL) ||
-	    (mfd->panel_info.type == EXT_MDDI_PANEL)) {
+	if (mfd->panel_info.type == MDDI_PANEL) {
 		dma2_cfg_reg |= DMA_OUT_SEL_MDDI;
 		mddi_dest = TRUE;
 
@@ -133,11 +113,6 @@ static void mdp_dma2_update_lcd(struct msm_fb_data_type *mfd)
 			dma2_cfg_reg |= DMA_MDDI_DMAOUT_LCD_SEL_EXTERNAL;
 			mddi_ld_param = 2;
 		}
-#ifdef CONFIG_FB_MSM_MDP303
-	} else if (mfd->panel_info.type == MIPI_CMD_PANEL) {
-		cmd_mode = TRUE;
-		dma2_cfg_reg |= DMA_OUT_SEL_DSI_CMD;
-#endif
 	} else {
 		if (mfd->panel_info.pdest == DISPLAY_1) {
 			dma2_cfg_reg |= DMA_AHBM_LCD_SEL_PRIMARY;
@@ -158,12 +133,6 @@ static void mdp_dma2_update_lcd(struct msm_fb_data_type *mfd)
 	/* MDP cmd block enable */
 	mdp_pipe_ctrl(MDP_CMD_BLOCK, MDP_BLOCK_POWER_ON, FALSE);
 
-#ifdef CONFIG_FB_MSM_MDP22
-	MDP_OUTP(MDP_CMD_DEBUG_ACCESS_BASE + 0x0184,
-			(iBuf->dma_h << 16 | iBuf->dma_w));
-	MDP_OUTP(MDP_CMD_DEBUG_ACCESS_BASE + 0x0188, src);
-	MDP_OUTP(MDP_CMD_DEBUG_ACCESS_BASE + 0x018C, ystride);
-#else
 	if (cmd_mode)
 		MDP_OUTP(MDP_BASE + 0x90004,
 			(mfd->panel_info.yres << 16 | mfd->panel_info.xres));
@@ -172,7 +141,6 @@ static void mdp_dma2_update_lcd(struct msm_fb_data_type *mfd)
 
 	MDP_OUTP(MDP_BASE + 0x90008, src);
 	MDP_OUTP(MDP_BASE + 0x9000c, ystride);
-#endif
 
 	if (mfd->panel_info.bpp == 18) {
 		mddi_pkt_desc = MDDI_VDO_PACKET_DESC;
@@ -188,34 +156,16 @@ static void mdp_dma2_update_lcd(struct msm_fb_data_type *mfd)
 		    DMA_DSTC1B_5BITS | DMA_DSTC2R_5BITS;
 	}
 
-#ifndef CONFIG_FB_MSM_MDP303
-
 	if (mddi_dest) {
-#ifdef CONFIG_FB_MSM_MDP22
-		MDP_OUTP(MDP_CMD_DEBUG_ACCESS_BASE + 0x0194,
-			 (iBuf->dma_y << 16) | iBuf->dma_x);
-		MDP_OUTP(MDP_CMD_DEBUG_ACCESS_BASE + 0x01a0, mddi_ld_param);
-		MDP_OUTP(MDP_CMD_DEBUG_ACCESS_BASE + 0x01a4,
-			 (mddi_pkt_desc << 16) | mddi_vdo_packet_reg);
-#else
 		MDP_OUTP(MDP_BASE + 0x90010, (iBuf->dma_y << 16) | iBuf->dma_x);
 		MDP_OUTP(MDP_BASE + 0x00090, mddi_ld_param);
 		MDP_OUTP(MDP_BASE + 0x00094,
 			 (mddi_pkt_desc << 16) | mddi_vdo_packet_reg);
-#endif
 	} else {
 		/* setting EBI2 LCDC write window */
 		pdata->set_rect(iBuf->dma_x, iBuf->dma_y, iBuf->dma_w,
 				iBuf->dma_h);
 	}
-#else
-	if (mfd->panel_info.type == MIPI_CMD_PANEL) {
-		/* dma_p = 0, dma_s = 1 */
-		 MDP_OUTP(MDP_BASE + 0xF1000, 0x10);
-		 /* enable dsi trigger on dma_p */
-		 MDP_OUTP(MDP_BASE + 0xF1004, 0x01);
-	}
-#endif
 
 	/* dma2 config register */
 #ifdef MDP_HW_VSYNC
@@ -242,11 +192,7 @@ static void mdp_dma2_update_lcd(struct msm_fb_data_type *mfd)
 		MDP_OUTP(MDP_BASE + 0x20c, 0);	/* disable prim vsync */
 	}
 #else
-#ifdef CONFIG_FB_MSM_MDP22
-	MDP_OUTP(MDP_CMD_DEBUG_ACCESS_BASE + 0x0180, dma2_cfg_reg);
-#else
 	MDP_OUTP(MDP_BASE + 0x90000, dma2_cfg_reg);
-#endif
 #endif /* MDP_HW_VSYNC */
 
 	/* MDP cmd block disable */
@@ -283,43 +229,6 @@ enum hrtimer_restart mdp_dma2_vsync_hrtimer_handler(struct hrtimer *ht)
 
 	return HRTIMER_NORESTART;
 }
-
-
-#ifdef CONFIG_FB_MSM_MDP303
-static int busy_wait_cnt;
-
-void	mdp3_dsi_cmd_dma_busy_wait(struct msm_fb_data_type *mfd)
-{
-	unsigned long flag;
-	int need_wait = 0;
-
-#ifdef DSI_CLK_CTRL
-	mod_timer(&dsi_clock_timer, jiffies + HZ); /* one second */
-#endif
-
-	spin_lock_irqsave(&mdp_spin_lock, flag);
-#ifdef DSI_CLK_CTRL
-
-	spin_lock_bh(&dsi_clk_lock);
-	if (mipi_dsi_clk_on == 0)
-		mipi_dsi_turn_on_clks();
-	spin_unlock_bh(&dsi_clk_lock);
-#endif
-
-	if (mfd->dma->busy == TRUE) {
-		if (busy_wait_cnt == 0)
-			INIT_COMPLETION(mfd->dma->comp);
-		busy_wait_cnt++;
-		need_wait++;
-	}
-	spin_unlock_irqrestore(&mdp_spin_lock, flag);
-
-	if (need_wait) {
-		/* wait until DMA finishes the current job */
-		wait_for_completion(&mfd->dma->comp);
-	}
-}
-#endif
 
 static void mdp_dma_schedule(struct msm_fb_data_type *mfd, uint32 term)
 {
@@ -444,11 +353,6 @@ void mdp_dma2_update(struct msm_fb_data_type *mfd)
 {
 	MDPIBUF *iBuf;
 	uint32 upper_height;
-
-	if (mfd->panel.type == EXT_MDDI_PANEL) {
-		mdp_dma2_update_sub(mfd);
-		return;
-	}
 
 	iBuf = &mfd->ibuf;
 

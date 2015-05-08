@@ -368,9 +368,6 @@ static int tvout_on(struct platform_device *pdev)
 #ifdef CONFIG_FB_MSM_TVOUT_SVIDEO
 	reg |= TVENC_CTL_S_VIDEO_EN;
 #endif
-#if defined(CONFIG_FB_MSM_MDP31)
-	TV_OUT(TV_DAC_INTF, 0x29);
-#endif
 	TV_OUT(TV_ENC_CTL, reg);
 
 	if (!tvout_msm_state->hpd_initialized) {

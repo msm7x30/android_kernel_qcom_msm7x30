@@ -278,25 +278,7 @@ static ssize_t msm_fb_fps_level_change(struct device *dev,
 				struct device_attribute *attr,
 				const char *buf, size_t count)
 {
-	struct fb_info *fbi = dev_get_drvdata(dev);
-	struct msm_fb_data_type *mfd = (struct msm_fb_data_type *)fbi->par;
-	struct msm_fb_panel_data *pdata =
-		(struct msm_fb_panel_data *)mfd->pdev->dev.platform_data;
-	unsigned long val;
-	int ret;
-
-	if (mfd->panel.type != MIPI_VIDEO_PANEL)
-		return -EINVAL;
-
-	ret = kstrtoul(buf, 10, &val);
-	if (ret)
-		return ret;
-
-	if ((val <= 0) || (val > 100))
-		return -EINVAL;
-	if (pdata->fps_level_change)
-		pdata->fps_level_change(mfd->pdev, (u32)val);
-	return count;
+	return -EINVAL;
 }
 
 static ssize_t msm_fb_msm_fb_type(struct device *dev,
@@ -315,14 +297,8 @@ static ssize_t msm_fb_msm_fb_type(struct device *dev,
 	case MDDI_PANEL:
 		ret = snprintf(buf, PAGE_SIZE, "mddi panel\n");
 		break;
-	case EBI2_PANEL:
-		ret = snprintf(buf, PAGE_SIZE, "ebi2 panel\n");
-		break;
 	case LCDC_PANEL:
 		ret = snprintf(buf, PAGE_SIZE, "lcdc panel\n");
-		break;
-	case EXT_MDDI_PANEL:
-		ret = snprintf(buf, PAGE_SIZE, "ext mddi panel\n");
 		break;
 	case TV_PANEL:
 		ret = snprintf(buf, PAGE_SIZE, "tv panel\n");
@@ -330,17 +306,8 @@ static ssize_t msm_fb_msm_fb_type(struct device *dev,
 	case HDMI_PANEL:
 		ret = snprintf(buf, PAGE_SIZE, "hdmi panel\n");
 		break;
-	case LVDS_PANEL:
-		ret = snprintf(buf, PAGE_SIZE, "lvds panel\n");
-		break;
 	case DTV_PANEL:
 		ret = snprintf(buf, PAGE_SIZE, "dtv panel\n");
-		break;
-	case MIPI_VIDEO_PANEL:
-		ret = snprintf(buf, PAGE_SIZE, "mipi dsi video panel\n");
-		break;
-	case MIPI_CMD_PANEL:
-		ret = snprintf(buf, PAGE_SIZE, "mipi dsi cmd panel\n");
 		break;
 	case WRITEBACK_PANEL:
 		ret = snprintf(buf, PAGE_SIZE, "writeback panel\n");
@@ -872,15 +839,6 @@ static struct platform_driver msm_fb_driver = {
 		   },
 };
 
-#if defined(CONFIG_HAS_EARLYSUSPEND) && defined(CONFIG_FB_MSM_MDP303)
-static void memset32_io(u32 __iomem *_ptr, u32 val, size_t count)
-{
-	count >>= 2;
-	while (count--)
-		writel(val, _ptr++);
-}
-#endif
-
 #ifdef CONFIG_HAS_EARLYSUSPEND
 static void msmfb_early_suspend(struct early_suspend *h)
 {
@@ -889,25 +847,6 @@ static void msmfb_early_suspend(struct early_suspend *h)
 	struct msm_fb_panel_data *pdata = NULL;
 
 	msm_fb_pan_idle(mfd);
-#if defined(CONFIG_FB_MSM_MDP303)
-	/*
-	* For MDP with overlay, set framebuffer with black pixels
-	* to show black screen on HDMI.
-	*/
-	struct fb_info *fbi = mfd->fbi;
-	switch (mfd->fbi->var.bits_per_pixel) {
-	case 32:
-		if (fbi->screen_base)
-			memset32_io((void *)fbi->screen_base, 0xFF000000,
-				    fbi->fix.smem_len);
-		break;
-	default:
-		if (fbi->screen_base)
-			memset32_io((void *)fbi->screen_base, 0x00,
-				    fbi->fix.smem_len);
-		break;
-	}
-#endif
 	msm_fb_suspend_sub(mfd);
 
 	pdata = (struct msm_fb_panel_data *)mfd->pdev->dev.platform_data;
@@ -2475,161 +2414,10 @@ int msm_fb_resume_sw_refresher(struct msm_fb_data_type *mfd)
 	return 0;
 }
 
-#if defined CONFIG_FB_MSM_MDP31
-static int mdp_blit_split_height(struct fb_info *info,
-				struct mdp_blit_req *req)
-{
-	int ret;
-	struct mdp_blit_req splitreq;
-	int s_x_0, s_x_1, s_w_0, s_w_1, s_y_0, s_y_1, s_h_0, s_h_1;
-	int d_x_0, d_x_1, d_w_0, d_w_1, d_y_0, d_y_1, d_h_0, d_h_1;
-
-	splitreq = *req;
-	/* break dest roi at height*/
-	d_x_0 = d_x_1 = req->dst_rect.x;
-	d_w_0 = d_w_1 = req->dst_rect.w;
-	d_y_0 = req->dst_rect.y;
-	if (req->dst_rect.h % 32 == 3)
-		d_h_1 = (req->dst_rect.h - 3) / 2 - 1;
-	else if (req->dst_rect.h % 32 == 2)
-		d_h_1 = (req->dst_rect.h - 2) / 2 - 6;
-	else
-		d_h_1 = (req->dst_rect.h - 1) / 2 - 1;
-	d_h_0 = req->dst_rect.h - d_h_1;
-	d_y_1 = d_y_0 + d_h_0;
-	if (req->dst_rect.h == 3) {
-		d_h_1 = 2;
-		d_h_0 = 2;
-		d_y_1 = d_y_0 + 1;
-	}
-
-	/* blit first region */
-	if (((splitreq.flags & 0x07) == 0x04) ||
-		((splitreq.flags & 0x07) == 0x0)) {
-
-		if (splitreq.flags & MDP_ROT_90) {
-			s_y_0 = s_y_1 = req->src_rect.y;
-			s_h_0 = s_h_1 = req->src_rect.h;
-			s_x_0 = req->src_rect.x;
-			s_w_1 = (req->src_rect.w * d_h_1) / req->dst_rect.h;
-			s_w_0 = req->src_rect.w - s_w_1;
-			s_x_1 = s_x_0 + s_w_0;
-			if (d_h_1 >= 8 * s_w_1) {
-				s_w_1++;
-				s_x_1--;
-			}
-		} else {
-			s_x_0 = s_x_1 = req->src_rect.x;
-			s_w_0 = s_w_1 = req->src_rect.w;
-			s_y_0 = req->src_rect.y;
-			s_h_1 = (req->src_rect.h * d_h_1) / req->dst_rect.h;
-			s_h_0 = req->src_rect.h - s_h_1;
-			s_y_1 = s_y_0 + s_h_0;
-			if (d_h_1 >= 8 * s_h_1) {
-				s_h_1++;
-				s_y_1--;
-			}
-		}
-
-		splitreq.src_rect.h = s_h_0;
-		splitreq.src_rect.y = s_y_0;
-		splitreq.dst_rect.h = d_h_0;
-		splitreq.dst_rect.y = d_y_0;
-		splitreq.src_rect.x = s_x_0;
-		splitreq.src_rect.w = s_w_0;
-		splitreq.dst_rect.x = d_x_0;
-		splitreq.dst_rect.w = d_w_0;
-	} else {
-
-		if (splitreq.flags & MDP_ROT_90) {
-			s_y_0 = s_y_1 = req->src_rect.y;
-			s_h_0 = s_h_1 = req->src_rect.h;
-			s_x_0 = req->src_rect.x;
-			s_w_1 = (req->src_rect.w * d_h_0) / req->dst_rect.h;
-			s_w_0 = req->src_rect.w - s_w_1;
-			s_x_1 = s_x_0 + s_w_0;
-			if (d_h_0 >= 8 * s_w_1) {
-				s_w_1++;
-				s_x_1--;
-			}
-		} else {
-			s_x_0 = s_x_1 = req->src_rect.x;
-			s_w_0 = s_w_1 = req->src_rect.w;
-			s_y_0 = req->src_rect.y;
-			s_h_1 = (req->src_rect.h * d_h_0) / req->dst_rect.h;
-			s_h_0 = req->src_rect.h - s_h_1;
-			s_y_1 = s_y_0 + s_h_0;
-			if (d_h_0 >= 8 * s_h_1) {
-				s_h_1++;
-				s_y_1--;
-			}
-		}
-		splitreq.src_rect.h = s_h_0;
-		splitreq.src_rect.y = s_y_0;
-		splitreq.dst_rect.h = d_h_1;
-		splitreq.dst_rect.y = d_y_1;
-		splitreq.src_rect.x = s_x_0;
-		splitreq.src_rect.w = s_w_0;
-		splitreq.dst_rect.x = d_x_1;
-		splitreq.dst_rect.w = d_w_1;
-	}
-	ret = mdp_ppp_blit(info, &splitreq);
-	if (ret)
-		return ret;
-
-	/* blit second region */
-	if (((splitreq.flags & 0x07) == 0x04) ||
-		((splitreq.flags & 0x07) == 0x0)) {
-		splitreq.src_rect.h = s_h_1;
-		splitreq.src_rect.y = s_y_1;
-		splitreq.dst_rect.h = d_h_1;
-		splitreq.dst_rect.y = d_y_1;
-		splitreq.src_rect.x = s_x_1;
-		splitreq.src_rect.w = s_w_1;
-		splitreq.dst_rect.x = d_x_1;
-		splitreq.dst_rect.w = d_w_1;
-	} else {
-		splitreq.src_rect.h = s_h_1;
-		splitreq.src_rect.y = s_y_1;
-		splitreq.dst_rect.h = d_h_0;
-		splitreq.dst_rect.y = d_y_0;
-		splitreq.src_rect.x = s_x_1;
-		splitreq.src_rect.w = s_w_1;
-		splitreq.dst_rect.x = d_x_0;
-		splitreq.dst_rect.w = d_w_0;
-	}
-	ret = mdp_ppp_blit(info, &splitreq);
-	return ret;
-}
-#endif
-
 int mdp_blit(struct fb_info *info, struct mdp_blit_req *req)
 {
 	int ret;
-#if defined CONFIG_FB_MSM_MDP31 || defined CONFIG_FB_MSM_MDP30
-	unsigned int remainder = 0, is_bpp_4 = 0;
-	struct mdp_blit_req splitreq;
-	int s_x_0, s_x_1, s_w_0, s_w_1, s_y_0, s_y_1, s_h_0, s_h_1;
-	int d_x_0, d_x_1, d_w_0, d_w_1, d_y_0, d_y_1, d_h_0, d_h_1;
 
-	if (req->flags & MDP_ROT_90) {
-		if (((req->dst_rect.h == 1) && ((req->src_rect.w != 1) ||
-			(req->dst_rect.w != req->src_rect.h))) ||
-			((req->dst_rect.w == 1) && ((req->src_rect.h != 1) ||
-			(req->dst_rect.h != req->src_rect.w)))) {
-			printk(KERN_ERR "mpd_ppp: error scaling when size is 1!\n");
-			return -EINVAL;
-		}
-	} else {
-		if (((req->dst_rect.w == 1) && ((req->src_rect.w != 1) ||
-			(req->dst_rect.h != req->src_rect.h))) ||
-			((req->dst_rect.h == 1) && ((req->src_rect.h != 1) ||
-			(req->dst_rect.w != req->src_rect.w)))) {
-			printk(KERN_ERR "mpd_ppp: error scaling when size is 1!\n");
-			return -EINVAL;
-		}
-	}
-#endif
 	if (unlikely(req->src_rect.h == 0 || req->src_rect.w == 0)) {
 		printk(KERN_ERR "mpd_ppp: src img of zero size!\n");
 		return -EINVAL;
@@ -2637,317 +2425,8 @@ int mdp_blit(struct fb_info *info, struct mdp_blit_req *req)
 	if (unlikely(req->dst_rect.h == 0 || req->dst_rect.w == 0))
 		return 0;
 
-#if defined CONFIG_FB_MSM_MDP31
-	/* MDP width split workaround */
-	remainder = (req->dst_rect.w)%32;
-	ret = mdp_get_bytes_per_pixel(req->dst.format,
-					(struct msm_fb_data_type *)info->par);
-	if (ret <= 0) {
-		printk(KERN_ERR "mdp_ppp: incorrect bpp!\n");
-		return -EINVAL;
-	}
-	is_bpp_4 = (ret == 4) ? 1 : 0;
-
-	if ((is_bpp_4 && (remainder == 6 || remainder == 14 ||
-	remainder == 22 || remainder == 30)) || remainder == 3 ||
-	(remainder == 1 && req->dst_rect.w != 1) ||
-	(remainder == 2 && req->dst_rect.w != 2)) {
-		/* make new request as provide by user */
-		splitreq = *req;
-
-		/* break dest roi at width*/
-		d_y_0 = d_y_1 = req->dst_rect.y;
-		d_h_0 = d_h_1 = req->dst_rect.h;
-		d_x_0 = req->dst_rect.x;
-
-		if (remainder == 14)
-			d_w_1 = (req->dst_rect.w - 14) / 2 + 4;
-		else if (remainder == 22)
-			d_w_1 = (req->dst_rect.w - 22) / 2 + 10;
-		else if (remainder == 30)
-			d_w_1 = (req->dst_rect.w - 30) / 2 + 10;
-		else if (remainder == 6)
-			d_w_1 = req->dst_rect.w / 2 - 1;
-		else if (remainder == 3)
-			d_w_1 = (req->dst_rect.w - 3) / 2 - 1;
-		else if (remainder == 2)
-			d_w_1 = (req->dst_rect.w - 2) / 2 - 6;
-		else
-			d_w_1 = (req->dst_rect.w - 1) / 2 - 1;
-		d_w_0 = req->dst_rect.w - d_w_1;
-		d_x_1 = d_x_0 + d_w_0;
-		if (req->dst_rect.w == 3) {
-			d_w_1 = 2;
-			d_w_0 = 2;
-			d_x_1 = d_x_0 + 1;
-		}
-
-		/* blit first region */
-		if (((splitreq.flags & 0x07) == 0x07) ||
-			((splitreq.flags & 0x07) == 0x0)) {
-
-			if (splitreq.flags & MDP_ROT_90) {
-				s_x_0 = s_x_1 = req->src_rect.x;
-				s_w_0 = s_w_1 = req->src_rect.w;
-				s_y_0 = req->src_rect.y;
-				s_h_1 = (req->src_rect.h * d_w_1) /
-					req->dst_rect.w;
-				s_h_0 = req->src_rect.h - s_h_1;
-				s_y_1 = s_y_0 + s_h_0;
-				if (d_w_1 >= 8 * s_h_1) {
-					s_h_1++;
-					s_y_1--;
-				}
-			} else {
-				s_y_0 = s_y_1 = req->src_rect.y;
-				s_h_0 = s_h_1 = req->src_rect.h;
-				s_x_0 = req->src_rect.x;
-				s_w_1 = (req->src_rect.w * d_w_1) /
-					req->dst_rect.w;
-				s_w_0 = req->src_rect.w - s_w_1;
-				s_x_1 = s_x_0 + s_w_0;
-				if (d_w_1 >= 8 * s_w_1) {
-					s_w_1++;
-					s_x_1--;
-				}
-			}
-
-			splitreq.src_rect.h = s_h_0;
-			splitreq.src_rect.y = s_y_0;
-			splitreq.dst_rect.h = d_h_0;
-			splitreq.dst_rect.y = d_y_0;
-			splitreq.src_rect.x = s_x_0;
-			splitreq.src_rect.w = s_w_0;
-			splitreq.dst_rect.x = d_x_0;
-			splitreq.dst_rect.w = d_w_0;
-		} else {
-			if (splitreq.flags & MDP_ROT_90) {
-				s_x_0 = s_x_1 = req->src_rect.x;
-				s_w_0 = s_w_1 = req->src_rect.w;
-				s_y_0 = req->src_rect.y;
-				s_h_1 = (req->src_rect.h * d_w_0) /
-					req->dst_rect.w;
-				s_h_0 = req->src_rect.h - s_h_1;
-				s_y_1 = s_y_0 + s_h_0;
-				if (d_w_0 >= 8 * s_h_1) {
-					s_h_1++;
-					s_y_1--;
-				}
-			} else {
-				s_y_0 = s_y_1 = req->src_rect.y;
-				s_h_0 = s_h_1 = req->src_rect.h;
-				s_x_0 = req->src_rect.x;
-				s_w_1 = (req->src_rect.w * d_w_0) /
-					req->dst_rect.w;
-				s_w_0 = req->src_rect.w - s_w_1;
-				s_x_1 = s_x_0 + s_w_0;
-				if (d_w_0 >= 8 * s_w_1) {
-					s_w_1++;
-					s_x_1--;
-				}
-			}
-			splitreq.src_rect.h = s_h_0;
-			splitreq.src_rect.y = s_y_0;
-			splitreq.dst_rect.h = d_h_1;
-			splitreq.dst_rect.y = d_y_1;
-			splitreq.src_rect.x = s_x_0;
-			splitreq.src_rect.w = s_w_0;
-			splitreq.dst_rect.x = d_x_1;
-			splitreq.dst_rect.w = d_w_1;
-		}
-
-		if ((splitreq.dst_rect.h % 32 == 3) ||
-			((req->dst_rect.h % 32) == 1 && req->dst_rect.h != 1) ||
-			((req->dst_rect.h % 32) == 2 && req->dst_rect.h != 2))
-			ret = mdp_blit_split_height(info, &splitreq);
-		else
-			ret = mdp_ppp_blit(info, &splitreq);
-		if (ret)
-			return ret;
-		/* blit second region */
-		if (((splitreq.flags & 0x07) == 0x07) ||
-			((splitreq.flags & 0x07) == 0x0)) {
-			splitreq.src_rect.h = s_h_1;
-			splitreq.src_rect.y = s_y_1;
-			splitreq.dst_rect.h = d_h_1;
-			splitreq.dst_rect.y = d_y_1;
-			splitreq.src_rect.x = s_x_1;
-			splitreq.src_rect.w = s_w_1;
-			splitreq.dst_rect.x = d_x_1;
-			splitreq.dst_rect.w = d_w_1;
-		} else {
-			splitreq.src_rect.h = s_h_1;
-			splitreq.src_rect.y = s_y_1;
-			splitreq.dst_rect.h = d_h_0;
-			splitreq.dst_rect.y = d_y_0;
-			splitreq.src_rect.x = s_x_1;
-			splitreq.src_rect.w = s_w_1;
-			splitreq.dst_rect.x = d_x_0;
-			splitreq.dst_rect.w = d_w_0;
-		}
-		if (((splitreq.dst_rect.h % 32) == 3) ||
-			((req->dst_rect.h % 32) == 1 && req->dst_rect.h != 1) ||
-			((req->dst_rect.h % 32) == 2 && req->dst_rect.h != 2))
-			ret = mdp_blit_split_height(info, &splitreq);
-		else
-			ret = mdp_ppp_blit(info, &splitreq);
-		if (ret)
-			return ret;
-	} else if ((req->dst_rect.h % 32) == 3 ||
-		((req->dst_rect.h % 32) == 1 && req->dst_rect.h != 1) ||
-		((req->dst_rect.h % 32) == 2 && req->dst_rect.h != 2))
-		ret = mdp_blit_split_height(info, req);
-	else
-		ret = mdp_ppp_blit(info, req);
-	return ret;
-#elif defined CONFIG_FB_MSM_MDP30
-	/* MDP width split workaround */
-	remainder = (req->dst_rect.w)%16;
-	ret = mdp_get_bytes_per_pixel(req->dst.format,
-					(struct msm_fb_data_type *)info->par);
-	if (ret <= 0) {
-		printk(KERN_ERR "mdp_ppp: incorrect bpp!\n");
-		return -EINVAL;
-	}
-	is_bpp_4 = (ret == 4) ? 1 : 0;
-
-	if ((is_bpp_4 && (remainder == 6 || remainder == 14))) {
-
-		/* make new request as provide by user */
-		splitreq = *req;
-
-		/* break dest roi at width*/
-		d_y_0 = d_y_1 = req->dst_rect.y;
-		d_h_0 = d_h_1 = req->dst_rect.h;
-		d_x_0 = req->dst_rect.x;
-
-		if (remainder == 14 || remainder == 6)
-			d_w_1 = req->dst_rect.w / 2;
-		else
-			d_w_1 = (req->dst_rect.w - 1) / 2 - 1;
-
-		d_w_0 = req->dst_rect.w - d_w_1;
-		d_x_1 = d_x_0 + d_w_0;
-
-		/* blit first region */
-		if (((splitreq.flags & 0x07) == 0x07) ||
-			((splitreq.flags & 0x07) == 0x05) ||
-			((splitreq.flags & 0x07) == 0x02) ||
-			((splitreq.flags & 0x07) == 0x0)) {
-
-			if (splitreq.flags & MDP_ROT_90) {
-				s_x_0 = s_x_1 = req->src_rect.x;
-				s_w_0 = s_w_1 = req->src_rect.w;
-				s_y_0 = req->src_rect.y;
-				s_h_1 = (req->src_rect.h * d_w_1) /
-					req->dst_rect.w;
-				s_h_0 = req->src_rect.h - s_h_1;
-				s_y_1 = s_y_0 + s_h_0;
-				if (d_w_1 >= 8 * s_h_1) {
-					s_h_1++;
-					s_y_1--;
-				}
-			} else {
-				s_y_0 = s_y_1 = req->src_rect.y;
-				s_h_0 = s_h_1 = req->src_rect.h;
-				s_x_0 = req->src_rect.x;
-				s_w_1 = (req->src_rect.w * d_w_1) /
-					req->dst_rect.w;
-				s_w_0 = req->src_rect.w - s_w_1;
-				s_x_1 = s_x_0 + s_w_0;
-				if (d_w_1 >= 8 * s_w_1) {
-					s_w_1++;
-					s_x_1--;
-				}
-			}
-
-			splitreq.src_rect.h = s_h_0;
-			splitreq.src_rect.y = s_y_0;
-			splitreq.dst_rect.h = d_h_0;
-			splitreq.dst_rect.y = d_y_0;
-			splitreq.src_rect.x = s_x_0;
-			splitreq.src_rect.w = s_w_0;
-			splitreq.dst_rect.x = d_x_0;
-			splitreq.dst_rect.w = d_w_0;
-		} else {
-			if (splitreq.flags & MDP_ROT_90) {
-				s_x_0 = s_x_1 = req->src_rect.x;
-				s_w_0 = s_w_1 = req->src_rect.w;
-				s_y_0 = req->src_rect.y;
-				s_h_1 = (req->src_rect.h * d_w_0) /
-					req->dst_rect.w;
-				s_h_0 = req->src_rect.h - s_h_1;
-				s_y_1 = s_y_0 + s_h_0;
-				if (d_w_0 >= 8 * s_h_1) {
-					s_h_1++;
-					s_y_1--;
-				}
-			} else {
-				s_y_0 = s_y_1 = req->src_rect.y;
-				s_h_0 = s_h_1 = req->src_rect.h;
-				s_x_0 = req->src_rect.x;
-				s_w_1 = (req->src_rect.w * d_w_0) /
-					req->dst_rect.w;
-				s_w_0 = req->src_rect.w - s_w_1;
-				s_x_1 = s_x_0 + s_w_0;
-				if (d_w_0 >= 8 * s_w_1) {
-					s_w_1++;
-					s_x_1--;
-				}
-			}
-			splitreq.src_rect.h = s_h_0;
-			splitreq.src_rect.y = s_y_0;
-			splitreq.dst_rect.h = d_h_1;
-			splitreq.dst_rect.y = d_y_1;
-			splitreq.src_rect.x = s_x_0;
-			splitreq.src_rect.w = s_w_0;
-			splitreq.dst_rect.x = d_x_1;
-			splitreq.dst_rect.w = d_w_1;
-		}
-
-		/* No need to split in height */
-		ret = mdp_ppp_blit(info, &splitreq);
-
-		if (ret)
-			return ret;
-
-		/* blit second region */
-		if (((splitreq.flags & 0x07) == 0x07) ||
-			((splitreq.flags & 0x07) == 0x05) ||
-			((splitreq.flags & 0x07) == 0x02) ||
-			((splitreq.flags & 0x07) == 0x0)) {
-			splitreq.src_rect.h = s_h_1;
-			splitreq.src_rect.y = s_y_1;
-			splitreq.dst_rect.h = d_h_1;
-			splitreq.dst_rect.y = d_y_1;
-			splitreq.src_rect.x = s_x_1;
-			splitreq.src_rect.w = s_w_1;
-			splitreq.dst_rect.x = d_x_1;
-			splitreq.dst_rect.w = d_w_1;
-		} else {
-			splitreq.src_rect.h = s_h_1;
-			splitreq.src_rect.y = s_y_1;
-			splitreq.dst_rect.h = d_h_0;
-			splitreq.dst_rect.y = d_y_0;
-			splitreq.src_rect.x = s_x_1;
-			splitreq.src_rect.w = s_w_1;
-			splitreq.dst_rect.x = d_x_0;
-			splitreq.dst_rect.w = d_w_0;
-		}
-
-		/* No need to split in height ... just width */
-		ret = mdp_ppp_blit(info, &splitreq);
-
-		if (ret)
-			return ret;
-
-	} else
-		ret = mdp_ppp_blit(info, req);
-	return ret;
-#else
 	ret = mdp_ppp_blit(info, req);
 	return ret;
-#endif
 }
 
 typedef void (*msm_dma_barrier_function_pointer) (void *, size_t);
@@ -3030,74 +2509,7 @@ static void msm_fb_ensure_memory_coherency_before_dma(struct fb_info *info,
 		struct mdp_blit_req *req_list,
 		int req_list_count)
 {
-#ifdef CONFIG_ARCH_QSD8X50
-	int i;
-
-	/*
-	 * Normally, do the requested barriers for each address
-	 * range that corresponds to a rectangle.
-	 *
-	 * But if at least one write barrier is requested for data
-	 * going to or from the device but no address range is
-	 * needed for that barrier, then do the barrier, but do it
-	 * only once, no matter how many requests there are.
-	 */
-	struct msm_fb_data_type *mfd = (struct msm_fb_data_type *)info->par;
-	switch (mfd->mdp_fb_page_protection)	{
-	default:
-	case MDP_FB_PAGE_PROTECTION_NONCACHED:
-	case MDP_FB_PAGE_PROTECTION_WRITECOMBINE:
-		/*
-		 * The following barrier is only done at most once,
-		 * since further calls would be redundant.
-		 */
-		for (i = 0; i < req_list_count; i++) {
-			if (!(req_list[i].flags
-				& MDP_NO_DMA_BARRIER_START)) {
-				msm_dma_nc_pre();
-				break;
-			}
-		}
-		break;
-
-	case MDP_FB_PAGE_PROTECTION_WRITETHROUGHCACHE:
-		/*
-		 * The following barrier is only done at most once,
-		 * since further calls would be redundant.
-		 */
-		for (i = 0; i < req_list_count; i++) {
-			if (!(req_list[i].flags
-				& MDP_NO_DMA_BARRIER_START)) {
-				msm_dma_wt_pre();
-				break;
-			}
-		}
-		break;
-
-	case MDP_FB_PAGE_PROTECTION_WRITEBACKCACHE:
-	case MDP_FB_PAGE_PROTECTION_WRITEBACKWACACHE:
-		for (i = 0; i < req_list_count; i++) {
-			if (!(req_list[i].flags &
-					MDP_NO_DMA_BARRIER_START)) {
-
-				msm_fb_dma_barrier_for_rect(info,
-						&(req_list[i].src),
-						&(req_list[i].src_rect),
-						msm_dma_todevice_wb_pre
-						);
-
-				msm_fb_dma_barrier_for_rect(info,
-						&(req_list[i].dst),
-						&(req_list[i].dst_rect),
-						msm_dma_todevice_wb_pre
-						);
-			}
-		}
-		break;
-	}
-#else
 	dmb();
-#endif
 }
 
 
@@ -3113,58 +2525,7 @@ static void msm_fb_ensure_memory_coherency_after_dma(struct fb_info *info,
 		struct mdp_blit_req *req_list,
 		int req_list_count)
 {
-#ifdef CONFIG_ARCH_QSD8X50
-	int i;
-
-	struct msm_fb_data_type *mfd = (struct msm_fb_data_type *)info->par;
-	switch (mfd->mdp_fb_page_protection)	{
-	default:
-	case MDP_FB_PAGE_PROTECTION_NONCACHED:
-	case MDP_FB_PAGE_PROTECTION_WRITECOMBINE:
-		/*
-		 * The following barrier is only done at most once,
-		 * since further calls would be redundant.
-		 */
-		for (i = 0; i < req_list_count; i++) {
-			if (!(req_list[i].flags
-				& MDP_NO_DMA_BARRIER_END)) {
-				msm_dma_nc_post();
-				break;
-			}
-		}
-		break;
-
-	case MDP_FB_PAGE_PROTECTION_WRITETHROUGHCACHE:
-		for (i = 0; i < req_list_count; i++) {
-			if (!(req_list[i].flags &
-					MDP_NO_DMA_BARRIER_END)) {
-
-				msm_fb_dma_barrier_for_rect(info,
-						&(req_list[i].dst),
-						&(req_list[i].dst_rect),
-						msm_dma_fromdevice_wt_post
-						);
-			}
-		}
-		break;
-	case MDP_FB_PAGE_PROTECTION_WRITEBACKCACHE:
-	case MDP_FB_PAGE_PROTECTION_WRITEBACKWACACHE:
-		for (i = 0; i < req_list_count; i++) {
-			if (!(req_list[i].flags &
-					MDP_NO_DMA_BARRIER_END)) {
-
-				msm_fb_dma_barrier_for_rect(info,
-						&(req_list[i].dst),
-						&(req_list[i].dst_rect),
-						msm_dma_fromdevice_wb_post
-						);
-			}
-		}
-		break;
-	}
-#else
 	dmb();
-#endif
 }
 
 /*
@@ -3661,11 +3022,6 @@ static void msmfb_set_color_conv(struct mdp_ccs *p)
 		for (i = 0; i < MDP_CCS_SIZE; i++)
 			writel(p->ccs[i], MDP_CSC_PFMVn(i));
 
-		#ifdef CONFIG_FB_MSM_MDP31
-		for (i = 0; i < MDP_BV_SIZE; i++)
-			writel(p->bv[i], MDP_CSC_POST_BV2n(i));
-		#endif
-
 		/* MDP cmd block disable */
 		mdp_pipe_ctrl(MDP_CMD_BLOCK, MDP_BLOCK_POWER_OFF, FALSE);
 	} else {
@@ -4082,23 +3438,8 @@ static int msm_fb_ioctl(struct fb_info *info, unsigned int cmd,
 		break;
 
 	case MSMFB_GRP_DISP:
-#ifdef CONFIG_FB_MSM_MDP22
-		{
-			unsigned long grp_id;
-
-			ret = copy_from_user(&grp_id, argp, sizeof(grp_id));
-			if (ret)
-				return ret;
-
-			mdp_pipe_ctrl(MDP_CMD_BLOCK, MDP_BLOCK_POWER_ON, FALSE);
-			writel(grp_id, MDP_FULL_BYPASS_WORD43);
-			mdp_pipe_ctrl(MDP_CMD_BLOCK, MDP_BLOCK_POWER_OFF,
-				      FALSE);
-			break;
-		}
-#else
 		return -EFAULT;
-#endif
+
 	case MSMFB_SUSPEND_SW_REFRESHER:
 		if (!mfd->panel_power_on)
 			return -EPERM;
@@ -4187,35 +3528,11 @@ static int msm_fb_ioctl(struct fb_info *info, unsigned int cmd,
 		break;
 
 	case MSMFB_SET_PAGE_PROTECTION:
-#if defined CONFIG_ARCH_QSD8X50 || defined CONFIG_ARCH_MSM8X60
-		ret = copy_from_user(&fb_page_protection, argp,
-				sizeof(fb_page_protection));
-		if (ret)
-				return ret;
-
-		/* Validate the proposed page protection settings. */
-		switch (fb_page_protection.page_protection)	{
-		case MDP_FB_PAGE_PROTECTION_NONCACHED:
-		case MDP_FB_PAGE_PROTECTION_WRITECOMBINE:
-		case MDP_FB_PAGE_PROTECTION_WRITETHROUGHCACHE:
-		/* Write-back cache (read allocate)  */
-		case MDP_FB_PAGE_PROTECTION_WRITEBACKCACHE:
-		/* Write-back cache (write allocate) */
-		case MDP_FB_PAGE_PROTECTION_WRITEBACKWACACHE:
-			mfd->mdp_fb_page_protection =
-				fb_page_protection.page_protection;
-			break;
-		default:
-			ret = -EINVAL;
-			break;
-		}
-#else
 		/*
 		 * Don't allow caching until 7k DMA cache operations are
 		 * available.
 		 */
 		ret = -EINVAL;
-#endif
 		break;
 
 	case MSMFB_MDP_PP:
@@ -4502,14 +3819,7 @@ int msm_fb_v4l2_enable(struct mdp_overlay *req, bool enable, void **par)
 		mdp4_v4l2_overlay_clear(pipe);
 	}
 #else
-#ifdef CONFIG_FB_MSM_MDP30
-	if (enable)
-		err = mdp_ppp_v4l2_overlay_set(fbi_list[0], req);
-	else
-		err = mdp_ppp_v4l2_overlay_clear();
-#else
 	err = -EINVAL;
-#endif
 #endif
 
 	return err;
@@ -4528,13 +3838,7 @@ int msm_fb_v4l2_update(void *par,
 		srcp0_addr, srcp1_addr,
 		srcp2_addr);
 #else
-#ifdef CONFIG_FB_MSM_MDP30
-	return mdp_ppp_v4l2_overlay_play(fbi_list[0],
-		srcp0_addr, srcp0_size,
-		srcp1_addr, srcp1_size);
-#else
 	return -EINVAL;
-#endif
 #endif
 }
 EXPORT_SYMBOL(msm_fb_v4l2_update);

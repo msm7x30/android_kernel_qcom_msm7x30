@@ -25,7 +25,6 @@
 #include "msm_fb.h"
 #include "hdmi_msm.h"
 #include "external_common.h"
-#include "mhl_api.h"
 
 #include "mdp.h"
 

@@ -241,22 +241,7 @@ void mdp4_display_intf_sel(int output, ulong intf)
 
 	bits = inpdw(MDP_BASE + 0x0038);	/* MDP_DISP_INTF_SEL */
 
-	if (intf == DSI_VIDEO_INTF) {
-		data = 0x40;	/* bit 6 */
-		intf = MDDI_LCDC_INTF;
-		if (output == SECONDARY_INTF_SEL) {
-			MSM_FB_INFO("%s: Illegal INTF selected, output=%d \
-				intf=%d\n", __func__, output, (int)intf);
-		}
-	} else if (intf == DSI_CMD_INTF) {
-		data = 0x80;	/* bit 7 */
-		intf = MDDI_INTF;
-		if (output == EXTERNAL_INTF_SEL) {
-			MSM_FB_INFO("%s: Illegal INTF selected, output=%d \
-				intf=%d\n", __func__, output, (int)intf);
-		}
-	} else
-		data = 0;
+	data = 0;
 
 	mask = 0x03;	/* 2 bits */
 	intf &= 0x03;	/* 2 bits */
@@ -553,12 +538,6 @@ irqreturn_t mdp4_isr(int irq, void *ptr)
 		if (panel & MDP4_PANEL_LCDC)
 			mdp4_dmap_done_lcdc(0);
 #ifdef CONFIG_FB_MSM_OVERLAY
-#ifdef CONFIG_FB_MSM_MIPI_DSI
-		else if (panel & MDP4_PANEL_DSI_VIDEO)
-			mdp4_dmap_done_dsi_video(0);
-		else if (panel & MDP4_PANEL_DSI_CMD)
-			mdp4_dmap_done_dsi_cmd(0);
-#endif
 		else if (panel & MDP4_PANEL_MDDI)
 			mdp4_dmap_done_mddi(0);
 #else
@@ -591,19 +570,10 @@ irqreturn_t mdp4_isr(int irq, void *ptr)
 	if (isr & INTR_OVERLAY0_DONE) {
 		mdp4_stat.intr_overlay0++;
 		dma = &dma2_data;
-		if (panel & (MDP4_PANEL_LCDC | MDP4_PANEL_DSI_VIDEO)) {
-			/* disable LCDC interrupt */
-			if (panel & MDP4_PANEL_LCDC)
-				mdp4_overlay0_done_lcdc(0);
-#ifdef CONFIG_FB_MSM_MIPI_DSI
-			else if (panel & MDP4_PANEL_DSI_VIDEO)
-				mdp4_overlay0_done_dsi_video(0);
-#endif
-		} else {        /* MDDI, DSI_CMD  */
-#ifdef CONFIG_FB_MSM_MIPI_DSI
-			if (panel & MDP4_PANEL_DSI_CMD)
-				mdp4_overlay0_done_dsi_cmd(0);
-#endif
+		/* disable LCDC interrupt */
+		if (panel & MDP4_PANEL_LCDC) {
+			mdp4_overlay0_done_lcdc(0);
+		} else {        /* MDDI */
 			if (panel & MDP4_PANEL_MDDI)
 				mdp4_overlay0_done_mddi(0);
 		}
@@ -641,8 +611,6 @@ irqreturn_t mdp4_isr(int irq, void *ptr)
 		mdp4_stat.intr_vsync_p++;
 		if (panel & MDP4_PANEL_LCDC)
 			mdp4_primary_vsync_lcdc();
-		else if (panel & MDP4_PANEL_DSI_VIDEO)
-			mdp4_primary_vsync_dsi_video();
 	}
 #ifdef CONFIG_FB_MSM_DTV
 	if (isr & INTR_EXTERNAL_VSYNC) {
