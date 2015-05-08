@@ -10,15 +10,14 @@
  * GNU General Public License for more details.
  *
  */
-#ifndef __LINUX_MSM_CAMERA_H
-#define __LINUX_MSM_CAMERA_H
+#ifndef __UAPI_LINUX_MSM_CAMERA_HUAWEI_H__
+#define __UAPI_LINUX_MSM_CAMERA_HUAWEI_H__
 
 #ifdef MSM_CAMERA_BIONIC
 #include <sys/types.h>
 #endif
 #include <linux/types.h>
 #include <linux/ioctl.h>
-#include <linux/cdev.h>
 #ifdef MSM_CAMERA_GCC
 #include <time.h>
 #else
@@ -1238,4 +1237,4 @@ struct img_plane_info {
 	uint8_t vpe_can_use;
 };
 
-#endif /* __LINUX_MSM_CAMERA_H */
+#endif /* __UAPI_LINUX_MSM_CAMERA_HUAWEI_H__ */

@@ -12,7 +12,7 @@
  */
 #if defined(CONFIG_MSM_CAMERA_HUAWEI)
 
-#include <media/msm_camera_huawei.h>
+#include <uapi/linux/msm_camera_huawei.h>
 
 #else
 
