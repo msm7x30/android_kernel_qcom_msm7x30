@@ -259,6 +259,7 @@ header-y += msm_audio_aac.h
 header-y += msm_audio_amrnb.h
 header-y += msm_audio_mvs.h
 header-y += msm_audio_qcp.h
+header-y += msm_camera_huawei.h
 header-y += msm_ion.h
 header-y += msm_kgsl.h
 header-y += msm_mdp.h
