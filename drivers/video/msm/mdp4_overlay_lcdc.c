@@ -639,11 +639,7 @@ int mdp4_lcdc_on(struct platform_device *pdev)
 
 	hsync_period =
 	    hsync_pulse_width + h_back_porch + h_front_porch;
-	if ((mfd->panel_info.type == LVDS_PANEL) &&
-		(mfd->panel_info.lvds.channel_mode == LVDS_DUAL_CHANNEL_MODE))
-		hsync_period += lcdc_width / 2;
-	else
-		hsync_period += lcdc_width;
+	hsync_period += lcdc_width;
 	hsync_ctrl = (hsync_period << 16) | hsync_pulse_width;
 	hsync_start_x = hsync_pulse_width + h_back_porch;
 	hsync_end_x = hsync_period - h_front_porch - 1;

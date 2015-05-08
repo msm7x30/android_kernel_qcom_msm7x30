@@ -188,12 +188,10 @@ extern u32 msm_fb_msg_level;
 unsigned char *msm_mdp_base;
 unsigned char *msm_pmdh_base;
 unsigned char *msm_emdh_base;
-unsigned char *mipi_dsi_base;
 #else
 extern unsigned char *msm_mdp_base;
 extern unsigned char *msm_pmdh_base;
 extern unsigned char *msm_emdh_base;
-extern unsigned char *mipi_dsi_base;
 #endif
 
 #undef ENABLE_MDDI_MULTI_READ_WRITE

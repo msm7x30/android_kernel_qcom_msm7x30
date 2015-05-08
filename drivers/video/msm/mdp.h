@@ -159,18 +159,10 @@ typedef enum {
 
 /* Let's keep Q Factor power of 2 for optimization */
 #define MDP_SCALE_Q_FACTOR 512
-
-#ifdef CONFIG_FB_MSM_MDP31
-#define MDP_MAX_X_SCALE_FACTOR (MDP_SCALE_Q_FACTOR*8)
-#define MDP_MIN_X_SCALE_FACTOR (MDP_SCALE_Q_FACTOR/8)
-#define MDP_MAX_Y_SCALE_FACTOR (MDP_SCALE_Q_FACTOR*8)
-#define MDP_MIN_Y_SCALE_FACTOR (MDP_SCALE_Q_FACTOR/8)
-#else
 #define MDP_MAX_X_SCALE_FACTOR (MDP_SCALE_Q_FACTOR*4)
 #define MDP_MIN_X_SCALE_FACTOR (MDP_SCALE_Q_FACTOR/4)
 #define MDP_MAX_Y_SCALE_FACTOR (MDP_SCALE_Q_FACTOR*4)
 #define MDP_MIN_Y_SCALE_FACTOR (MDP_SCALE_Q_FACTOR/4)
-#endif
 
 /* SHIM Q Factor */
 #define PHI_Q_FACTOR          29
@@ -314,11 +306,7 @@ extern struct mdp_hist_mgmt *mdp_hist_mgmt_array[];
 #define LCDC_FRAME_START    BIT(15)
 #define LCDC_UNDERFLOW      BIT(16)
 
-#ifdef CONFIG_FB_MSM_MDP22
-#define MDP_DMA_P_DONE 	BIT(2)
-#else
 #define MDP_DMA_P_DONE 	BIT(14)
-#endif
 
 #define MDP_PPP_DONE 				BIT(0)
 #define TV_OUT_DMA3_DONE    BIT(6)
@@ -339,18 +327,12 @@ extern struct mdp_hist_mgmt *mdp_hist_mgmt_array[];
 #define INTR_HIST_DONE			BIT(1)
 #define INTR_HIST_RESET_SEQ_DONE	BIT(0)
 
-#ifdef CONFIG_FB_MSM_MDP22
-#define MDP_ANY_INTR_MASK (MDP_PPP_DONE| \
-			MDP_DMA_P_DONE| \
-			TV_ENC_UNDERRUN)
-#else
 #define MDP_ANY_INTR_MASK (MDP_PPP_DONE| \
 			MDP_DMA_P_DONE| \
 			MDP_DMA_S_DONE| \
 			MDP_DMA_E_DONE| \
 			LCDC_UNDERFLOW| \
 			TV_ENC_UNDERRUN)
-#endif
 
 #define MDP_TOP_LUMA       16
 #define MDP_TOP_CHROMA     0
@@ -376,16 +358,10 @@ extern struct mdp_hist_mgmt *mdp_hist_mgmt_array[];
 /*
  * 0x0000 0x0004 0x0008 MDP sync config
  */
-#ifdef CONFIG_FB_MSM_MDP22
-#define MDP_SYNCFG_HGT_LOC 22
-#define MDP_SYNCFG_VSYNC_EXT_EN BIT(21)
-#define MDP_SYNCFG_VSYNC_INT_EN BIT(20)
-#else
 #define MDP_SYNCFG_HGT_LOC 21
 #define MDP_SYNCFG_VSYNC_EXT_EN BIT(20)
 #define MDP_SYNCFG_VSYNC_INT_EN BIT(19)
 #define MDP_HW_VSYNC
-#endif
 
 /*
  * 0x0018 MDP VSYNC THREASH
@@ -627,24 +603,6 @@ extern struct mdp_hist_mgmt *mdp_hist_mgmt_array[];
 #define DMA_IBUF_FORMAT_RGB888              0
 #define DMA_IBUF_FORMAT_xRGB8888_OR_ARGB8888  BIT(26)
 
-#ifdef CONFIG_FB_MSM_MDP303
-#define DMA_OUT_SEL_DSI_CMD                  BIT(19)
-#define DMA_OUT_SEL_DSI_VIDEO               (3 << 19)
-#endif
-
-#ifdef CONFIG_FB_MSM_MDP22
-#define DMA_OUT_SEL_MDDI BIT(14)
-#define DMA_AHBM_LCD_SEL_PRIMARY 0
-#define DMA_AHBM_LCD_SEL_SECONDARY BIT(15)
-#define DMA_IBUF_C3ALPHA_EN BIT(16)
-#define DMA_DITHER_EN BIT(17)
-#define DMA_MDDI_DMAOUT_LCD_SEL_PRIMARY 0
-#define DMA_MDDI_DMAOUT_LCD_SEL_SECONDARY BIT(18)
-#define DMA_MDDI_DMAOUT_LCD_SEL_EXTERNAL BIT(19)
-#define DMA_IBUF_FORMAT_RGB565 BIT(20)
-#define DMA_IBUF_FORMAT_RGB888_OR_ARGB8888 0
-#define DMA_IBUF_NONCONTIGUOUS BIT(21)
-#else
 #define DMA_OUT_SEL_MDDI                    BIT(19)
 #define DMA_AHBM_LCD_SEL_PRIMARY            0
 #define DMA_AHBM_LCD_SEL_SECONDARY          0
@@ -657,7 +615,6 @@ extern struct mdp_hist_mgmt *mdp_hist_mgmt_array[];
 #define DMA_MDDI_DMAOUT_LCD_SEL_EXTERNAL    0
 #define DMA_IBUF_FORMAT_RGB565              BIT(25)
 #define DMA_IBUF_NONCONTIGUOUS 0
-#endif
 
 /*
  * MDDI Register
@@ -703,23 +660,7 @@ extern struct mdp_hist_mgmt *mdp_hist_mgmt_array[];
 #define MDP_CSC_PRE_BV2n(n)	(msm_mdp_base + 0x40540 + 4 * (n))
 #define MDP_CSC_POST_BV1n(n)	(msm_mdp_base + 0x40580 + 4 * (n))
 #define MDP_CSC_POST_BV2n(n)	(msm_mdp_base + 0x405c0 + 4 * (n))
-
-#ifdef CONFIG_FB_MSM_MDP31
-#define MDP_CSC_PRE_LV1n(n)	(msm_mdp_base + 0x40600 + 4 * (n))
-#define MDP_CSC_PRE_LV2n(n)	(msm_mdp_base + 0x40640 + 4 * (n))
-#define MDP_CSC_POST_LV1n(n)	(msm_mdp_base + 0x40680 + 4 * (n))
-#define MDP_CSC_POST_LV2n(n)	(msm_mdp_base + 0x406c0 + 4 * (n))
-#define MDP_PPP_SCALE_COEFF_LSBn(n)	(msm_mdp_base + 0x50400 + 8 * (n))
-#define MDP_PPP_SCALE_COEFF_MSBn(n)	(msm_mdp_base + 0x50404 + 8 * (n))
-
-#define SCALE_D0_SET  0
-#define SCALE_D1_SET  BIT(0)
-#define SCALE_D2_SET  BIT(1)
-#define SCALE_U1_SET  (BIT(0)|BIT(1))
-
-#else
 #define MDP_CSC_PRE_LV1n(n)	(msm_mdp_base + 0x40580 + 4 * (n))
-#endif
 
 #define MDP_CURSOR_WIDTH 64
 #define MDP_CURSOR_HEIGHT 64
@@ -777,36 +718,6 @@ int mdp_lcdc_on(struct platform_device *pdev);
 int mdp_lcdc_off(struct platform_device *pdev);
 void mdp_lcdc_update(struct msm_fb_data_type *mfd);
 void mdp_free_splash_buffer(struct msm_fb_data_type *mfd);
-#ifdef CONFIG_FB_MSM_MDP303
-int mdp_dsi_video_on(struct platform_device *pdev);
-int mdp_dsi_video_off(struct platform_device *pdev);
-void mdp_dsi_video_update(struct msm_fb_data_type *mfd);
-void mdp3_dsi_cmd_dma_busy_wait(struct msm_fb_data_type *mfd);
-static inline int mdp4_dsi_cmd_off(struct platform_device *pdev)
-{
-	return 0;
-}
-static inline int mdp4_dsi_video_off(struct platform_device *pdev)
-{
-	return 0;
-}
-static inline int mdp4_lcdc_off(struct platform_device *pdev)
-{
-	return 0;
-}
-static inline int mdp4_dsi_cmd_on(struct platform_device *pdev)
-{
-	return 0;
-}
-static inline int mdp4_dsi_video_on(struct platform_device *pdev)
-{
-	return 0;
-}
-static inline int mdp4_lcdc_on(struct platform_device *pdev)
-{
-	return 0;
-}
-#endif
 
 void set_cont_splashScreen_status(int);
 
@@ -877,38 +788,6 @@ void __mdp_histogram_reset(struct mdp_hist_mgmt *mgmt);
 void mdp_footswitch_ctrl(boolean on);
 int mdp_enable_iommu_clocks(void);
 int mdp_disable_iommu_clocks(void);
-
-#ifdef CONFIG_FB_MSM_MDP303
-static inline void mdp4_dsi_cmd_dma_busy_wait(struct msm_fb_data_type *mfd)
-{
-	/* empty */
-}
-
-static inline void mdp4_dsi_blt_dmap_busy_wait(struct msm_fb_data_type *mfd)
-{
-	/* empty */
-}
-static inline void mdp4_overlay_dsi_state_set(int state)
-{
-	/* empty */
-}
-static inline int mdp4_overlay_dsi_state_get(void)
-{
-	return 0;
-}
-#endif
-
-#ifndef CONFIG_FB_MSM_MDP40
-static inline void mdp_dsi_cmd_overlay_suspend(struct msm_fb_data_type *mfd)
-{
-	/* empty */
-}
-static inline int msmfb_overlay_vsync_ctrl(struct fb_info *info,
-						void __user *argp)
-{
-	return 0;
-}
-#endif
 
 int mdp_ppp_v4l2_overlay_set(struct fb_info *info, struct mdp_overlay *req);
 int mdp_ppp_v4l2_overlay_clear(void);

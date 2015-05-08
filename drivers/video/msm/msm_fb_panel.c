@@ -154,16 +154,8 @@ struct platform_device *msm_fb_device_alloc(struct msm_fb_panel_data *pdata,
 	char dev_name[16];
 
 	switch (type) {
-	case EBI2_PANEL:
-		snprintf(dev_name, sizeof(dev_name), "ebi2_lcd");
-		break;
-
 	case MDDI_PANEL:
 		snprintf(dev_name, sizeof(dev_name), "mddi");
-		break;
-
-	case EXT_MDDI_PANEL:
-		snprintf(dev_name, sizeof(dev_name), "mddi_ext");
 		break;
 
 	case TV_PANEL:
@@ -175,18 +167,10 @@ struct platform_device *msm_fb_device_alloc(struct msm_fb_panel_data *pdata,
 		snprintf(dev_name, sizeof(dev_name), "lcdc");
 		break;
 
-	case LVDS_PANEL:
-		snprintf(dev_name, sizeof(dev_name), "lvds");
-		break;
-
 	case DTV_PANEL:
 		snprintf(dev_name, sizeof(dev_name), "dtv");
 		break;
 
-	case MIPI_VIDEO_PANEL:
-	case MIPI_CMD_PANEL:
-		snprintf(dev_name, sizeof(dev_name), "mipi_dsi");
-		break;
 	case WRITEBACK_PANEL:
 		snprintf(dev_name, sizeof(dev_name), "writeback");
 		break;
