@@ -518,11 +518,12 @@ kgsl_create_context(struct kgsl_device_private *dev_priv)
 
 	write_lock(&device->context_lock);
 	id = idr_alloc(&device->context_idr, context, 1, 0, GFP_KERNEL);
-	context->id = id;
 	write_unlock(&device->context_lock);
-	if (id < 0)
+	if (id < 0) {
 		ret = id;
 		goto func_end;
+	}
+	context->id = id;
 
 	/* MAX - 1, there is one memdesc in memstore for device info */
 	if (id >= KGSL_MEMSTORE_MAX) {
