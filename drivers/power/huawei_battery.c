@@ -265,7 +265,7 @@ void huawei_bat_charger_connected(enum chg_type chgtype)
 		ret = msm_rpc_call(data->chg_ep, CHG_SET_CHARGER_CONNECTED,
 			&req, sizeof(req), msecs_to_jiffies(5000));
 		if (ret)
-			pr_err("%s: failed to do rpc call ret=%d",
+			pr_err("%s: failed to do rpc call ret=%d\n",
 				__func__, ret);
 	} else {
 		struct {
@@ -277,7 +277,7 @@ void huawei_bat_charger_connected(enum chg_type chgtype)
 		ret = msm_rpc_call(data->chg_ep, CHG_SET_CHARGER_DISCONNECTED,
 			&req, sizeof(req), msecs_to_jiffies(5000));
 		if (ret)
-			pr_err("%s: failed to do rpc call ret=%d",
+			pr_err("%s: failed to do rpc call ret=%d\n",
 				__func__, ret);
 
 		/* Notify no current available. */
@@ -310,7 +310,7 @@ void huawei_bat_charger_draw(unsigned int ma)
 		ret = msm_rpc_call(data->chg_ep, CHG_SET_CURRENT_AVAILABLE,
 			&req, sizeof(req), msecs_to_jiffies(5000));
 		if (ret)
-			pr_err("%s: failed to do rpc call ret=%d",
+			pr_err("%s: failed to do rpc call ret=%d\n",
 				__func__, ret);
 	} else {
 		struct {
@@ -322,7 +322,7 @@ void huawei_bat_charger_draw(unsigned int ma)
 		ret = msm_rpc_call(data->chg_ep, CHG_SET_CURRENT_UNAVAILABLE,
 			&req, sizeof(req), msecs_to_jiffies(5000));
 		if (ret)
-			pr_err("%s: failed to do rpc call ret=%d",
+			pr_err("%s: failed to do rpc call ret=%d\n",
 				__func__, ret);
 	}
 }
