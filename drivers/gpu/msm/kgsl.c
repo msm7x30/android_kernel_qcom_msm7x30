@@ -446,9 +446,11 @@ kgsl_mem_entry_attach_process(struct kgsl_mem_entry *entry,
 	if (!ret)
 		return -EBADF;
 
+	idr_preload(GFP_KERNEL);
 	spin_lock(&process->mem_lock);
 	ret = idr_alloc(&process->mem_idr, entry, 1, 0, GFP_KERNEL);
 	spin_unlock(&process->mem_lock);
+	idr_preload_end();
 	if (ret < 0)
 		goto err_put_proc_priv;
 
