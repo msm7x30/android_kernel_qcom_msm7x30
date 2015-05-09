@@ -748,20 +748,7 @@ static struct i2c_driver lsm303dlh_acc_driver = {
 	.id_table = lsm303dlh_acc_id,
 };
 
-static int __init lsm303dlh_acc_init(void)
-{
-	pr_info(KERN_INFO "LSM303DLH_ACC driver for the accelerometer part\n");
-	return i2c_add_driver(&lsm303dlh_acc_driver);
-}
-
-static void __exit lsm303dlh_acc_exit(void)
-{
-	i2c_del_driver(&lsm303dlh_acc_driver);
-	return;
-}
-
-module_init(lsm303dlh_acc_init);
-module_exit(lsm303dlh_acc_exit);
+module_i2c_driver(lsm303dlh_acc_driver);
 
 MODULE_DESCRIPTION("lsm303dlh accelerometer driver");
 MODULE_AUTHOR("STMicroelectronics");

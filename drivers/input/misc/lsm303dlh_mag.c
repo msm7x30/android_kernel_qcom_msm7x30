@@ -789,20 +789,7 @@ static struct i2c_driver lsm303dlh_mag_driver = {
 	.id_table = lsm303dlh_mag_id,
 };
 
-static int __init lsm303dlh_mag_init(void)
-{
-	pr_info(KERN_INFO "lsm303dlh magnetometer driver\n");
-	return i2c_add_driver(&lsm303dlh_mag_driver);
-}
-
-static void __exit lsm303dlh_mag_exit(void)
-{
-	i2c_del_driver(&lsm303dlh_mag_driver);
-	return;
-}
-
-module_init(lsm303dlh_mag_init);
-module_exit(lsm303dlh_mag_exit);
+module_i2c_driver(lsm303dlh_mag_driver);
 
 MODULE_DESCRIPTION("lsm303dlh driver for the magnetometer section");
 MODULE_AUTHOR("STMicroelectronics");
