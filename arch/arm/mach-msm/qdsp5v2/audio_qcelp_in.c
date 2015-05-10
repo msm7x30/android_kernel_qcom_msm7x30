@@ -1524,8 +1524,6 @@ static int audqcelp_in_open(struct inode *inode, struct file *file)
 					qcelp_in_listener, (void *) audio);
 	if (rc) {
 		MM_ERR("failed to register device event listener\n");
-		iounmap(audio->map_v_write);
-		free_contiguous_memory_by_paddr(audio->out_phys);
 		goto evt_error;
 	}
 	audio->mfield = META_OUT_SIZE;
