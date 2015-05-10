@@ -41,19 +41,14 @@
 #endif
 #include <linux/slab.h>
 #include <linux/msm_audio.h>
-#include <linux/memory_alloc.h>
 #include <linux/msm_ion.h>
-
 #include <mach/msm_adsp.h>
-#include <mach/iommu.h>
-#include <mach/iommu_domains.h>
 #include <mach/qdsp5v2/qdsp5audppmsg.h>
 #include <mach/qdsp5v2/qdsp5audplaycmdi.h>
 #include <mach/qdsp5v2/qdsp5audplaymsg.h>
 #include <mach/qdsp5v2/audio_dev_ctl.h>
 #include <mach/qdsp5v2/audpp.h>
 #include <mach/debug_mm.h>
-#include <mach/msm_memtypes.h>
 
 #define BUFSZ 4110 /* Hold minimum 700ms voice data and 14 bytes of meta in*/
 #define DMASZ (BUFSZ * 2)

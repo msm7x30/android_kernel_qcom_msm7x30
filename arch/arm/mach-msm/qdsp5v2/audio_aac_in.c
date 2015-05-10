@@ -28,12 +28,7 @@
 #include <linux/wait.h>
 #include <linux/dma-mapping.h>
 #include <linux/msm_audio_aac.h>
-#include <linux/memory_alloc.h>
 #include <linux/msm_ion.h>
-#include <mach/msm_memtypes.h>
-#include <mach/iommu.h>
-#include <mach/iommu_domains.h>
-
 #include <mach/msm_adsp.h>
 #include <mach/qdsp5v2/qdsp5audreccmdi.h>
 #include <mach/qdsp5v2/qdsp5audrecmsg.h>

@@ -28,19 +28,15 @@
 #include <linux/delay.h>
 #include <linux/wakelock.h>
 #include <linux/pm_qos.h>
-
 #include <linux/msm_audio.h>
-
 #include <asm/atomic.h>
 #include <asm/ioctls.h>
 #include <mach/msm_adsp.h>
-
 #include <mach/qdsp5v2/qdsp5audppcmdi.h>
 #include <mach/qdsp5v2/qdsp5audppmsg.h>
 #include <mach/qdsp5v2/audio_dev_ctl.h>
 #include <mach/qdsp5v2/audpp.h>
 #include <mach/qdsp5v2/audio_dev_ctl.h>
-#include <mach/msm_memtypes.h>
 #include <mach/cpuidle.h>
 #include <linux/msm_ion.h>
 #include <mach/debug_mm.h>
