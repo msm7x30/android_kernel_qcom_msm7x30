@@ -28,7 +28,7 @@ int msm_arch_idle(void);
 int msm_pm_collapse(void);
 void msm_pm_collapse_exit(void);
 extern void *msm_saved_state;
-extern unsigned long msm_saved_state_phys;
+extern dma_addr_t msm_saved_state_phys;
 
 #ifdef CONFIG_CPU_V7
 void msm_pm_boot_entry(void);
