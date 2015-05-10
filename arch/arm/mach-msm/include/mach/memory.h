@@ -69,19 +69,8 @@ extern unsigned long ebi1_phys_offset;
 #endif
 
 #ifndef __ASSEMBLY__
-void *alloc_bootmem_aligned(unsigned long size, unsigned long alignment);
-void *allocate_contiguous_ebi(unsigned long, unsigned long, int);
 unsigned long allocate_contiguous_ebi_nomap(unsigned long, unsigned long);
-void clean_and_invalidate_caches(unsigned long, unsigned long, unsigned long);
 void clean_caches(unsigned long, unsigned long, unsigned long);
-void invalidate_caches(unsigned long, unsigned long, unsigned long);
-int msm_get_memory_type_from_name(const char *memtype_name);
-unsigned long get_ddr_size(void);
-
-#if defined(CONFIG_ARCH_MSM_ARM11) || defined(CONFIG_ARCH_MSM_CORTEX_A5)
-void write_to_strongly_ordered_memory(void);
-void map_page_strongly_ordered(void);
-#endif
 
 #ifdef CONFIG_CACHE_L2X0
 extern void l2x0_cache_sync(void);

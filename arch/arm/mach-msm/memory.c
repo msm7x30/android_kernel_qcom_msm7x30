@@ -20,124 +20,24 @@
 #include <linux/module.h>
 #include <linux/memory_alloc.h>
 #include <linux/memblock.h>
-#include <asm/pgtable.h>
 #include <asm/io.h>
 #include <asm/mach/map.h>
 #include <asm/cacheflush.h>
 #include <asm/setup.h>
-#include <asm/mach-types.h>
 #include <mach/msm_memtypes.h>
-#include <linux/hardirq.h>
-#if defined(CONFIG_MSM_NPA_REMOTE)
-#include "npa_remote.h"
-#include <linux/completion.h>
-#include <linux/err.h>
-#endif
-#include <linux/android_pmem.h>
-#include <mach/msm_iomap.h>
 #include <mach/socinfo.h>
-#include <linux/sched.h>
-#include <linux/of_fdt.h>
 
-/* fixme */
-#include <asm/tlbflush.h>
-#include <../../mm/mm.h>
-
-void *strongly_ordered_page;
-char strongly_ordered_mem[PAGE_SIZE*2-4];
-
-void map_page_strongly_ordered(void)
-{
-#if defined(CONFIG_ARCH_MSM7X27) && !defined(CONFIG_ARCH_MSM7X27A)
-	long unsigned int phys;
-	struct map_desc map;
-
-	if (strongly_ordered_page)
-		return;
-
-	strongly_ordered_page = (void*)PFN_ALIGN((int)&strongly_ordered_mem);
-	phys = __pa(strongly_ordered_page);
-
-	map.pfn = __phys_to_pfn(phys);
-	map.virtual = MSM_STRONGLY_ORDERED_PAGE;
-	map.length = PAGE_SIZE;
-	map.type = MT_DEVICE_STRONGLY_ORDERED;
-	create_mapping(&map);
-
-	printk(KERN_ALERT "Initialized strongly ordered page successfully\n");
-#endif
-}
-EXPORT_SYMBOL(map_page_strongly_ordered);
-
-void write_to_strongly_ordered_memory(void)
-{
-#if defined(CONFIG_ARCH_MSM7X27) && !defined(CONFIG_ARCH_MSM7X27A)
-	if (!strongly_ordered_page) {
-		if (!in_interrupt())
-			map_page_strongly_ordered();
-		else {
-			printk(KERN_ALERT "Cannot map strongly ordered page in "
-				"Interrupt Context\n");
-			/* capture it here before the allocation fails later */
-			BUG();
-		}
-	}
-	*(int *)MSM_STRONGLY_ORDERED_PAGE = 0;
-#endif
-}
-EXPORT_SYMBOL(write_to_strongly_ordered_memory);
 
 /* These cache related routines make the assumption (if outer cache is
  * available) that the associated physical memory is contiguous.
  * They will operate on all (L1 and L2 if present) caches.
  */
-void clean_and_invalidate_caches(unsigned long vstart,
-	unsigned long length, unsigned long pstart)
-{
-	dmac_flush_range((void *)vstart, (void *) (vstart + length));
-	outer_flush_range(pstart, pstart + length);
-}
 
 void clean_caches(unsigned long vstart,
 	unsigned long length, unsigned long pstart)
 {
 	dmac_clean_range((void *)vstart, (void *) (vstart + length));
 	outer_clean_range(pstart, pstart + length);
-}
-
-void invalidate_caches(unsigned long vstart,
-	unsigned long length, unsigned long pstart)
-{
-	dmac_inv_range((void *)vstart, (void *) (vstart + length));
-	outer_inv_range(pstart, pstart + length);
-}
-
-void * __init alloc_bootmem_aligned(unsigned long size, unsigned long alignment)
-{
-	void *unused_addr = NULL;
-	unsigned long addr, tmp_size, unused_size;
-
-	/* Allocate maximum size needed, see where it ends up.
-	 * Then free it -- in this path there are no other allocators
-	 * so we can depend on getting the same address back
-	 * when we allocate a smaller piece that is aligned
-	 * at the end (if necessary) and the piece we really want,
-	 * then free the unused first piece.
-	 */
-
-	tmp_size = size + alignment - PAGE_SIZE;
-	addr = (unsigned long)alloc_bootmem(tmp_size);
-	free_bootmem(__pa(addr), tmp_size);
-
-	unused_size = alignment - (addr % alignment);
-	if (unused_size)
-		unused_addr = alloc_bootmem(unused_size);
-
-	addr = (unsigned long)alloc_bootmem(size);
-	if (unused_size)
-		free_bootmem(__pa(unused_addr), unused_size);
-
-	return (void *)addr;
 }
 
 char *memtype_name[] = {
@@ -324,14 +224,6 @@ static int get_ebi_memtype(void)
 	return MEMTYPE_EBI1;
 }
 
-void *allocate_contiguous_ebi(unsigned long size,
-	unsigned long align, int cached)
-{
-	return allocate_contiguous_memory(size, get_ebi_memtype(),
-		align, cached);
-}
-EXPORT_SYMBOL(allocate_contiguous_ebi);
-
 unsigned long allocate_contiguous_ebi_nomap(unsigned long size,
 	unsigned long align)
 {
@@ -339,146 +231,3 @@ unsigned long allocate_contiguous_ebi_nomap(unsigned long size,
 		align, __builtin_return_address(0));
 }
 EXPORT_SYMBOL(allocate_contiguous_ebi_nomap);
-
-unsigned int msm_ttbr0;
-
-void store_ttbr0(void)
-{
-	/* Store TTBR0 for post-mortem debugging purposes. */
-	asm("mrc p15, 0, %0, c2, c0, 0\n"
-		: "=r" (msm_ttbr0));
-}
-
-static char * const memtype_names[] = {
-	[MEMTYPE_SMI_KERNEL] = "SMI_KERNEL",
-	[MEMTYPE_SMI]	= "SMI",
-	[MEMTYPE_EBI0] = "EBI0",
-	[MEMTYPE_EBI1] = "EBI1",
-};
-
-int msm_get_memory_type_from_name(const char *memtype_name)
-{
-	int i;
-
-	for (i = 0; i < ARRAY_SIZE(memtype_names); i++) {
-		if (memtype_names[i] &&
-		    strcmp(memtype_name, memtype_names[i]) == 0)
-			return i;
-	}
-
-	pr_err("Could not find memory type %s\n", memtype_name);
-	return -EINVAL;
-}
-
-static int reserve_memory_type(const char *mem_name,
-				struct memtype_reserve *reserve_table,
-				int size)
-{
-	int ret = msm_get_memory_type_from_name(mem_name);
-
-	if (ret >= 0) {
-		reserve_table[ret].size += size;
-		ret = 0;
-	}
-	return ret;
-}
-
-static int check_for_compat(unsigned long node)
-{
-	char **start = __compat_exports_start;
-
-	for ( ; start < __compat_exports_end; start++)
-		if (of_flat_dt_is_compatible(node, *start))
-			return 1;
-
-	return 0;
-}
-
-int __init dt_scan_for_memory_reserve(unsigned long node, const char *uname,
-		int depth, void *data)
-{
-	char *memory_name_prop;
-	unsigned int *memory_remove_prop;
-	unsigned long memory_name_prop_length;
-	unsigned long memory_remove_prop_length;
-	unsigned long memory_size_prop_length;
-	unsigned int *memory_size_prop;
-	unsigned int memory_size;
-	unsigned int memory_start;
-	int ret;
-
-	memory_name_prop = of_get_flat_dt_prop(node,
-						"qcom,memory-reservation-type",
-						&memory_name_prop_length);
-	memory_remove_prop = of_get_flat_dt_prop(node,
-						"qcom,memblock-remove",
-						&memory_remove_prop_length);
-
-	if (memory_name_prop || memory_remove_prop) {
-		if (!check_for_compat(node))
-			goto out;
-	} else {
-		goto out;
-	}
-
-	if (memory_name_prop) {
-		if (strnlen(memory_name_prop, memory_name_prop_length) == 0) {
-			WARN(1, "Memory name was malformed\n");
-			goto mem_remove;
-		}
-
-		memory_size_prop = of_get_flat_dt_prop(node,
-						"qcom,memory-reservation-size",
-						&memory_size_prop_length);
-
-		if (memory_size_prop &&
-		    (memory_size_prop_length == sizeof(unsigned int))) {
-			memory_size = be32_to_cpu(*memory_size_prop);
-
-			if (reserve_memory_type(memory_name_prop,
-						data, memory_size) == 0)
-				pr_info("%s reserved %s size %x\n",
-					uname, memory_name_prop, memory_size);
-			else
-				WARN(1, "Node %s reserve failed\n",
-						uname);
-		} else {
-			WARN(1, "Node %s specified bad/nonexistent size\n",
-					uname);
-		}
-	}
-
-mem_remove:
-
-	if (memory_remove_prop) {
-		if (memory_remove_prop_length != (2*sizeof(unsigned int))) {
-			WARN(1, "Memory remove malformed\n");
-			goto out;
-		}
-
-		memory_start = be32_to_cpu(memory_remove_prop[0]);
-		memory_size = be32_to_cpu(memory_remove_prop[1]);
-
-		ret = memblock_remove(memory_start, memory_size);
-		if (ret)
-			WARN(1, "Failed to remove memory %x-%x\n",
-				memory_start, memory_start+memory_size);
-		else
-			pr_info("Node %s removed memory %x-%x\n", uname,
-				memory_start, memory_start+memory_size);
-	}
-
-out:
-	return 0;
-}
-
-unsigned long get_ddr_size(void)
-{
-	unsigned int i;
-	unsigned long ret = 0;
-
-	for (i = 0; i < meminfo.nr_banks; i++)
-		ret += meminfo.bank[i].size;
-
-	return ret;
-}
