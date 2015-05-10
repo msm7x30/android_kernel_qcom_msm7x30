@@ -28,18 +28,13 @@
 #include <linux/dma-mapping.h>
 #include <linux/msm_audio_qcp.h>
 #include <linux/msm_ion.h>
-#include <linux/memory_alloc.h>
-
 #include <mach/msm_adsp.h>
-#include <mach/iommu.h>
-#include <mach/iommu_domains.h>
 #include <mach/socinfo.h>
 #include <mach/qdsp5v2/qdsp5audreccmdi.h>
 #include <mach/qdsp5v2/qdsp5audrecmsg.h>
 #include <mach/qdsp5v2/audpreproc.h>
 #include <mach/qdsp5v2/audio_dev_ctl.h>
 #include <mach/debug_mm.h>
-#include <mach/msm_memtypes.h>
 
 #define META_OUT_SIZE	24
 /* FRAME_NUM must be a power of two */

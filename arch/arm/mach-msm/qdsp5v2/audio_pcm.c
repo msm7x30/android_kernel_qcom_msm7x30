@@ -39,16 +39,12 @@
 #include <mach/qdsp5v2/audio_dev_ctl.h>
 
 #include <mach/msm_adsp.h>
-#include <mach/iommu.h>
-#include <mach/iommu_domains.h>
 #include <mach/qdsp5v2/qdsp5audppcmdi.h>
 #include <mach/qdsp5v2/qdsp5audppmsg.h>
 #include <mach/qdsp5v2/qdsp5audplaycmdi.h>
 #include <mach/qdsp5v2/qdsp5audplaymsg.h>
 #include <mach/qdsp5v2/audpp.h>
 #include <mach/debug_mm.h>
-#include <linux/memory_alloc.h>
-#include <mach/msm_memtypes.h>
 
 #define ADRV_STATUS_AIO_INTF 0x00000001
 #define ADRV_STATUS_OBUF_GIVEN 0x00000002

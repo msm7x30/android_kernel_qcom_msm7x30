@@ -38,19 +38,14 @@
 #endif
 #include <linux/slab.h>
 #include <linux/msm_audio.h>
-#include <linux/memory_alloc.h>
 #include <mach/qdsp5v2/audio_dev_ctl.h>
-
 #include <mach/msm_adsp.h>
-#include <mach/iommu.h>
-#include <mach/iommu_domains.h>
 #include <mach/qdsp5v2/qdsp5audppmsg.h>
 #include <mach/qdsp5v2/qdsp5audplaycmdi.h>
 #include <mach/qdsp5v2/qdsp5audplaymsg.h>
 #include <mach/qdsp5v2/audio_dev_ctl.h>
 #include <mach/qdsp5v2/audpp.h>
 #include <mach/debug_mm.h>
-#include <mach/msm_memtypes.h>
 
 
 /* Size must be power of 2 */
@@ -123,7 +118,8 @@ struct audio {
 	struct mutex read_lock;
 	wait_queue_head_t read_wait;	/* Wait queue for read */
 	char *read_data;	/* pointer to reader buffer */
-	int32_t read_phys;	/* physical address of reader buffer */
+	dma_addr_t read_phys;	/* physical address of reader buffer */
+	size_t read_size;	/* size of the read buffer */
 	uint8_t read_next;	/* index to input buffers to be read next */
 	uint8_t fill_next;	/* index to buffer that DSP should be filling */
 	uint8_t pcm_buf_count;	/* number of pcm buffer allocated */
@@ -1011,56 +1007,42 @@ static long audio_ioctl(struct file *file, unsigned int cmd, unsigned long arg)
 
 			/* Check if pcm feedback is required */
 			if ((config.pcm_feedback) && (!audio->read_data)) {
+				uint8_t index;
+				uint32_t offset = 0;
+
+				audio->read_size = config.buffer_count *
+						config.buffer_size;
 				MM_DBG("allocate PCM buffer %d\n",
-						config.buffer_count *
-						config.buffer_size);
-				audio->read_phys =
-					allocate_contiguous_ebi_nomap(
-							config.buffer_size *
-							config.buffer_count,
-							SZ_4K);
-				if (!audio->read_phys) {
+						audio->read_size);
+				audio->map_v_read = dma_alloc_coherent(NULL,
+					audio->read_size, &(audio->read_phys),
+					GFP_KERNEL);
+				if (!audio->map_v_read) {
 					rc = -ENOMEM;
 					break;
 				}
-				audio->map_v_read = ioremap(
-							audio->read_phys,
-							config.buffer_size *
-							config.buffer_count);
-				if (IS_ERR(audio->map_v_read)) {
-					MM_ERR("read buf map fail\n");
-					rc = -ENOMEM;
-					free_contiguous_memory_by_paddr(
-							audio->read_phys);
-				} else {
-					uint8_t index;
-					uint32_t offset = 0;
-					audio->read_data =
-						audio->map_v_read;
-					audio->buf_refresh = 0;
-					audio->pcm_buf_count =
-					    config.buffer_count;
-					audio->read_next = 0;
-					audio->fill_next = 0;
+				audio->read_data = audio->map_v_read;
+				audio->buf_refresh = 0;
+				audio->pcm_buf_count = config.buffer_count;
+				audio->read_next = 0;
+				audio->fill_next = 0;
 
-					for (index = 0;
-					     index < config.buffer_count;
-					     index++) {
-						audio->in[index].data =
-						    audio->read_data + offset;
-						audio->in[index].addr =
-						    audio->read_phys + offset;
-						audio->in[index].size =
-						    config.buffer_size;
-						audio->in[index].used = 0;
-						offset += config.buffer_size;
-					}
-					MM_DBG("read buf: phy addr \
-						0x%08x kernel addr 0x%08x\n",
-						audio->read_phys,
-						(int)audio->read_data);
-					rc = 0;
+				for (index = 0; index < config.buffer_count;
+					index++) {
+					audio->in[index].data =
+					    audio->read_data + offset;
+					audio->in[index].addr =
+					    audio->read_phys + offset;
+					audio->in[index].size =
+					    config.buffer_size;
+					audio->in[index].used = 0;
+					offset += config.buffer_size;
 				}
+				MM_DBG("read buf: phy addr \
+					0x%08x kernel addr 0x%08x\n",
+					audio->read_phys,
+					(int)audio->read_data);
+				rc = 0;
 			} else {
 				rc = 0;
 			}
@@ -1418,11 +1400,11 @@ static int audio_release(struct inode *inode, struct file *file)
 	audio->event_abort = 1;
 	wake_up(&audio->event_wait);
 	audadpcm_reset_event_queue(audio);
-	iounmap(audio->map_v_write);
-	free_contiguous_memory_by_paddr(audio->phys);
+	dma_free_coherent(NULL, audio->out_dma_sz, audio->map_v_write,
+		audio->phys);
 	if (audio->read_data) {
-		iounmap(audio->map_v_read);
-		free_contiguous_memory_by_paddr(audio->read_phys);
+		dma_free_coherent(NULL, audio->read_size, audio->map_v_read,
+			audio->read_phys);
 	}
 	mutex_unlock(&audio->lock);
 #ifdef CONFIG_DEBUG_FS
@@ -1610,20 +1592,9 @@ static int audio_open(struct inode *inode, struct file *file)
 
 	while (pmem_sz >= DMASZ_MIN) {
 		MM_DBG("pmemsz = %d\n", pmem_sz);
-		audio->phys = allocate_contiguous_ebi_nomap(pmem_sz,
-									SZ_4K);
-		if (audio->phys) {
-			audio->map_v_write = ioremap(audio->phys, pmem_sz);
-			if (IS_ERR(audio->map_v_write)) {
-				MM_ERR("could not map write phys address, \
-						freeing instance 0x%08x\n",
-						(int)audio);
-				rc = -ENOMEM;
-				free_contiguous_memory_by_paddr(audio->phys);
-				audpp_adec_free(audio->dec_id);
-				kfree(audio);
-				goto done;
-			}
+		audio->map_v_write = dma_alloc_coherent(NULL, pmem_sz,
+			&(audio->phys), GFP_KERNEL);
+		if (audio->map_v_write) {
 			audio->data = audio->map_v_write;
 			MM_DBG("write buf: phy addr 0x%08x kernel addr \
 				0x%08x\n", audio->phys, (int)audio->data);
@@ -1636,7 +1607,7 @@ static int audio_open(struct inode *inode, struct file *file)
 			kfree(audio);
 			goto done;
 		} else
-		pmem_sz >>= 1;
+			pmem_sz >>= 1;
 	}
 	audio->out_dma_sz = pmem_sz;
 
@@ -1724,8 +1695,8 @@ done:
 event_err:
 	msm_adsp_put(audio->audplay);
 err:
-	iounmap(audio->map_v_write);
-	free_contiguous_memory_by_paddr(audio->phys);
+	dma_free_coherent(NULL, audio->out_dma_sz, audio->map_v_write,
+		audio->phys);
 	audpp_adec_free(audio->dec_id);
 	kfree(audio);
 	return rc;

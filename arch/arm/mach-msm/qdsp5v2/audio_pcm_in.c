@@ -24,15 +24,9 @@
 #include <linux/wait.h>
 #include <linux/dma-mapping.h>
 #include <linux/msm_ion.h>
-
 #include <linux/msm_audio.h>
-
-#include <mach/msm_memtypes.h>
-#include <linux/memory_alloc.h>
-
 #include <asm/atomic.h>
 #include <asm/ioctls.h>
-
 #include <mach/msm_adsp.h>
 #include <mach/socinfo.h>
 #include <mach/qdsp5v2/qdsp5audreccmdi.h>
