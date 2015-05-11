@@ -336,7 +336,7 @@ void rotator_free_2pass_buf(struct rot_buf_type *rot_buf, int s_ndx)
 	rot_buf->read_addr = 0;
 }
 
-int msm_rotator_iommu_map_buf(int mem_id, int domain,
+int msm_rotator_iommu_map_buf(int mem_id,
 	unsigned long *start, unsigned long *len,
 	struct ion_handle **pihdl, unsigned int secure)
 {
@@ -1628,7 +1628,7 @@ static int msm_rotator_rgb_types(struct msm_rotator_img_info *info,
 	return 0;
 }
 
-static int get_img(struct msmfb_data *fbd, int domain,
+static int get_img(struct msmfb_data *fbd,
 	unsigned long *start, unsigned long *len, struct file **p_file,
 	int *p_need, struct ion_handle **p_ihdl, unsigned int secure)
 {
@@ -1667,13 +1667,13 @@ static int get_img(struct msmfb_data *fbd, int domain,
 	}
 #endif
 
-	return msm_rotator_iommu_map_buf(fbd->memory_id, domain, start,
+	return msm_rotator_iommu_map_buf(fbd->memory_id, start,
 		len, p_ihdl, secure);
 
 }
 
 static void put_img(struct file *p_file, struct ion_handle *p_ihdl,
-	int domain, unsigned int secure)
+	unsigned int secure)
 {
 #ifdef CONFIG_MSM_MULTIMEDIA_USE_ION
 	if (!IS_ERR_OR_NULL(p_ihdl)) {
@@ -1748,7 +1748,7 @@ static int msm_rotator_rotate_prepare(
 		return rc;
 	}
 
-	rc = get_img(&info.src, ROTATOR_SRC_DOMAIN, (unsigned long *)&in_paddr,
+	rc = get_img(&info.src, (unsigned long *)&in_paddr,
 			(unsigned long *)&src_len, &srcp0_file, &ps0_need,
 			&srcp0_ihdl, 0);
 	if (rc) {
@@ -1757,7 +1757,7 @@ static int msm_rotator_rotate_prepare(
 		goto rotate_prepare_error;
 	}
 
-	rc = get_img(&info.dst, ROTATOR_DST_DOMAIN, (unsigned long *)&out_paddr,
+	rc = get_img(&info.dst, (unsigned long *)&out_paddr,
 			(unsigned long *)&dst_len, &dstp0_file, &p_need,
 			&dstp0_ihdl, img_info->secure);
 	if (rc) {
@@ -1787,7 +1787,7 @@ static int msm_rotator_rotate_prepare(
 			goto rotate_prepare_error;
 		}
 
-		rc = get_img(&info.src_chroma, ROTATOR_SRC_DOMAIN,
+		rc = get_img(&info.src_chroma,
 				(unsigned long *)&in_chroma_paddr,
 				(unsigned long *)&src_len, &srcp1_file, &p_need,
 				&srcp1_ihdl, 0);
@@ -1797,7 +1797,7 @@ static int msm_rotator_rotate_prepare(
 			goto rotate_prepare_error;
 		}
 
-		rc = get_img(&info.dst_chroma, ROTATOR_DST_DOMAIN,
+		rc = get_img(&info.dst_chroma,
 				(unsigned long *)&out_chroma_paddr,
 				(unsigned long *)&dst_len, &dstp1_file, &p_need,
 				&dstp1_ihdl, img_info->secure);
@@ -1884,17 +1884,17 @@ static int msm_rotator_rotate_prepare(
 	return 0;
 
 rotate_prepare_error:
-	put_img(dstp1_file, dstp1_ihdl, ROTATOR_DST_DOMAIN,
+	put_img(dstp1_file, dstp1_ihdl,
 		msm_rotator_dev->rot_session[s]->img_info.secure);
-	put_img(srcp1_file, srcp1_ihdl, ROTATOR_SRC_DOMAIN, 0);
-	put_img(dstp0_file, dstp0_ihdl, ROTATOR_DST_DOMAIN,
+	put_img(srcp1_file, srcp1_ihdl, 0);
+	put_img(dstp0_file, dstp0_ihdl,
 		msm_rotator_dev->rot_session[s]->img_info.secure);
 
 	/* only source may use frame buffer */
 	if (info.src.flags & MDP_MEMORY_ID_TYPE_FB)
 		fput_light(srcp0_file, ps0_need);
 	else
-		put_img(srcp0_file, srcp0_ihdl, ROTATOR_SRC_DOMAIN, 0);
+		put_img(srcp0_file, srcp0_ihdl, 0);
 	dev_dbg(msm_rotator_dev->device, "%s() returning rc = %d\n",
 		__func__, rc);
 	mutex_unlock(&msm_rotator_dev->rotator_lock);
@@ -2071,17 +2071,17 @@ do_rotate_exit:
 	msm_rotator_imem_free(ROTATOR_REQUEST);
 #endif
 	schedule_delayed_work(&msm_rotator_dev->rot_clk_work, HZ);
-	put_img(dstp1_file, dstp1_ihdl, ROTATOR_DST_DOMAIN,
+	put_img(dstp1_file, dstp1_ihdl,
 		img_info->secure);
-	put_img(srcp1_file, srcp1_ihdl, ROTATOR_SRC_DOMAIN, 0);
-	put_img(dstp0_file, dstp0_ihdl, ROTATOR_DST_DOMAIN,
+	put_img(srcp1_file, srcp1_ihdl, 0);
+	put_img(dstp0_file, dstp0_ihdl,
 		img_info->secure);
 
 	/* only source may use frame buffer */
 	if (info.src.flags & MDP_MEMORY_ID_TYPE_FB)
 		fput_light(srcp0_file, ps0_need);
 	else
-		put_img(srcp0_file, srcp0_ihdl, ROTATOR_SRC_DOMAIN, 0);
+		put_img(srcp0_file, srcp0_ihdl, 0);
 	msm_rotator_signal_timeline_done(s);
 	mutex_unlock(&msm_rotator_dev->rotator_lock);
 	dev_dbg(msm_rotator_dev->device, "%s() returning rc = %d\n",
