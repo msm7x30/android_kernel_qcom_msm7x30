@@ -255,7 +255,6 @@ static struct platform_device ion_dev;
 #define DDR2_BANK_BASE 0X40000000
 #define DDR2_BANK_SIZE 0X10000000
 
-static unsigned int phys_add = DDR2_BANK_BASE;
 unsigned long ebi1_phys_offset = DDR2_BANK_BASE;
 EXPORT_SYMBOL(ebi1_phys_offset);
 
@@ -3905,42 +3904,9 @@ static struct platform_device ion_dev = {
 };
 #endif
 
-static struct memtype_reserve msm7x30_reserve_table[] __initdata = {
-	[MEMTYPE_SMI] = {
-	},
-	[MEMTYPE_EBI0] = {
-		.flags	=	MEMTYPE_FLAGS_1M_ALIGN,
-	},
-	[MEMTYPE_EBI1] = {
-		.flags	=	MEMTYPE_FLAGS_1M_ALIGN,
-	},
-};
-
-static void __init msm7x30_calculate_reserve_sizes(void)
-{
-}
-
-static int msm7x30_paddr_to_memtype(unsigned int paddr)
-{
-	if (paddr < phys_add)
-		return MEMTYPE_EBI0;
-	if (paddr >= phys_add && paddr < 0x80000000)
-		return MEMTYPE_EBI1;
-	return MEMTYPE_NONE;
-}
-
-static struct reserve_info msm7x30_reserve_info __initdata = {
-	.memtype_reserve_table = msm7x30_reserve_table,
-	.calculate_reserve_sizes = msm7x30_calculate_reserve_sizes,
-	.paddr_to_memtype = msm7x30_paddr_to_memtype,
-};
-
 static void __init msm7x30_reserve(void)
 {
 	unsigned int cma_total_size = 0;
-
-	reserve_info = &msm7x30_reserve_info;
-	msm_reserve();
 
 	cma_total_size += MSM_ION_MM_SIZE;
 	cma_total_size += MSM_ION_AUDIO_SIZE;
