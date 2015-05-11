@@ -3928,16 +3928,10 @@ static void __init size_ion_devices(void)
 #endif
 }
 
-static void __init reserve_ion_memory(void)
-{
-	msm7x30_reserve_table[MEMTYPE_EBI0].size += 1;
-}
-
 static void __init msm7x30_calculate_reserve_sizes(void)
 {
 	reserve_mdp_memory();
 	size_ion_devices();
-	reserve_ion_memory();
 }
 
 static int msm7x30_paddr_to_memtype(unsigned int paddr)
