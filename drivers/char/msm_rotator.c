@@ -253,7 +253,7 @@ static struct res_mmu_clk rot_mmu_clks[] = {
 
 u32 rotator_allocate_2pass_buf(struct rot_buf_type *rot_buf, int s_ndx)
 {
-	ion_phys_addr_t	addr, read_addr = 0;
+	ion_phys_addr_t	addr = 0, read_addr = 0;
 	size_t buffer_size;
 	unsigned long len;
 
@@ -285,10 +285,8 @@ u32 rotator_allocate_2pass_buf(struct rot_buf_type *rot_buf, int s_ndx)
 				__LINE__);
 			return -ENOMEM;
 		}
-	} else {
-		addr = allocate_contiguous_memory_nomap(buffer_size,
-			mrd->rot_session[s_ndx]->mem_hid, 4);
 	}
+
 	if (addr) {
 		pr_info("allocating %d bytes at write=%x, read=%x for 2-pass\n",
 			buffer_size, (u32) addr, (u32) read_addr);
@@ -324,12 +322,6 @@ void rotator_free_2pass_buf(struct rot_buf_type *rot_buf, int s_ndx)
 			rot_buf->ihdl = NULL;
 			pr_info("%s:%d Free rotator 2pass memory",
 					__func__, __LINE__);
-		}
-	} else {
-		if (rot_buf->write_addr) {
-			free_contiguous_memory_by_paddr(rot_buf->write_addr);
-			pr_debug("%s:%d Free rotator 2pass pmem\n", __func__,
-				__LINE__);
 		}
 	}
 	rot_buf->write_addr = 0;
