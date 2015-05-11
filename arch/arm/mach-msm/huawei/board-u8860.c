@@ -84,21 +84,21 @@
 
 
 #ifdef CONFIG_FB_MSM_TRIPLE_BUFFER
-#define MSM_FB_PRIM_BUF_SIZE	(roundup(854 * 480 * 4, 4096) * 3) /* 4bpp * 3 Pages */
+#define MSM_FB_PRIM_BUF_SIZE	(854 * 480 * 4 * 3) /* 4bpp * 3 Pages */
 #else
-#define MSM_FB_PRIM_BUF_SIZE	(roundup(854 * 480 * 4, 4096) * 2) /* 4bpp * 2 Pages */
+#define MSM_FB_PRIM_BUF_SIZE	(854 * 480 * 4 * 2) /* 4bpp * 2 Pages */
 #endif
 
 #define MSM_FB_EXT_BUF_SIZE	0
 
 #ifdef CONFIG_FB_MSM_OVERLAY0_WRITEBACK
 /* width x height x 3 bpp x 2 frame buffer */
-#define MSM_FB_OVERLAY0_WRITEBACK_SIZE	roundup((854 * 480 * 3 * 2), 4096)
+#define MSM_FB_OVERLAY0_WRITEBACK_SIZE	(854 * 480 * 3 * 2)
 #else
 #define MSM_FB_OVERLAY0_WRITEBACK_SIZE	0
 #endif
 
-#define MSM_FB_SIZE roundup(MSM_FB_PRIM_BUF_SIZE + MSM_FB_EXT_BUF_SIZE, 4096)
+#define MSM_FB_SIZE (MSM_FB_PRIM_BUF_SIZE + MSM_FB_EXT_BUF_SIZE)
 
 #ifdef CONFIG_ION_MSM
 static struct platform_device ion_dev;
@@ -2250,6 +2250,7 @@ static struct msm_panel_common_pdata mdp_pdata = {
 	.mdp_max_clk = 192000000,
 	.mdp_rev = MDP_REV_40,
 	.mem_hid = BIT(ION_CP_WB_HEAP_ID),
+	.ov0_wb_size = MSM_FB_OVERLAY0_WRITEBACK_SIZE,
 };
 
 static struct regulator *atv_s4, *atv_ldo9;
@@ -3341,6 +3342,7 @@ static struct ion_platform_heap msm7x30_heaps[] = {
 			.id	= ION_CP_MM_HEAP_ID,
 			.type	= ION_HEAP_TYPE_DMA,
 			.name	= ION_MM_HEAP_NAME,
+			.size	= MSM_ION_MM_SIZE,
 			.priv	= (void *)&ion_cma_heap_device.dev,
 		},
 		/* AUDIO */
@@ -3348,6 +3350,7 @@ static struct ion_platform_heap msm7x30_heaps[] = {
 			.id	= ION_AUDIO_HEAP_ID,
 			.type	= ION_HEAP_TYPE_DMA,
 			.name	= ION_AUDIO_HEAP_NAME,
+			.size	= MSM_ION_AUDIO_SIZE,
 			.priv	= (void *)&ion_cma_heap_device.dev,
 		},
 		/* SF */
@@ -3355,6 +3358,7 @@ static struct ion_platform_heap msm7x30_heaps[] = {
 			.id	= ION_SF_HEAP_ID,
 			.type	= ION_HEAP_TYPE_DMA,
 			.name	= ION_SF_HEAP_NAME,
+			.size	= MSM_ION_SF_SIZE,
 			.priv	= (void *)&ion_cma_heap_device.dev,
 		},
 		/* WB */
@@ -3362,6 +3366,7 @@ static struct ion_platform_heap msm7x30_heaps[] = {
 			.id	= ION_CP_WB_HEAP_ID,
 			.type	= ION_HEAP_TYPE_DMA,
 			.name	= ION_WB_HEAP_NAME,
+			.size	= MSM_ION_WB_SIZE,
 			.priv	= (void *)&ion_cma_heap_device.dev,
 		},
 #endif
@@ -3390,25 +3395,8 @@ static struct memtype_reserve msm7x30_reserve_table[] __initdata = {
 	},
 };
 
-static void __init reserve_mdp_memory(void)
-{
-	mdp_pdata.ov0_wb_size = MSM_FB_OVERLAY0_WRITEBACK_SIZE;
-}
-
-static void __init size_ion_devices(void)
-{
-#ifdef CONFIG_MSM_MULTIMEDIA_USE_ION
-	ion_pdata.heaps[1].size = MSM_ION_MM_SIZE;
-	ion_pdata.heaps[2].size = MSM_ION_AUDIO_SIZE;
-	ion_pdata.heaps[3].size = MSM_ION_SF_SIZE;
-	ion_pdata.heaps[4].size = MSM_ION_WB_SIZE;
-#endif
-}
-
 static void __init msm7x30_calculate_reserve_sizes(void)
 {
-	reserve_mdp_memory();
-	size_ion_devices();
 }
 
 static int msm7x30_paddr_to_memtype(unsigned int paddr)
