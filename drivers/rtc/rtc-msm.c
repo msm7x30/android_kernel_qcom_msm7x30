@@ -644,6 +644,8 @@ msmrtc_probe(struct platform_device *pdev)
 	rtc_pdata->rtcalarm_time = 0;
 	platform_set_drvdata(pdev, rtc_pdata);
 
+	device_init_wakeup(&pdev->dev, 1);
+
 	rtc_pdata->rtc = rtc_device_register("msm_rtc",
 				  &pdev->dev,
 				  &msm_rtc_ops,
