@@ -21,7 +21,6 @@
 #include <linux/init.h>
 #include <linux/types.h>
 #include <linux/slab.h>
-#include <linux/android_alarm.h>
 
 #include <linux/rtc.h>
 #include <linux/rtc-msm.h>
@@ -141,42 +140,6 @@ struct rtc_tod_args {
 	int proc;
 	struct rtc_time *tm;
 };
-
-#ifdef CONFIG_PM
-struct suspend_state_info {
-	atomic_t state;
-	int64_t tick_at_suspend;
-};
-
-static struct suspend_state_info suspend_state = {ATOMIC_INIT(0), 0};
-
-void msmrtc_updateatsuspend(struct timespec *ts)
-{
-	int64_t now, sleep, sclk_max;
-
-	if (atomic_read(&suspend_state.state)) {
-		now = msm_timer_get_sclk_time(&sclk_max);
-
-		if (now && suspend_state.tick_at_suspend) {
-			if (now < suspend_state.tick_at_suspend) {
-				sleep = sclk_max -
-					suspend_state.tick_at_suspend + now;
-			} else
-				sleep = now - suspend_state.tick_at_suspend;
-
-			timespec_add_ns(ts, sleep);
-			suspend_state.tick_at_suspend = now;
-		} else
-			pr_err("%s: Invalid ticks from SCLK now=%lld"
-				"tick_at_suspend=%lld", __func__, now,
-				suspend_state.tick_at_suspend);
-	}
-
-}
-#else
-void msmrtc_updateatsuspend(struct timespec *ts) { }
-#endif
-EXPORT_SYMBOL(msmrtc_updateatsuspend);
 
 static int msmrtc_tod_proc_args(struct msm_rpc_client *client, void *buff,
 							void *data)
@@ -435,34 +398,11 @@ static struct rtc_class_ops msm_rtc_ops_secure = {
 static void process_cb_request(void *buffer)
 {
 	struct rtc_cb_recv *rtc_cb = buffer;
-	struct timespec ts, tv;
 
-	rtc_cb->client_cb_id = be32_to_cpu(rtc_cb->client_cb_id);
 	rtc_cb->event = be32_to_cpu(rtc_cb->event);
-	rtc_cb->cb_info_ptr = be32_to_cpu(rtc_cb->cb_info_ptr);
 
-	if (rtc_cb->event == EVENT_TOD_CHANGE) {
-		/* A TOD update has been received from the Modem */
-		rtc_cb->cb_info_data.tod_update.tick =
-			be32_to_cpu(rtc_cb->cb_info_data.tod_update.tick);
-		rtc_cb->cb_info_data.tod_update.stamp =
-			be64_to_cpu(rtc_cb->cb_info_data.tod_update.stamp);
-		rtc_cb->cb_info_data.tod_update.freq =
-			be32_to_cpu(rtc_cb->cb_info_data.tod_update.freq);
-		pr_info("RPC CALL -- TOD TIME UPDATE: ttick = %d\n"
-			"stamp=%lld, freq = %d\n",
-			rtc_cb->cb_info_data.tod_update.tick,
-			rtc_cb->cb_info_data.tod_update.stamp,
-			rtc_cb->cb_info_data.tod_update.freq);
-
-		getnstimeofday(&ts);
-		msmrtc_updateatsuspend(&ts);
-		rtc_hctosys();
-		getnstimeofday(&tv);
-		/* Update the alarm information with the new time info. */
-		alarm_update_timedelta(ts, tv);
-
-	} else
+	/* Stub EVENT_TOD_CHANGE. */
+	if (rtc_cb->event != EVENT_TOD_CHANGE)
 		pr_err("%s: Unknown event EVENT=%x\n",
 					__func__, rtc_cb->event);
 }
@@ -706,7 +646,6 @@ msmrtc_suspend(struct platform_device *dev, pm_message_t state)
 	unsigned long now;
 	struct msm_rtc *rtc_pdata = platform_get_drvdata(dev);
 
-	suspend_state.tick_at_suspend = msm_timer_get_sclk_time(NULL);
 	if (rtc_pdata->rtcalarm_time) {
 		rc = msmrtc_timeremote_read_time(&dev->dev, &tm);
 		if (rc) {
@@ -719,14 +658,12 @@ msmrtc_suspend(struct platform_device *dev, pm_message_t state)
 		if (diff <= 0) {
 			msmrtc_alarmtimer_expired(1 , rtc_pdata);
 			msm_pm_set_max_sleep_time(0);
-			atomic_inc(&suspend_state.state);
 			return 0;
 		}
 		msm_pm_set_max_sleep_time((int64_t)
 			((int64_t) diff * NSEC_PER_SEC));
 	} else
 		msm_pm_set_max_sleep_time(0);
-	atomic_inc(&suspend_state.state);
 	return 0;
 }
 
@@ -750,8 +687,6 @@ msmrtc_resume(struct platform_device *dev)
 		if (diff <= 0)
 			msmrtc_alarmtimer_expired(2 , rtc_pdata);
 	}
-	suspend_state.tick_at_suspend = 0;
-	atomic_dec(&suspend_state.state);
 	return 0;
 }
 #else
@@ -762,6 +697,8 @@ msmrtc_resume(struct platform_device *dev)
 static int msmrtc_remove(struct platform_device *pdev)
 {
 	struct msm_rtc *rtc_pdata = platform_get_drvdata(pdev);
+
+	device_init_wakeup(&pdev->dev, 0);
 
 	msm_rpc_unregister_client(rtc_pdata->rpc_client);
 	kfree(rtc_pdata);
