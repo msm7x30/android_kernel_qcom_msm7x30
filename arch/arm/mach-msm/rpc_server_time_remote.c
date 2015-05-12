@@ -21,8 +21,6 @@
 #include <mach/msm_rpcrouter.h>
 #include "rpc_server_time_remote.h"
 #include <linux/rtc.h>
-#include <linux/android_alarm.h>
-#include <linux/rtc-msm.h>
 
 /* time_remote_mtoa server definitions. */
 
@@ -101,29 +99,12 @@ send_reply:
 static int handle_rpc_call(struct msm_rpc_server *server,
 			   struct rpc_request_hdr *req, unsigned len)
 {
-	struct timespec ts, tv;
-
 	switch (req->procedure) {
 	case RPC_TIME_REMOTE_MTOA_NULL:
 		return 0;
 
-	case RPC_TIME_TOD_SET_APPS_BASES: {
-		struct rpc_time_tod_set_apps_bases_args *args;
-		args = (struct rpc_time_tod_set_apps_bases_args *)(req + 1);
-		args->tick = be32_to_cpu(args->tick);
-		args->stamp = be64_to_cpu(args->stamp);
-		printk(KERN_INFO "RPC_TIME_TOD_SET_APPS_BASES:\n"
-		       "\ttick = %d\n"
-		       "\tstamp = %lld\n",
-		       args->tick, args->stamp);
-		getnstimeofday(&ts);
-		msmrtc_updateatsuspend(&ts);
-		rtc_hctosys();
-		getnstimeofday(&tv);
-		/* Update the alarm information with the new time info. */
-		alarm_update_timedelta(ts, tv);
+	case RPC_TIME_TOD_SET_APPS_BASES:
 		return 0;
-	}
 
 	case RPC_TIME_GET_APPS_USER_TIME:
 		return read_rtc0_time(server, req, len);
