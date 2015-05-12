@@ -646,8 +646,8 @@ msmrtc_probe(struct platform_device *pdev)
 
 	device_init_wakeup(&pdev->dev, 1);
 
-	rtc_pdata->rtc = rtc_device_register("msm_rtc",
-				  &pdev->dev,
+	rtc_pdata->rtc = devm_rtc_device_register(&pdev->dev,
+				  "msm_rtc",
 				  &msm_rtc_ops,
 				  THIS_MODULE);
 	if (IS_ERR(rtc_pdata->rtc)) {
@@ -658,8 +658,8 @@ msmrtc_probe(struct platform_device *pdev)
 	}
 
 #ifdef CONFIG_RTC_SECURE_TIME_SUPPORT
-	rtc_pdata->rtcsecure = rtc_device_register("msm_rtc_secure",
-				  &pdev->dev,
+	rtc_pdata->rtcsecure = devm_rtc_device_register(&pdev->dev,
+				  "msm_rtc_secure",
 				  &msm_rtc_ops_secure,
 				  THIS_MODULE);
 
@@ -667,7 +667,6 @@ msmrtc_probe(struct platform_device *pdev)
 		dev_err(&pdev->dev,
 			"%s: Can't register RTC Secure device (%ld)\n",
 		       pdev->name, PTR_ERR(rtc_pdata->rtcsecure));
-		rtc_device_unregister(rtc_pdata->rtc);
 		rc = PTR_ERR(rtc_pdata->rtcsecure);
 		goto fail_cb_setup;
 	}
@@ -764,10 +763,6 @@ static int msmrtc_remove(struct platform_device *pdev)
 {
 	struct msm_rtc *rtc_pdata = platform_get_drvdata(pdev);
 
-	rtc_device_unregister(rtc_pdata->rtc);
-#ifdef CONFIG_RTC_SECURE_TIME_SUPPORT
-	rtc_device_unregister(rtc_pdata->rtcsecure);
-#endif
 	msm_rpc_unregister_client(rtc_pdata->rpc_client);
 	kfree(rtc_pdata);
 
