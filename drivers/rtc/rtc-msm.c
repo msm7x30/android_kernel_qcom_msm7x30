@@ -639,19 +639,21 @@ msmrtc_alarmtimer_expired(unsigned long _data,
 }
 
 static int
-msmrtc_suspend(struct platform_device *dev, pm_message_t state)
+msmrtc_suspend(struct device *dev)
 {
 	int rc;
 	int64_t diff;
 	struct rtc_time tm;
 	unsigned long now;
-	struct msm_rtc *rtc_pdata = platform_get_drvdata(dev);
+	struct msm_rtc *rtc_pdata = dev_get_drvdata(dev);
+
+	if (!device_may_wakeup(dev))
+		return 0;
 
 	if (rtc_pdata->rtcalarm_time) {
-		rc = msmrtc_timeremote_read_time(&dev->dev, &tm);
+		rc = msmrtc_timeremote_read_time(dev, &tm);
 		if (rc) {
-			dev_err(&dev->dev,
-				"%s: Unable to read from RTC\n", __func__);
+			dev_err(dev, "%s: Unable to read from RTC\n", __func__);
 			return rc;
 		}
 		rtc_tm_to_time(&tm, &now);
@@ -668,19 +670,21 @@ msmrtc_suspend(struct platform_device *dev, pm_message_t state)
 }
 
 static int
-msmrtc_resume(struct platform_device *dev)
+msmrtc_resume(struct device *dev)
 {
 	int rc;
 	int64_t diff;
 	struct rtc_time tm;
 	unsigned long now;
-	struct msm_rtc *rtc_pdata = platform_get_drvdata(dev);
+	struct msm_rtc *rtc_pdata = dev_get_drvdata(dev);
+
+	if (!device_may_wakeup(dev))
+		return 0;
 
 	if (rtc_pdata->rtcalarm_time) {
-		rc = msmrtc_timeremote_read_time(&dev->dev, &tm);
+		rc = msmrtc_timeremote_read_time(dev, &tm);
 		if (rc) {
-			dev_err(&dev->dev,
-				"%s: Unable to read from RTC\n", __func__);
+			dev_err(dev, "%s: Unable to read from RTC\n", __func__);
 			return rc;
 		}
 		rtc_tm_to_time(&tm, &now);
@@ -690,9 +694,8 @@ msmrtc_resume(struct platform_device *dev)
 	}
 	return 0;
 }
-#else
-#define msmrtc_suspend NULL
-#define msmrtc_resume  NULL
+
+static SIMPLE_DEV_PM_OPS(msmrtc_pm_ops, msmrtc_suspend, msmrtc_resume);
 #endif
 
 static int msmrtc_remove(struct platform_device *pdev)
@@ -709,12 +712,13 @@ static int msmrtc_remove(struct platform_device *pdev)
 
 static struct platform_driver msmrtc_driver = {
 	.probe		= msmrtc_probe,
-	.suspend	= msmrtc_suspend,
-	.resume		= msmrtc_resume,
 	.remove		= msmrtc_remove,
 	.driver	= {
 		.name	= APP_TIMEREMOTE_PDEV_NAME,
 		.owner	= THIS_MODULE,
+#ifdef CONFIG_PM
+		.pm	= &msmrtc_pm_ops,
+#endif
 	},
 };
 
