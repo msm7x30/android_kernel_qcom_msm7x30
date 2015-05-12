@@ -641,7 +641,8 @@ msmrtc_alarmtimer_expired(unsigned long _data,
 static int
 msmrtc_suspend(struct platform_device *dev, pm_message_t state)
 {
-	int rc, diff;
+	int rc;
+	int64_t diff;
 	struct rtc_time tm;
 	unsigned long now;
 	struct msm_rtc *rtc_pdata = platform_get_drvdata(dev);
@@ -656,12 +657,11 @@ msmrtc_suspend(struct platform_device *dev, pm_message_t state)
 		rtc_tm_to_time(&tm, &now);
 		diff = rtc_pdata->rtcalarm_time - now;
 		if (diff <= 0) {
-			msmrtc_alarmtimer_expired(1 , rtc_pdata);
+			msmrtc_alarmtimer_expired(1, rtc_pdata);
 			msm_pm_set_max_sleep_time(0);
 			return 0;
 		}
-		msm_pm_set_max_sleep_time((int64_t)
-			((int64_t) diff * NSEC_PER_SEC));
+		msm_pm_set_max_sleep_time(diff * NSEC_PER_SEC);
 	} else
 		msm_pm_set_max_sleep_time(0);
 	return 0;
@@ -670,7 +670,8 @@ msmrtc_suspend(struct platform_device *dev, pm_message_t state)
 static int
 msmrtc_resume(struct platform_device *dev)
 {
-	int rc, diff;
+	int rc;
+	int64_t diff;
 	struct rtc_time tm;
 	unsigned long now;
 	struct msm_rtc *rtc_pdata = platform_get_drvdata(dev);
@@ -685,7 +686,7 @@ msmrtc_resume(struct platform_device *dev)
 		rtc_tm_to_time(&tm, &now);
 		diff = rtc_pdata->rtcalarm_time - now;
 		if (diff <= 0)
-			msmrtc_alarmtimer_expired(2 , rtc_pdata);
+			msmrtc_alarmtimer_expired(2, rtc_pdata);
 	}
 	return 0;
 }
