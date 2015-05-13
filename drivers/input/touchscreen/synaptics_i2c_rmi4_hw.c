@@ -20,7 +20,10 @@
 #define CONFIG_SYNAPTICS_UPDATE_RMI_TS_FIRMWARE
 
 #include <linux/delay.h>
-#ifdef CONFIG_HAS_EARLYSUSPEND
+#ifdef CONFIG_FB
+#include <linux/notifier.h>
+#include <linux/fb.h>
+#elif defined CONFIG_HAS_EARLYSUSPEND
 #include <linux/earlysuspend.h>
 #endif
 #include <linux/gpio.h>
@@ -88,9 +91,12 @@ struct synaptics_i2c_rmi4 {
 	int use_irq;
 	struct hrtimer timer;
 	struct work_struct work;
-#ifdef CONFIG_HAS_EARLYSUSPEND
+#ifdef CONFIG_FB
+	struct notifier_block fb_notif;
+#elif defined(CONFIG_HAS_EARLYSUSPEND)
 	struct early_suspend early_suspend;
 #endif
+	bool suspended;
 
 	__u8 data_reg;
 	__u8 data_length;
@@ -185,7 +191,11 @@ static struct kobj_attribute update_firmware_attribute = {
 static int RMI4_enable_program(struct i2c_client *client);
 static int RMI4_disable_program(struct i2c_client *client);
 
-#ifdef CONFIG_HAS_EARLYSUSPEND
+
+#if defined(CONFIG_FB)
+static int fb_notifier_callback(struct notifier_block *self,
+	unsigned long event, void *data);
+#elif defined(CONFIG_HAS_EARLYSUSPEND)
 static void synaptics_i2c_rmi4_early_suspend(struct early_suspend *h);
 static void synaptics_i2c_rmi4_late_resume(struct early_suspend *h);
 #endif
@@ -935,7 +945,15 @@ fallback_polling:
 
 	dev_set_drvdata(&ts->input_dev->dev, ts);
 
-#ifdef CONFIG_HAS_EARLYSUSPEND
+#ifdef CONFIG_FB
+	ts->fb_notif.notifier_call = fb_notifier_callback;
+	ret = fb_register_client(&ts->fb_notif);
+	if (ret) {
+		pr_err("%s: Failed to register fb_notifier ret=%d\n",
+			__func__, ret);
+		goto err_remove_worker;
+	}
+#elif defined CONFIG_HAS_EARLYSUSPEND
 	ts->early_suspend.level = EARLY_SUSPEND_LEVEL_BLANK_SCREEN + 1;
 	ts->early_suspend.suspend = synaptics_i2c_rmi4_early_suspend;
 	ts->early_suspend.resume = synaptics_i2c_rmi4_late_resume;
@@ -943,6 +961,11 @@ fallback_polling:
 #endif
 	return 0;
 
+err_remove_worker:
+	if (ts->use_irq)
+		free_irq(client->irq, ts);
+	else
+		hrtimer_cancel(&ts->timer);
 err_free_input_device:
 	input_free_device(ts->input_dev);
 err_destroy_workqueue:
@@ -994,6 +1017,9 @@ static int synaptics_i2c_rmi4_suspend(struct i2c_client *client,
 	int ret;
 	struct synaptics_i2c_rmi4 *ts = i2c_get_clientdata(client);
 
+	if (ts->suspended)
+		return 0;
+
 	if (ts->use_irq)
 		disable_irq_nosync(client->irq);
 	else
@@ -1008,6 +1034,8 @@ static int synaptics_i2c_rmi4_suspend(struct i2c_client *client,
 	if (ret < 0)
 		pr_err("%s: Failed to set sleep mode ret=%d\n", __func__, ret);
 
+	ts->suspended = true;
+
 	return 0;
 }
 
@@ -1015,6 +1043,9 @@ static int synaptics_i2c_rmi4_resume(struct i2c_client *client)
 {
 	int ret;
 	struct synaptics_i2c_rmi4 *ts = i2c_get_clientdata(client);
+
+	if (!ts->suspended)
+		return 0;
 
 	ret = i2c_smbus_write_byte_data(ts->client, fd_01.controlBase, 0x00);
 	if (ret < 0)
@@ -1027,10 +1058,34 @@ static int synaptics_i2c_rmi4_resume(struct i2c_client *client)
 	else
 		hrtimer_start(&ts->timer, ktime_set(1, 0), HRTIMER_MODE_REL);
 
+	ts->suspended = false;
+
 	return 0;
 }
 
-#ifdef CONFIG_HAS_EARLYSUSPEND
+#if defined(CONFIG_FB)
+static int fb_notifier_callback(struct notifier_block *self,
+	unsigned long event, void *data)
+{
+	struct fb_event *evdata = data;
+	int *blank;
+	struct synaptics_i2c_rmi4 *ts =
+		container_of(self, struct synaptics_i2c_rmi4, fb_notif);
+
+	if (evdata && evdata->data && ts && ts->client) {
+		if (event == FB_EVENT_BLANK) {
+			blank = evdata->data;
+			if (*blank == FB_BLANK_UNBLANK)
+				synaptics_i2c_rmi4_resume(ts->client);
+			else if (*blank == FB_BLANK_POWERDOWN)
+				synaptics_i2c_rmi4_suspend(ts->client,
+					PMSG_SUSPEND);
+		}
+	}
+
+	return 0;
+}
+#elif defined(CONFIG_HAS_EARLYSUSPEND)
 static void synaptics_i2c_rmi4_early_suspend(struct early_suspend *h)
 {
 	struct synaptics_i2c_rmi4 *ts;
@@ -1528,7 +1583,7 @@ static const struct i2c_device_id synaptics_i2c_rmi4_id[] = {
 static struct i2c_driver synaptics_i2c_rmi4_driver = {
 	.probe		= synaptics_i2c_rmi4_probe,
 	.remove		= synaptics_i2c_rmi4_remove,
-#ifndef CONFIG_HAS_EARLYSUSPEND
+#if (!defined(CONFIG_FB) && !defined(CONFIG_HAS_EARLYSUSPEND))
 	.suspend	= synaptics_i2c_rmi4_suspend,
 	.resume		= synaptics_i2c_rmi4_resume,
 #endif
