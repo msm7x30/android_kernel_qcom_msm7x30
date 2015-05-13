@@ -854,9 +854,12 @@ static int synaptics_i2c_rmi4_probe(
 		goto err_destroy_workqueue;
 	}
 
-	dev_set_drvdata(&(ts->input_dev->dev), ts);
+
 	ts->input_dev->name = SYNAPTICS_I2C_RMI4_NAME;
 	ts->input_dev->phys = client->name;
+	ts->input_dev->id.bustype = BUS_I2C;
+	ts->input_dev->dev.parent = &client->dev;
+	input_set_drvdata(ts->input_dev, ts);
 
 	set_bit(EV_ABS, ts->input_dev->evbit);
 	set_bit(EV_SYN, ts->input_dev->evbit);
