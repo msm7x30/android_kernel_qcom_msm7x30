@@ -13,7 +13,6 @@
 
 #include <linux/export.h>
 #include <linux/vmalloc.h>
-#include <linux/memory_alloc.h>
 #include <asm/cacheflush.h>
 #include <linux/slab.h>
 #include <linux/kmemleak.h>
@@ -373,11 +372,6 @@ static void kgsl_page_alloc_free(struct kgsl_memdesc *memdesc)
 		}
 }
 
-static int kgsl_contiguous_vmflags(struct kgsl_memdesc *memdesc)
-{
-	return VM_IO | VM_PFNMAP | VM_DONTEXPAND;
-}
-
 /*
  * kgsl_page_alloc_map_kernel - Map the memory in memdesc to kernel address
  * space
@@ -425,51 +419,6 @@ static int kgsl_page_alloc_map_kernel(struct kgsl_memdesc *memdesc)
 	return 0;
 }
 
-static int kgsl_contiguous_vmfault(struct kgsl_memdesc *memdesc,
-				struct vm_area_struct *vma,
-				struct vm_fault *vmf)
-{
-	unsigned long offset, pfn;
-	int ret;
-
-	offset = ((unsigned long) vmf->virtual_address - vma->vm_start) >>
-		PAGE_SHIFT;
-
-	pfn = (memdesc->physaddr >> PAGE_SHIFT) + offset;
-	ret = vm_insert_pfn(vma, (unsigned long) vmf->virtual_address, pfn);
-
-	if (ret == -ENOMEM || ret == -EAGAIN)
-		return VM_FAULT_OOM;
-	else if (ret == -EFAULT)
-		return VM_FAULT_SIGBUS;
-
-	return VM_FAULT_NOPAGE;
-}
-
-static void kgsl_ebimem_free(struct kgsl_memdesc *memdesc)
-
-{
-	kgsl_driver.stats.coherent -= memdesc->size;
-	if (memdesc->hostptr)
-		iounmap(memdesc->hostptr);
-
-	free_contiguous_memory_by_paddr(memdesc->physaddr);
-}
-
-static int kgsl_ebimem_map_kernel(struct kgsl_memdesc *memdesc)
-{
-	if (!memdesc->hostptr) {
-		memdesc->hostptr = ioremap(memdesc->physaddr, memdesc->size);
-		if (!memdesc->hostptr) {
-			KGSL_CORE_ERR("ioremap failed, addr:0x%p, size:0x%x\n",
-				memdesc->hostptr, memdesc->size);
-			return -ENOMEM;
-		}
-	}
-
-	return 0;
-}
-
 static void kgsl_coherent_free(struct kgsl_memdesc *memdesc)
 {
 	kgsl_driver.stats.coherent -= memdesc->size;
@@ -485,13 +434,6 @@ struct kgsl_memdesc_ops kgsl_page_alloc_ops = {
 	.map_kernel_mem = kgsl_page_alloc_map_kernel,
 };
 EXPORT_SYMBOL(kgsl_page_alloc_ops);
-
-static struct kgsl_memdesc_ops kgsl_ebimem_ops = {
-	.free = kgsl_ebimem_free,
-	.vmflags = kgsl_contiguous_vmflags,
-	.vmfault = kgsl_contiguous_vmfault,
-	.map_kernel_mem = kgsl_ebimem_map_kernel,
-};
 
 static struct kgsl_memdesc_ops kgsl_coherent_ops = {
 	.free = kgsl_coherent_free,
@@ -780,71 +722,6 @@ void kgsl_sharedmem_free(struct kgsl_memdesc *memdesc)
 	memset(memdesc, 0, sizeof(*memdesc));
 }
 EXPORT_SYMBOL(kgsl_sharedmem_free);
-
-static int
-_kgsl_sharedmem_ebimem(struct kgsl_memdesc *memdesc,
-			struct kgsl_pagetable *pagetable, size_t size)
-{
-	int result = 0;
-
-	memdesc->size = size;
-	memdesc->pagetable = pagetable;
-	memdesc->ops = &kgsl_ebimem_ops;
-	memdesc->physaddr = allocate_contiguous_ebi_nomap(size, SZ_8K);
-
-	if (memdesc->physaddr == 0) {
-		KGSL_CORE_ERR("allocate_contiguous_ebi_nomap(%d) failed\n",
-			size);
-		return -ENOMEM;
-	}
-
-	result = memdesc_sg_phys(memdesc, memdesc->physaddr, size);
-
-	if (result)
-		goto err;
-
-	KGSL_STATS_ADD(size, kgsl_driver.stats.coherent,
-		kgsl_driver.stats.coherent_max);
-
-err:
-	if (result)
-		kgsl_sharedmem_free(memdesc);
-
-	return result;
-}
-
-int
-kgsl_sharedmem_ebimem_user(struct kgsl_memdesc *memdesc,
-			struct kgsl_pagetable *pagetable,
-			size_t size)
-{
-	size = ALIGN(size, PAGE_SIZE);
-	return _kgsl_sharedmem_ebimem(memdesc, pagetable, size);
-}
-EXPORT_SYMBOL(kgsl_sharedmem_ebimem_user);
-
-int
-kgsl_sharedmem_ebimem(struct kgsl_memdesc *memdesc,
-		struct kgsl_pagetable *pagetable, size_t size)
-{
-	int result;
-	size = ALIGN(size, 8192);
-	result = _kgsl_sharedmem_ebimem(memdesc, pagetable, size);
-
-	if (result)
-		return result;
-
-	memdesc->hostptr = ioremap(memdesc->physaddr, size);
-
-	if (memdesc->hostptr == NULL) {
-		KGSL_CORE_ERR("ioremap failed\n");
-		kgsl_sharedmem_free(memdesc);
-		return -ENOMEM;
-	}
-
-	return 0;
-}
-EXPORT_SYMBOL(kgsl_sharedmem_ebimem);
 
 int
 kgsl_sharedmem_readl(const struct kgsl_memdesc *memdesc,
