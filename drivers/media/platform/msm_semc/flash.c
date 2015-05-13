@@ -19,7 +19,6 @@
 #include <linux/kernel.h>
 #include <linux/errno.h>
 #include <linux/pwm.h>
-#include <linux/pmic8058-pwm.h>
 #include <linux/hrtimer.h>
 #include <mach/pmic.h>
 #include <mach/camera.h>
