@@ -29,6 +29,7 @@
 #include <linux/gpio.h>
 #include <linux/i2c.h>
 #include <linux/input.h>
+#include <linux/input/mt.h>
 #include <linux/interrupt.h>
 #include <linux/kernel.h>
 #include <linux/module.h>
@@ -41,6 +42,8 @@
 #endif
 
 #include <linux/synaptics_i2c_rmi4_hw.h>
+
+#define TYPE_B_PROTOCOL
 
 #define REPORTING_MODE	0x00	 /* 000: Continuous, when finger present. */
 #define SENSITIVITY	0x08
@@ -480,6 +483,12 @@ static void synaptics_i2c_rmi4_work_func(struct work_struct *work)
 			finger_status =
 				(finger_status_reg >> ((f % 4) * 2)) & 3;
 
+#ifdef TYPE_B_PROTOCOL
+			input_mt_slot(ts->input_dev, f);
+			input_mt_report_slot_state(ts->input_dev,
+				MT_TOOL_FINGER, finger_status != 0);
+#endif
+
 			reg = fsr_len + 5 * f;
 			finger_reg = &f11_data[reg];
 
@@ -511,7 +520,9 @@ static void synaptics_i2c_rmi4_work_func(struct work_struct *work)
 			input_report_abs(ts->input_dev, ABS_MT_POSITION_Y, y);
 			input_report_abs(ts->input_dev, ABS_MT_TRACKING_ID, f);
 
+#ifndef TYPE_B_PROTOCOL
 			input_mt_sync(ts->input_dev);
+#endif
 
 			ts->f11_fingers[f].status = finger_status;
 			if (finger_status > 0)
@@ -520,6 +531,15 @@ static void synaptics_i2c_rmi4_work_func(struct work_struct *work)
 		/* Report if there is any finger on the TP */
 		input_report_key(ts->input_dev, BTN_TOUCH,
 			finger_pressed_count);
+		input_report_key(ts->input_dev,
+			BTN_TOOL_FINGER, finger_pressed_count > 0);
+
+#ifndef TYPE_B_PROTOCOL
+		if (!finger_pressed_count)
+			input_mt_sync(ts->input_dev);
+#else
+		input_mt_report_pointer_emulation(ts->input_dev, false);
+#endif
 
 		/* set f to offset after all absolute data */
 		f = (f + 3) / 4 + f * 5;
@@ -893,6 +913,12 @@ static int synaptics_i2c_rmi4_probe(
 			0, 1, 0, 0);
 		input_set_abs_params(ts->input_dev, ABS_MT_PRESSURE,
 			0, 255, 0, 0);
+
+#ifdef TYPE_B_PROTOCOL
+		input_mt_init_slots(ts->input_dev,
+			ts->f11.points_supported, 0);
+#endif
+
 		if (ts->hasEgrPalmDetect)
 			set_bit(BTN_DEAD, ts->input_dev->keybit);
 		if (ts->hasEgrFlick) {
