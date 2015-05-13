@@ -291,10 +291,10 @@ static int pm8xxx_pwm_bank_enable(struct pm8xxx_pwm_chip *chip, int enable)
 
 	if (cdata->banks & PM_PWM_BANK_HI) {
 		if (enable)
-			reg = chip->lo_bank_mask |
+			reg = chip->hi_bank_mask |
 				(1 << chip->current_channel);
 		else
-			reg = chip->lo_bank_mask &
+			reg = chip->hi_bank_mask &
 				~(1 << chip->current_channel);
 
 		rc = pm8xxx_writeb(chip->dev->parent,
