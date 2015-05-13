@@ -214,6 +214,7 @@ struct pm8xxx_pwm_chip {
 	u8				hi_bank_mask;
 #define	PM8XXX_FEATURE_LPG_SUPPORTED	(1 << 0)
 #define PM8XXX_FEATURE_PWM_ENABLE_SYNC	(1 << 1)
+#define PM8XXX_FEATURE_LO_BANK_WA	(1 << 2)
 	u32				feature_flags;
 	int				current_channel;
 };
@@ -269,6 +270,9 @@ static int pm8xxx_pwm_bank_enable(struct pm8xxx_pwm_chip *chip, int enable)
 
 	if (!cdata->banks)
 		cdata->banks = (PM_PWM_BANK_LO | PM_PWM_BANK_HI);
+
+	if (chip->feature_flags & PM8XXX_FEATURE_LO_BANK_WA)
+		cdata->banks &= ~PM_PWM_BANK_LO;
 
 	if (cdata->banks & PM_PWM_BANK_LO) {
 		if (enable)
@@ -1056,6 +1060,9 @@ int pm8xxx_pwm_lut_config(struct pwm_device *pwm, int period_us,
 	if (!cdata->banks)
 		cdata->banks |= (PM_PWM_BANK_LO | PM_PWM_BANK_HI);
 
+	if (chip->feature_flags & PM8XXX_FEATURE_LO_BANK_WA)
+		cdata->banks &= ~PM_PWM_BANK_LO;
+
 	if (pwm->period != period_us) {
 		pm8xxx_pwm_calc_period(chip, period_us, period);
 		pm8xxx_pwm_save_period(chip);
@@ -1453,6 +1460,9 @@ static int pm8xxx_pwm_probe(struct platform_device *pdev)
 
 	if (version == PM8XXX_VERSION_8038)
 		chip->feature_flags |= PM8XXX_FEATURE_PWM_ENABLE_SYNC;
+
+	if (version == PM8XXX_VERSION_8058)
+		chip->feature_flags |= PM8XXX_FEATURE_LO_BANK_WA;
 
 	if (chip->feature_flags & PM8XXX_FEATURE_LPG_SUPPORTED) {
 		if (version == PM8XXX_VERSION_8922 ||
