@@ -565,7 +565,7 @@ static int __ovm7692_probe(struct platform_device *pdev)
 
 static struct platform_driver msm_camera_driver = {
 	.probe = __ovm7692_probe,
-	.remove = __devexit_p(__ovm7692_remove),
+	.remove = __ovm7692_remove,
 	.driver = {
 		.name = "msm_camera_ovm7692",
 		.owner = THIS_MODULE,

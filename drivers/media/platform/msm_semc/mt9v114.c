@@ -677,7 +677,7 @@ static int __mt9v114_probe(struct platform_device *pdev)
 
 static struct platform_driver msm_camera_driver = {
 	.probe = __mt9v114_probe,
-	.remove = __devexit_p(__mt9v114_remove),
+	.remove = __mt9v114_remove,
 	.driver = {
 		.name = "msm_camera_mt9v114",
 		.owner = THIS_MODULE,
