@@ -1,4 +1,4 @@
-obj-y += io.o dma.o memory.o
+obj-y += io.o dma.o
 ifndef CONFIG_ARM_ARCH_TIMER
 obj-y += timer.o
 endif
