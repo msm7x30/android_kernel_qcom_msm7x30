@@ -1603,18 +1603,7 @@ static struct i2c_driver lm3560_driver = {
 	.id_table = lm3560_id,
 };
 
-static int __init lm3560_init(void)
-{
-	return i2c_add_driver(&lm3560_driver);
-}
-
-static void __exit lm3560_exit(void)
-{
-	i2c_del_driver(&lm3560_driver);
-}
-
-module_init(lm3560_init);
-module_exit(lm3560_exit);
+module_i2c_driver(lm3560_driver);
 
 static const struct i2c_device_id lm3561_id[] = {
 	{ LM3561_DRV_NAME, 0 },
@@ -1632,20 +1621,7 @@ static struct i2c_driver lm3561_driver = {
 	.id_table = lm3561_id,
 };
 
-static int __init lm3561_init(void)
-{
-	return i2c_add_driver(&lm3561_driver);
-}
-
-static void __exit lm3561_exit(void)
-{
-	i2c_del_driver(&lm3561_driver);
-}
-
-module_init(lm3561_init);
-module_exit(lm3561_exit);
-
-
+module_i2c_driver(lm3561_driver);
 
 MODULE_AUTHOR("Kazunari YOSHINO <Kazunari.X.Yoshino@sonyericsson.com>");
 MODULE_DESCRIPTION("LM356X I2C LED driver");
