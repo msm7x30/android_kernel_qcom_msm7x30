@@ -43,7 +43,9 @@
 #include <mach/memory.h>
 #include <mach/msm_iomap.h>
 #include <mach/msm_hsusb.h>
+#ifdef CONFIG_SPI_QSD
 #include <mach/msm_spi.h>
+#endif
 #include <mach/qdsp5v2/msm_lpa.h>
 #include <mach/dma.h>
 #include <linux/android_pmem.h>
@@ -2500,6 +2502,7 @@ static struct i2c_board_info msm_i2c_board_info[] = {
 #endif
 };
 
+#ifdef CONFIG_SPI_QSD
 static struct spi_board_info msm_spi_board_info[] __initdata = {
 #ifdef CONFIG_TOUCHSCREEN_CY8CTMA300_SPI
 	{
@@ -2524,6 +2527,7 @@ static struct spi_board_info msm_spi_board_info[] __initdata = {
 	},
 #endif
 };
+#endif
 
 static struct i2c_board_info msm_marimba_board_info[] = {
 	{
@@ -2601,6 +2605,7 @@ static struct msm_pm_boot_platform_data msm_pm_boot_pdata __initdata = {
 	.v_addr = (uint32_t *)PAGE_OFFSET,
 };
 
+#ifdef CONFIG_SPI_QSD
 static struct resource qsd_spi_resources[] = {
 	{
 		.name   = "spi_irq_in",
@@ -2707,6 +2712,7 @@ static void __init msm_qsd_spi_init(void)
 {
 	qsd_device_spi.dev.platform_data = &qsd_spi_pdata;
 }
+#endif
 
 #ifdef CONFIG_USB_EHCI_MSM_72K
 static void msm_hsusb_vbus_power(unsigned phy_info, int on)
@@ -3074,8 +3080,9 @@ static struct platform_device *devices[] __initdata = {
 #ifdef CONFIG_USB_G_ANDROID
 	&android_usb_device,
 #endif
+#ifdef CONFIG_SPI_QSD
 	&qsd_device_spi,
-
+#endif
 #ifdef CONFIG_MSM_SSBI
 	&msm_device_ssbi_pmic1,
 #endif
@@ -3616,6 +3623,7 @@ out3:
 
 }
 
+#ifdef CONFIG_SPI_QSD
 /*
  * Temporary place for hardware initialization until the devices in question
  * gets proper drivers
@@ -3624,6 +3632,7 @@ static void __init mogami_temp_fixups(void)
 {
 	gpio_set_value(46, 1);	/* SPI_CS0_N - Touch */
 }
+#endif
 
 static void __init shared_vreg_on(void)
 {
@@ -3758,7 +3767,9 @@ static void __init msm7x30_init(void)
 	platform_add_devices(msm_footswitch_devices,
 			     msm_num_footswitch_devices);
 	platform_add_devices(devices, ARRAY_SIZE(devices));
+#ifdef CONFIG_SPI_QSD
 	mogami_temp_fixups();
+#endif
 #ifdef CONFIG_SEMC_CHARGER_USB_ARCH
 	semc_chg_usb_set_supplicants(semc_chg_usb_supplied_to,
 				  ARRAY_SIZE(semc_chg_usb_supplied_to));
@@ -3768,7 +3779,9 @@ static void __init msm7x30_init(void)
 #endif
 	msm7x30_init_mmc();
 	msm7x30_init_nand();
+#ifdef CONFIG_SPI_QSD
 	msm_qsd_spi_init();
+#endif
 
 #ifdef CONFIG_INPUT_KEYRESET
 	platform_device_register(&semc_reset_keys_device);
@@ -3801,8 +3814,10 @@ static void __init msm7x30_init(void)
 	i2c_register_board_info(4 /* QUP ID */, msm_camera_boardinfo,
 				ARRAY_SIZE(msm_camera_boardinfo));
 
+#ifdef CONFIG_SPI_QSD
 	spi_register_board_info(msm_spi_board_info,
 				ARRAY_SIZE(msm_spi_board_info));
+#endif
 
 #ifdef CONFIG_I2C_SSBI
 	msm_device_ssbi7.dev.platform_data = &msm_i2c_ssbi7_pdata;
