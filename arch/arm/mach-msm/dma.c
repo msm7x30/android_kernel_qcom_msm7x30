@@ -94,16 +94,6 @@ static struct msm_dmov_conf dmov_conf[] = {
 #define DMOV_ID_TO_CHAN(id)   ((id) % MSM_DMOV_CHANNEL_COUNT)
 #define DMOV_CHAN_ADM_TO_ID(ch, adm) ((ch) + (adm) * MSM_DMOV_CHANNEL_COUNT)
 
-#ifdef CONFIG_MSM_ADM3
-#define DMOV_IRQ_TO_ADM(irq)   \
-({ \
-	typeof(irq) _irq = irq; \
-	((_irq == INT_ADM1_MASTER) || (_irq == INT_ADM1_AARM)); \
-})
-#else
-#define DMOV_IRQ_TO_ADM(irq) 0
-#endif
-
 enum {
 	MSM_DMOV_PRINT_ERRORS = 1,
 	MSM_DMOV_PRINT_IO = 2,
@@ -162,7 +152,7 @@ static void msm_dmov_clock_work(struct work_struct *work)
 {
 	struct msm_dmov_conf *conf =
 		container_of(to_delayed_work(work), struct msm_dmov_conf, work);
-	int adm = DMOV_IRQ_TO_ADM(conf->irq);
+	int adm = 0;
 	mutex_lock(&conf->lock);
 	if (conf->clk_ctl == CLK_TO_BE_DIS) {
 		BUG_ON(conf->channel_active);
@@ -377,7 +367,7 @@ static irqreturn_t msm_dmov_isr(int irq, void *dev_id)
 	unsigned int ch_result;
 	unsigned int valid = 0;
 	struct msm_dmov_cmd *cmd;
-	int adm = DMOV_IRQ_TO_ADM(irq);
+	int adm = 0;
 
 	mutex_lock(&dmov_conf[adm].lock);
 	/* read and clear isr */
@@ -542,33 +532,6 @@ static int msm_dmov_init_clocks(struct platform_device *pdev)
 	return 0;
 }
 
-static void config_datamover(int adm)
-{
-#ifdef CONFIG_MSM_ADM3
-	int i;
-	for (i = 0; i < MSM_DMOV_CHANNEL_COUNT; i++) {
-		struct msm_dmov_chan_conf *chan_conf =
-			dmov_conf[adm].chan_conf;
-		unsigned conf;
-		/* Only configure scorpion channels */
-		if (chan_conf[i].sd <= 1) {
-			conf = readl_relaxed(DMOV_REG(DMOV_CONF(i), adm));
-			conf &= ~DMOV_CONF_SD(7);
-			conf |= DMOV_CONF_SD(chan_conf[i].sd);
-			writel_relaxed(conf | DMOV_CONF_SHADOW_EN,
-			       DMOV_REG(DMOV_CONF(i), adm));
-		}
-	}
-	for (i = 0; i < MSM_DMOV_CRCI_COUNT; i++) {
-		struct msm_dmov_crci_conf *crci_conf =
-			dmov_conf[adm].crci_conf;
-
-		writel_relaxed(DMOV_CRCI_CTL_BLK_SZ(crci_conf[i].blk_size),
-		       DMOV_REG(DMOV_CRCI_CTL(i), adm));
-	}
-#endif
-}
-
 static int msm_dmov_probe(struct platform_device *pdev)
 {
 	int adm = (pdev->id >= 0) ? pdev->id : 0;
@@ -623,7 +586,6 @@ static int msm_dmov_probe(struct platform_device *pdev)
 		goto out_irq;
 	}
 
-	config_datamover(adm);
 	for (i = 0; i < MSM_DMOV_CHANNEL_COUNT; i++) {
 		INIT_LIST_HEAD(&dmov_conf[adm].staged_commands[i]);
 		INIT_LIST_HEAD(&dmov_conf[adm].ready_commands[i]);

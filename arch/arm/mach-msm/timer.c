@@ -406,57 +406,7 @@ void __iomem *msm_timer_get_timer0_base(void)
  *      >0: the slow clock value after time-sync
  */
 static void (*msm_timer_sync_timeout)(void);
-#if defined(CONFIG_MSM_DIRECT_SCLK_ACCESS)
-uint32_t msm_timer_get_sclk_ticks(void)
-{
-	uint32_t t1, t2;
-	int loop_count = 10;
-	int loop_zero_count = 3;
-	int tmp = USEC_PER_SEC;
-	do_div(tmp, sclk_hz);
-	tmp /= (loop_zero_count-1);
-
-	while (loop_zero_count--) {
-		t1 = __raw_readl_no_log(MSM_RPM_MPM_BASE + MPM_SCLK_COUNT_VAL);
-		do {
-			udelay(1);
-			t2 = t1;
-			t1 = __raw_readl_no_log(
-				MSM_RPM_MPM_BASE + MPM_SCLK_COUNT_VAL);
-		} while ((t2 != t1) && --loop_count);
-
-		if (!loop_count) {
-			printk(KERN_EMERG "SCLK  did not stabilize\n");
-			return 0;
-		}
-
-		if (t1)
-			break;
-
-		udelay(tmp);
-	}
-
-	if (!loop_zero_count) {
-		printk(KERN_EMERG "SCLK reads zero\n");
-		return 0;
-	}
-
-	return t1;
-}
-
-static uint32_t msm_timer_do_sync_to_sclk(
-	void (*time_start)(struct msm_timer_sync_data_t *data),
-	bool (*time_expired)(struct msm_timer_sync_data_t *data),
-	void (*update)(struct msm_timer_sync_data_t *, uint32_t, uint32_t),
-	struct msm_timer_sync_data_t *data)
-{
-	unsigned t1 = msm_timer_get_sclk_ticks();
-
-	if (t1 && update != NULL)
-		update(data, t1, sclk_hz);
-	return t1;
-}
-#elif defined(CONFIG_MSM_N_WAY_SMSM)
+#if defined(CONFIG_MSM_N_WAY_SMSM)
 
 /* Time Master State Bits */
 #define MASTER_BITS_PER_CPU        1
@@ -909,7 +859,7 @@ int64_t msm_timer_get_sclk_time(int64_t *period)
 
 int __init msm_timer_init_time_sync(void (*timeout)(void))
 {
-#if defined(CONFIG_MSM_N_WAY_SMSM) && !defined(CONFIG_MSM_DIRECT_SCLK_ACCESS)
+#if defined(CONFIG_MSM_N_WAY_SMSM)
 	int ret = smsm_change_intr_mask(SMSM_TIME_MASTER_DEM, 0xFFFFFFFF, 0);
 
 	if (ret) {

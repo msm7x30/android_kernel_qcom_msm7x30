@@ -1,6 +1,5 @@
 config BOARD_SEMC_MOGAMI
 	depends on ARCH_MSM7X30
-	depends on !MSM_STACKED_MEMORY
 	select MACH_SEMC
 	default n
 	bool "SonyEricsson Mogami Platform"
@@ -9,7 +8,6 @@ config BOARD_SEMC_MOGAMI
 
 config BOARD_SEMC_ZEUS
 	depends on ARCH_MSM7X30
-	depends on !MSM_STACKED_MEMORY
 	select MACH_SEMC
 	default n
 	bool "SonyEricsson Zeus Platform"
