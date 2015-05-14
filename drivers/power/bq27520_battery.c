@@ -2368,28 +2368,7 @@ static struct i2c_driver bq27520_driver = {
 	.id_table = bq27520_id,
 };
 
-static int __init bq27520_init(void)
-{
-	int rc;
-
-	rc = i2c_add_driver(&bq27520_driver);
-	if (rc) {
-		pr_err("%s: FAILED: i2c_add_driver rc=%d\n", __func__, rc);
-		goto init_exit;
-	}
-	return 0;
-
-init_exit:
-	return rc;
-}
-
-static void __exit bq27520_exit(void)
-{
-	i2c_del_driver(&bq27520_driver);
-}
-
-module_init(bq27520_init);
-module_exit(bq27520_exit);
+module_i2c_driver(bq27520_driver);
 
 MODULE_AUTHOR("James Jacobsson, Imre Sunyi, Hiroyuki Namba");
 MODULE_LICENSE("GPL");
