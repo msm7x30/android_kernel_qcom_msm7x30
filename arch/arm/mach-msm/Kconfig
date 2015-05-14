@@ -34,35 +34,13 @@ config MSM_VIC
 
 config MSM_REMOTE_SPINLOCK_DEKKERS
 	bool
-config MSM_REMOTE_SPINLOCK_SWP
-	bool
-config MSM_REMOTE_SPINLOCK_SFPB
-	bool
-config MSM_ADM3
-	bool
-
-menu "MSM Board Selection"
-
-config MACH_MSM_DUMMY
-	bool "NONE (No device)"
-
-endmenu
 
 source "arch/arm/mach-msm/huawei/Kconfig"
 source "arch/arm/mach-msm/semc/Kconfig"
 
-config MSM_STACKED_MEMORY
-	bool "Stacked Memory"
-	default y
-	help
-	  This option is used to indicate the presence of on-die stacked
-	  memory.  When present this memory bank is used for a high speed
-	  shared memory interface.  When not present regular RAM is used.
-
 config PHYS_OFFSET
 	hex
-	default "0x00200000" if !MSM_STACKED_MEMORY
-	default "0x10000000"
+	default "0x00200000"
 
 config MSM_AMSS_VERSION
 	int
@@ -90,12 +68,6 @@ config MSM_HAS_DEBUG_UART_HS
 	help
 	  Say Y here if high speed MSM UART is present.
 
-config MSM_HAS_DEBUG_UART_HS_V14
-	bool
-	select MSM_HAS_DEBUG_UART_HS
-	help
-	  Say Y here if high speed MSM UART v1.4 is present.
-
 config MSM_DEBUG_UART_PHYS
 	hex
 	default 0xACA00000 if ARCH_MSM7X30 && DEBUG_MSM_UART1
@@ -110,11 +82,6 @@ choice
 		bool "GP Timer"
 	help
 	  Low resolution timer that allows power collapse from idle.
-
-	config MSM7X00A_USE_DG_TIMER
-		bool "DG Timer"
-	help
-	  High resolution timer.
 endchoice
 
 config MSM7X00A_IDLE_SLEEP_MIN_TIME
@@ -153,11 +120,6 @@ config MSM_SUSPEND_STATS_FIRST_BUCKET
 	  histogram.  This is for collecting statistics on suspend.
 
 endif # MSM_IDLE_STATS
-
-config CPU_HAS_L2_PMU
-	bool "L2CC PMU Support"
-	help
-	 Select this if the L2 cache controller has a Performance Monitoring Unit.
 
 config MSM_FIQ_SUPPORT
 	default y
@@ -411,7 +373,7 @@ config MSM7KV2_AUDIO
 config MSM_ADSP_REPORT_EVENTS
 	bool "Report modem events from the DSP"
 	default y
-	depends on (MSM_ADSP || MSM7KV2_AUDIO)
+	depends on MSM7KV2_AUDIO
 	help
 	  Normally, only messages from the aDSP are reported to userspace.
 	  With this option, we report events from the aDSP as well.
@@ -430,7 +392,7 @@ config MSM_VREG_SWITCH_INVERTED
 	  Reverses the enable and disable for vreg switch.
 
 config AUDIO_AAC_PLUS
-	depends on (MSM_ADSP || MSM7KV2_AUDIO)
+	depends on MSM7KV2_AUDIO
 	bool "AAC+ Audio"
 	default y
 	help
@@ -520,14 +482,7 @@ config MSM_IDLE_WAIT_ON_MODEM
 	  for idle power collapse, wait the number of microseconds in case
 	  Modem becomes ready soon.
 
-config MSM_DIRECT_SCLK_ACCESS
-	bool "Direct access to the SCLK timer"
-	default n
-
 config MSM_GPIOMUX
-	bool
-
-config MSM_SECURE_IO
 	bool
 
 config MSM_MODEM_RESTART
@@ -535,10 +490,6 @@ config MSM_MODEM_RESTART
 
 config MSM_PM2
 	depends on PM
-	bool
-
-config MSM_NOPM
-	default y if !PM
 	bool
 
 config MSM_STANDALONE_POWER_COLLAPSE
@@ -562,22 +513,6 @@ config MSM_SPM_V1
 	  used to manage the processor power during sleep. The driver allows
 	  configuring SPM to allow different power modes.
 
-config MSM_SPM_V2
-	bool "Driver support for SPM Version 2"
-	help
-	  Enables the support for Version 2 of the SPM driver. SPM hardware is
-	  used to manage the processor power during sleep. The driver allows
-	  configuring SPM to allow different power modes.
-
-config MSM_L2_SPM
-	bool "SPM support for L2 cache"
-	depends on MSM_SPM_V2
-	help
-	  Enable SPM driver support for L2 cache. Some MSM chipsets allow
-	  control of L2 cache low power mode with a Subsystem Power manager.
-	  Enabling this driver allows configuring L2 SPM for low power modes
-	  on supported chipsets.
-
 config MSM_MULTIMEDIA_USE_ION
 	bool "Multimedia suport using Ion"
 	depends on ION_MSM
@@ -585,9 +520,6 @@ config MSM_MULTIMEDIA_USE_ION
 	  Enable support for multimedia drivers using Ion for buffer management
 	  instead of pmem. Selecting this may also involve userspace
 	  dependencies as well.
-
-config HAVE_ARCH_HAS_CURRENT_TIMER
-	bool
 
 config MSM_RPC_PMIC
 	tristate "MSM RPC PMIC driver"
