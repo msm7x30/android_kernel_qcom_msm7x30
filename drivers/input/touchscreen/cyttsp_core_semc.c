@@ -37,9 +37,6 @@
 #include <linux/workqueue.h>
 #include <linux/byteorder/generic.h>
 #include <linux/bitops.h>
-#ifdef CONFIG_HAS_EARLYSUSPEND
-#include <linux/earlysuspend.h>
-#endif
 #include <linux/input/cyttsp_semc.h>
 #include <linux/ctype.h>
 #include <linux/sched.h>
@@ -302,9 +299,6 @@ struct cyttsp {
 	struct input_dev *input;
 	struct delayed_work work;
 	struct mutex mutex;
-#ifdef CONFIG_HAS_EARLYSUSPEND
-	struct early_suspend early_suspend;
-#endif
 	char phys[32];
 	struct cyttsp_platform_data *platform_data;
 	struct cyttsp_bootloader_data bl_data;
@@ -1743,45 +1737,6 @@ static int cyttsp_suspend(struct cyttsp *ts)
 	return retval;
 }
 
-#ifdef CONFIG_HAS_EARLYSUSPEND
-static void cyttsp_ts_early_suspend(struct early_suspend *h)
-{
-	struct cyttsp *ts = container_of(h, struct cyttsp, early_suspend);
-
-	DBG(printk(KERN_INFO"%s: Enter\n", __func__);)
-	LOCK(ts->mutex);
-	ts->suspended = 1;
-	if (!ts->fw_loader_mode) {
-		disable_irq(ts->irq);
-		dev_dbg(ts->pdev, "%s: stop ESD check\n", __func__);
-		cancel_delayed_work_sync(&ts->work);
-		cyttsp_suspend(ts);
-	}
-	UNLOCK(ts->mutex);
-}
-
-static void cyttsp_ts_late_resume(struct early_suspend *h)
-{
-	struct cyttsp *ts = container_of(h, struct cyttsp, early_suspend);
-
-	DBG(printk(KERN_INFO"%s: Enter\n", __func__);)
-	LOCK(ts->mutex);
-	ts->suspended = 0;
-	if (!ts->fw_loader_mode) {
-		if (cyttsp_resume(ts) < 0)
-			printk(KERN_ERR "%s: Error, cyttsp_resume.\n",
-				__func__);
-		dev_dbg(ts->pdev, "%s: start ESD check\n", __func__);
-		schedule_delayed_work(&ts->work, ESD_CHECK_INTERVAL);
-#ifdef CONFIG_TOUCHSCREEN_CYTTSP_CHARGER_MODE
-		schedule_work(&ts->charger_status_work);
-#endif
-		enable_irq(ts->irq);
-	}
-	UNLOCK(ts->mutex);
-}
-#endif
-
 static bool is_ttsp_fwwr_done(struct cyttsp *ts)
 {
 	struct {
@@ -2214,12 +2169,6 @@ void *cyttsp_core_init(struct cyttsp_bus_ops *bus_ops, struct device *pdev)
 	}
 	DBG(printk(KERN_INFO "%s: Interrupt=%d\n",
 			__func__, ts->irq);)
-#ifdef CONFIG_HAS_EARLYSUSPEND
-	ts->early_suspend.level = EARLY_SUSPEND_LEVEL_BLANK_SCREEN + 1;
-	ts->early_suspend.suspend = cyttsp_ts_early_suspend;
-	ts->early_suspend.resume = cyttsp_ts_late_resume;
-	register_early_suspend(&ts->early_suspend);
-#endif
 	retval = add_sysfs_interfaces(pdev);
 	if (retval)
 		goto attr_create_error;
@@ -2240,9 +2189,6 @@ void *cyttsp_core_init(struct cyttsp_bus_ops *bus_ops, struct device *pdev)
 error_power_on:
 	remove_sysfs_interfaces(ts->pdev);
 attr_create_error:
-#ifdef CONFIG_HAS_EARLYSUSPEND
-	unregister_early_suspend(&ts->early_suspend);
-#endif
 error_free_irq:
 	free_irq(ts->irq, ts);
 	input_unregister_device(input_device);
@@ -2265,9 +2211,6 @@ void cyttsp_core_release(void *handle)
 
 	DBG(printk(KERN_INFO"%s: Enter\n", __func__);)
 	remove_sysfs_interfaces(ts->pdev);
-#ifdef CONFIG_HAS_EARLYSUSPEND
-	unregister_early_suspend(&ts->early_suspend);
-#endif
 	free_irq(ts->irq, ts);
 	input_unregister_device(ts->input);
 	input_free_device(ts->input);
