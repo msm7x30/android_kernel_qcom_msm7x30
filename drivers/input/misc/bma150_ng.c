@@ -747,14 +747,4 @@ static struct i2c_driver bma150_driver = {
 	.id_table	= bma150_i2c_id,
 };
 
-static int __init bma150_init(void)
-{
-	return i2c_add_driver(&bma150_driver);
-}
-module_init(bma150_init);
-
-static void __exit bma150_exit(void)
-{
-	i2c_del_driver(&bma150_driver);
-}
-module_exit(bma150_exit);
+module_i2c_driver(bma150_driver);
