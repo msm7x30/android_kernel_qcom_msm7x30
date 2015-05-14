@@ -283,25 +283,7 @@ static struct spi_driver cyttsp_spi_driver = {
 	.remove = cyttsp_spi_remove,
 };
 
-static int __init cyttsp_spi_init(void)
-{
-	int err;
-
-	err = spi_register_driver(&cyttsp_spi_driver);
-	printk(KERN_INFO "%s: Cypress TrueTouch(R) Standard Product SPI "
-		"Touchscreen Driver (Built %s @ %s) returned %d\n",
-		 __func__, __DATE__, __TIME__, err);
-
-	return err;
-}
-module_init(cyttsp_spi_init);
-
-static void __exit cyttsp_spi_exit(void)
-{
-	spi_unregister_driver(&cyttsp_spi_driver);
-	printk(KERN_INFO "%s: module exit\n", __func__);
-}
-module_exit(cyttsp_spi_exit);
+module_spi_driver(cyttsp_spi_driver);
 
 MODULE_LICENSE("GPL");
 MODULE_DESCRIPTION("Cypress TrueTouch(R) Standard Product SPI driver");
