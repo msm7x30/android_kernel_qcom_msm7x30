@@ -3483,7 +3483,6 @@ static int __init fb_size_setup(char *p)
 early_param("fb_size", fb_size_setup);
 
 #ifdef CONFIG_ION_MSM
-#ifdef CONFIG_MSM_MULTIMEDIA_USE_ION
 static u64 msm_dmamask = DMA_BIT_MASK(32);
 
 static struct platform_device ion_cma_heap_device = {
@@ -3494,7 +3493,6 @@ static struct platform_device ion_cma_heap_device = {
 		.coherent_dma_mask = DMA_BIT_MASK(32),
 	}
 };
-#endif
 
 /**
  * These heaps are listed in the order they will be allocated.
@@ -3506,7 +3504,6 @@ static struct ion_platform_heap msm7x30_heaps[] = {
 			.type	= ION_HEAP_TYPE_SYSTEM,
 			.name	= ION_VMALLOC_HEAP_NAME,
 		},
-#ifdef CONFIG_MSM_MULTIMEDIA_USE_ION
 		/* MM */
 		{
 			.id	= ION_CP_MM_HEAP_ID,
@@ -3539,7 +3536,6 @@ static struct ion_platform_heap msm7x30_heaps[] = {
 			.size	= MSM_ION_WB_SIZE,
 			.priv	= (void *)&ion_cma_heap_device.dev,
 		},
-#endif
 };
 
 static struct ion_platform_data ion_pdata = {
