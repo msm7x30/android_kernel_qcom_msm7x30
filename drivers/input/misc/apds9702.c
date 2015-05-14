@@ -510,18 +510,7 @@ static struct i2c_driver apds9702_driver = {
 	},
 };
 
-static int __init apds9702_init(void)
-{
-	return i2c_add_driver(&apds9702_driver);
-}
-
-static void __exit apds9702_exit(void)
-{
-	i2c_del_driver(&apds9702_driver);
-}
-
-module_init(apds9702_init);
-module_exit(apds9702_exit);
+module_i2c_driver(apds9702_driver);
 
 MODULE_AUTHOR("SEMC");
 MODULE_DESCRIPTION("APDS9702 proximity sensor driver");
