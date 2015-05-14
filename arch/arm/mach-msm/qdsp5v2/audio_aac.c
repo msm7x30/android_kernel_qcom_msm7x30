@@ -29,9 +29,6 @@
 #include <linux/debugfs.h>
 #include <linux/delay.h>
 #include <linux/list.h>
-#ifdef CONFIG_HAS_EARLYSUSPEND
-#include <linux/earlysuspend.h>
-#endif
 #include <linux/slab.h>
 #include <linux/msm_audio_aac.h>
 #include <linux/msm_ion.h>
@@ -81,13 +78,6 @@ struct buffer {
 	unsigned addr;
 	unsigned short mfield_sz; /*only useful for data has meta field */
 };
-
-#ifdef CONFIG_HAS_EARLYSUSPEND
-struct audaac_suspend_ctl {
-	struct early_suspend node;
-	struct audio *audio;
-};
-#endif
 
 struct audaac_event{
 	struct list_head list;
@@ -161,10 +151,6 @@ struct audio {
 	uint16_t dec_id;
 	uint32_t read_ptr_offset;
 	int16_t source;
-
-#ifdef CONFIG_HAS_EARLYSUSPEND
-	struct audaac_suspend_ctl suspend_ctl;
-#endif
 
 #ifdef CONFIG_DEBUG_FS
 	struct dentry *dentry;
@@ -1658,9 +1644,6 @@ static int audio_release(struct inode *inode, struct file *file)
 	audio_flush_pcm_buf(audio);
 	msm_adsp_put(audio->audplay);
 	audpp_adec_free(audio->dec_id);
-#ifdef CONFIG_HAS_EARLYSUSPEND
-	unregister_early_suspend(&audio->suspend_ctl.node);
-#endif
 	audio->event_abort = 1;
 	wake_up(&audio->event_wait);
 	audaac_reset_event_queue(audio);
@@ -1706,28 +1689,6 @@ static void audaac_post_event(struct audio *audio, int type,
 	spin_unlock_irqrestore(&audio->event_queue_lock, flags);
 	wake_up(&audio->event_wait);
 }
-
-#ifdef CONFIG_HAS_EARLYSUSPEND
-static void audaac_suspend(struct early_suspend *h)
-{
-	struct audaac_suspend_ctl *ctl =
-		container_of(h, struct audaac_suspend_ctl, node);
-	union msm_audio_event_payload payload;
-
-	MM_DBG("\n"); /* Macro prints the file name and function */
-	audaac_post_event(ctl->audio, AUDIO_EVENT_SUSPEND, payload);
-}
-
-static void audaac_resume(struct early_suspend *h)
-{
-	struct audaac_suspend_ctl *ctl =
-		container_of(h, struct audaac_suspend_ctl, node);
-	union msm_audio_event_payload payload;
-
-	MM_DBG("\n"); /* Macro prints the file name and function */
-	audaac_post_event(ctl->audio, AUDIO_EVENT_RESUME, payload);
-}
-#endif
 
 #ifdef CONFIG_DEBUG_FS
 static ssize_t audaac_debug_open(struct inode *inode, struct file *file)
@@ -2042,13 +2003,6 @@ static int audio_open(struct inode *inode, struct file *file)
 
 	if (IS_ERR(audio->dentry))
 		MM_DBG("debugfs_create_file failed\n");
-#endif
-#ifdef CONFIG_HAS_EARLYSUSPEND
-	audio->suspend_ctl.node.level = EARLY_SUSPEND_LEVEL_DISABLE_FB;
-	audio->suspend_ctl.node.resume = audaac_resume;
-	audio->suspend_ctl.node.suspend = audaac_suspend;
-	audio->suspend_ctl.audio = audio;
-	register_early_suspend(&audio->suspend_ctl.node);
 #endif
 	for (index = 0; index < AUDAAC_EVENT_NUM; index++) {
 		e_node = kmalloc(sizeof(struct audaac_event), GFP_KERNEL);

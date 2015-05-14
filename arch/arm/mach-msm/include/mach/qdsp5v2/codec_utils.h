@@ -13,10 +13,6 @@
 #ifndef CODEC_UTILS_H
 #define CODEC_UTILS_H
 
-#ifdef CONFIG_HAS_EARLYSUSPEND
-#include <linux/earlysuspend.h>
-#endif
-
 #define ADRV_STATUS_AIO_INTF 0x00000001
 #define ADRV_STATUS_OBUF_GIVEN 0x00000002
 #define ADRV_STATUS_IBUF_GIVEN 0x00000004
@@ -44,13 +40,6 @@ struct buffer {
 	unsigned addr;
 };
 struct audio;
-
-#ifdef CONFIG_HAS_EARLYSUSPEND
-struct audio_suspend_ctl {
-	struct early_suspend node;
-	struct audio *audio;
-};
-#endif
 
 struct codec_operations {
 	long (*ioctl)(struct file *, unsigned int, unsigned long);
@@ -96,10 +85,6 @@ struct audio {
 	uint16_t dec_id;
 	uint32_t read_ptr_offset;
 	int16_t source;
-
-#ifdef CONFIG_HAS_EARLYSUSPEND
-	struct audio_suspend_ctl suspend_ctl;
-#endif
 
 #ifdef CONFIG_DEBUG_FS
 	struct dentry *dentry;

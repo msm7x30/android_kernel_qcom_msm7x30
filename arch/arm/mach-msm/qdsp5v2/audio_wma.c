@@ -34,9 +34,6 @@
 #include <linux/debugfs.h>
 #include <linux/delay.h>
 #include <linux/list.h>
-#ifdef CONFIG_HAS_EARLYSUSPEND
-#include <linux/earlysuspend.h>
-#endif
 #include <linux/slab.h>
 #include <linux/msm_audio.h>
 #include <linux/msm_audio_wma.h>
@@ -84,13 +81,6 @@ struct buffer {
 	unsigned addr;
 	unsigned short mfield_sz; /*only useful for data has meta field */
 };
-
-#ifdef CONFIG_HAS_EARLYSUSPEND
-struct audwma_suspend_ctl {
-	struct early_suspend node;
-	struct audio *audio;
-};
-#endif
 
 struct audwma_event{
 	struct list_head list;
@@ -159,10 +149,6 @@ struct audio {
 	uint32_t read_ptr_offset;
 	int16_t source;
 
-#ifdef CONFIG_HAS_EARLYSUSPEND
-	struct audwma_suspend_ctl suspend_ctl;
-#endif
-
 #ifdef CONFIG_DEBUG_FS
 	struct dentry *dentry;
 #endif
@@ -198,10 +184,7 @@ static void audplay_send_data(struct audio *audio, unsigned needed);
 static void audplay_config_hostpcm(struct audio *audio);
 static void audplay_buffer_refresh(struct audio *audio);
 static void audio_dsp_event(void *private, unsigned id, uint16_t *msg);
-#ifdef CONFIG_HAS_EARLYSUSPEND
-static void audwma_post_event(struct audio *audio, int type,
-		union msm_audio_event_payload payload);
-#endif
+
 /* must be called with audio->lock held */
 static int audio_enable(struct audio *audio)
 {
@@ -1506,9 +1489,6 @@ static int audio_release(struct inode *inode, struct file *file)
 	audio_flush_pcm_buf(audio);
 	msm_adsp_put(audio->audplay);
 	audpp_adec_free(audio->dec_id);
-#ifdef CONFIG_HAS_EARLYSUSPEND
-	unregister_early_suspend(&audio->suspend_ctl.node);
-#endif
 	audio->event_abort = 1;
 	wake_up(&audio->event_wait);
 	audwma_reset_event_queue(audio);
@@ -1527,57 +1507,6 @@ static int audio_release(struct inode *inode, struct file *file)
 	kfree(audio);
 	return 0;
 }
-
-#ifdef CONFIG_HAS_EARLYSUSPEND
-static void audwma_post_event(struct audio *audio, int type,
-		union msm_audio_event_payload payload)
-{
-	struct audwma_event *e_node = NULL;
-	unsigned long flags;
-
-	spin_lock_irqsave(&audio->event_queue_lock, flags);
-
-	if (!list_empty(&audio->free_event_queue)) {
-		e_node = list_first_entry(&audio->free_event_queue,
-				struct audwma_event, list);
-		list_del(&e_node->list);
-	} else {
-		e_node = kmalloc(sizeof(struct audwma_event), GFP_ATOMIC);
-		if (!e_node) {
-			MM_ERR("No mem to post event %d\n", type);
-			spin_unlock_irqrestore(&audio->event_queue_lock, flags);
-			return;
-		}
-	}
-
-	e_node->event_type = type;
-	e_node->payload = payload;
-
-	list_add_tail(&e_node->list, &audio->event_queue);
-	spin_unlock_irqrestore(&audio->event_queue_lock, flags);
-	wake_up(&audio->event_wait);
-}
-
-static void audwma_suspend(struct early_suspend *h)
-{
-	struct audwma_suspend_ctl *ctl =
-		container_of(h, struct audwma_suspend_ctl, node);
-	union msm_audio_event_payload payload;
-
-	MM_DBG("\n"); /* Macro prints the file name and function */
-	audwma_post_event(ctl->audio, AUDIO_EVENT_SUSPEND, payload);
-}
-
-static void audwma_resume(struct early_suspend *h)
-{
-	struct audwma_suspend_ctl *ctl =
-		container_of(h, struct audwma_suspend_ctl, node);
-	union msm_audio_event_payload payload;
-
-	MM_DBG("\n"); /* Macro prints the file name and function */
-	audwma_post_event(ctl->audio, AUDIO_EVENT_RESUME, payload);
-}
-#endif
 
 #ifdef CONFIG_DEBUG_FS
 static ssize_t audwma_debug_open(struct inode *inode, struct file *file)
@@ -1826,13 +1755,6 @@ static int audio_open(struct inode *inode, struct file *file)
 
 	if (IS_ERR(audio->dentry))
 		MM_DBG("debugfs_create_file failed\n");
-#endif
-#ifdef CONFIG_HAS_EARLYSUSPEND
-	audio->suspend_ctl.node.level = EARLY_SUSPEND_LEVEL_DISABLE_FB;
-	audio->suspend_ctl.node.resume = audwma_resume;
-	audio->suspend_ctl.node.suspend = audwma_suspend;
-	audio->suspend_ctl.audio = audio;
-	register_early_suspend(&audio->suspend_ctl.node);
 #endif
 	for (i = 0; i < AUDWMA_EVENT_NUM; i++) {
 		e_node = kmalloc(sizeof(struct audwma_event), GFP_KERNEL);
