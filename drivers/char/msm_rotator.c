@@ -1667,12 +1667,10 @@ static int get_img(struct msmfb_data *fbd,
 static void put_img(struct file *p_file, struct ion_handle *p_ihdl,
 	unsigned int secure)
 {
-#ifdef CONFIG_MSM_MULTIMEDIA_USE_ION
 	if (!IS_ERR_OR_NULL(p_ihdl)) {
 		pr_debug("%s(): p_ihdl %p\n", __func__, p_ihdl);
 		ion_free(msm_rotator_dev->client, p_ihdl);
 	}
-#endif
 }
 
 static int msm_rotator_rotate_prepare(
@@ -2810,9 +2808,7 @@ static int msm_rotator_probe(struct platform_device *pdev)
 			  msm_rotator_rot_clk_work_f);
 
 	mutex_init(&msm_rotator_dev->rotator_lock);
-#ifdef CONFIG_MSM_MULTIMEDIA_USE_ION
 	msm_rotator_dev->client = msm_ion_client_create(pdev->name);
-#endif
 	platform_set_drvdata(pdev, msm_rotator_dev);
 
 
