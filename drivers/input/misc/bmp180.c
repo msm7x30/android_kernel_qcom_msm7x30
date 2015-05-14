@@ -573,19 +573,8 @@ static struct i2c_driver bmp180_driver = {
 	.remove        = bmp180_remove,
 };
 
-static int __init bmp180_init(void)
-{
-	return i2c_add_driver(&bmp180_driver);
-}
-
-static void __exit bmp180_exit(void)
-{
-	i2c_del_driver(&bmp180_driver);
-}
+module_i2c_driver(bmp180_driver);
 
 MODULE_AUTHOR("Marcus Bauer <marcus.bauer@sonyericsson.com>");
 MODULE_DESCRIPTION("BMP180 driver");
 MODULE_LICENSE("GPL");
-
-module_init(bmp180_init);
-module_exit(bmp180_exit);
