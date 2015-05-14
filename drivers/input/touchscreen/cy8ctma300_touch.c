@@ -50,10 +50,6 @@
 #include <linux/jiffies.h>
 #endif
 
-#ifdef	CONFIG_EARLYSUSPEND
-#include <linux/earlysuspend.h>
-#endif
-
 #ifdef	CONFIG_ARM
 #include <asm/mach-types.h>
 #endif
@@ -202,9 +198,6 @@ struct cy8ctma300_touch {
 	int					device_major;
 	struct class				*device_class;
 	int					first_irq;
-#ifdef CONFIG_EARLYSUSPEND
-	struct early_suspend			early_suspend;
-#endif
 	int					irq_suspend_enabled;
 	int					init_complete;
 	int					has_been_initialized;
@@ -964,30 +957,6 @@ static int cy8ctma300_touch_resume(struct spi_device *spi)
 };
 #endif
 
-#if defined(CONFIG_EARLYSUSPEND) && defined(CONFIG_PM)
-static void cy8ctma300_touch_early_suspend(struct early_suspend *es)
-{
-	struct cy8ctma300_touch *this;
-	this = container_of(es, struct cy8ctma300_touch, early_suspend);
-
-	DEBUG_PRINTK(KERN_INFO "CY8CTMA300_TOUCH: %s()\n", __func__);
-	dev_dbg(&this->spi->dev, "CY8CTMA300_TOUCH: early suspend\n");
-
-	cy8ctma300_touch_suspend(this->spi, PMSG_SUSPEND);
-};
-
-static void cy8ctma300_touch_late_resume(struct early_suspend *es)
-{
-	struct cy8ctma300_touch *this;
-	this = container_of(es, struct cy8ctma300_touch, early_suspend);
-
-	DEBUG_PRINTK(KERN_INFO "CY8CTMA300_TOUCH: %s()\n", __func__);
-	dev_dbg(&this->spi->dev, "CY8CTMA300_TOUCH: late resume\n");
-
-	cy8ctma300_touch_resume(this->spi);
-};
-#endif /* #ifdef CONFIG_EARLYSUSPEND */
-
 static int cy8ctma300_touch_open(struct inode *inode, struct file *file)
 {
 	struct cy8ctma300_touch *this =
@@ -1194,14 +1163,6 @@ static int cy8ctma300_deferred_init(struct cy8ctma300_touch *this)
 	}
 	DEBUG_PRINTK(KERN_DEBUG "CY8CTMA300_TOUCH: Device created\n");
 
-#ifdef CONFIG_EARLYSUSPEND
-	/* register early suspend */
-	this->early_suspend.level = EARLY_SUSPEND_LEVEL_BLANK_SCREEN + 1;
-	this->early_suspend.suspend = cy8ctma300_touch_early_suspend;
-	this->early_suspend.resume = cy8ctma300_touch_late_resume;
-	register_early_suspend(&this->early_suspend);
-#endif /* #ifdef CONFIG_EARLYSUSPEND */
-
 	err = request_irq(pdata->irq, cy8ctma300_touch_irq, pdata->irq_polarity,
 		this->spi->dev.driver->name, this);
 	if (err) {
@@ -1231,9 +1192,6 @@ static int cy8ctma300_deferred_init(struct cy8ctma300_touch *this)
 	return 0;
 
 err_cleanup_device:
-#ifdef CONFIG_EARLYSUSPEND
-	unregister_early_suspend(&this->early_suspend);
-#endif
 	device_destroy(this->device_class, MKDEV(this->device_major, 0));
 err_cleanup_class:
 	class_destroy(this->device_class);
@@ -1410,10 +1368,6 @@ static int cy8ctma300_touch_remove(struct spi_device *spi)
 		printk(KERN_ERR "CY8CTMA300_TOUCH: unregistering partially-loaded driver\n");
 		return -EBUSY;
 	};
-
-#ifdef CONFIG_EARLYSUSPEND
-	unregister_early_suspend(&this->early_suspend);
-#endif
 
 	if (this->input)
 		input_unregister_device(this->input);
