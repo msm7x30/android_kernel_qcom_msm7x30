@@ -1448,28 +1448,7 @@ static struct spi_driver cy8ctma300_touch_driver = {
 #endif
 };
 
-static int __init cy8ctma300_touch_init(void)
-{
-	int err;
-
-	printk(KERN_DEBUG
-		"CY8CTMA300_TOUCH: V%s built %s %s\n",
-		MODULE_VER, __DATE__, __TIME__);
-	err = spi_register_driver(&cy8ctma300_touch_driver);
-	DEBUG_PRINTK(KERN_DEBUG
-		"CY8CTMA300_TOUCH: module init, result=%d\n", err);
-
-	return err;
-};
-
-static void __exit cy8ctma300_touch_exit(void)
-{
-	spi_unregister_driver(&cy8ctma300_touch_driver);
-	printk(KERN_DEBUG "CY8CTMA300_TOUCH: module exit\n");
-};
-
-module_init(cy8ctma300_touch_init);
-module_exit(cy8ctma300_touch_exit);
+module_spi_driver(cy8ctma300_touch_driver);
 
 MODULE_DESCRIPTION("Touchscreen driver for Cypress CY8CTMA300 hardware");
 MODULE_LICENSE("GPL");
