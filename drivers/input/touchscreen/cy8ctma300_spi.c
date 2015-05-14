@@ -33,10 +33,6 @@
 #include <linux/timer.h>
 #include <linux/module.h>
 
-#ifdef CONFIG_EARLYSUSPEND
-#include <linux/earlysuspend.h>
-#endif
-
 #ifdef CONFIG_ARM
 #include <asm/mach-types.h>
 #endif
@@ -168,9 +164,6 @@ struct cy8ctma300_touch {
 	u8 active_track_cnt;
 	u8 track_state[TP_TOUCH_CNT_MAX];
 	u8 track_detect[TP_TOUCH_CNT_MAX];
-#ifdef CONFIG_EARLYSUSPEND
-	struct early_suspend early_suspend;
-#endif
 	int init_complete;
 	struct mutex touch_lock;
 	unsigned long sflag;
@@ -1115,28 +1108,6 @@ done:
 	return 0;
 }
 
-#ifdef CONFIG_EARLYSUSPEND
-static void cy8ctma300_touch_early_suspend(struct early_suspend *es)
-{
-	struct cy8ctma300_touch *tp;
-	tp = container_of(es, struct cy8ctma300_touch, early_suspend);
-
-	dev_dbg(&tp->spi->dev, "%s: early suspend\n", __func__);
-
-	cy8ctma300_touch_suspend(tp->spi, PMSG_SUSPEND);
-}
-
-static void cy8ctma300_touch_late_resume(struct early_suspend *es)
-{
-	struct cy8ctma300_touch *tp;
-	tp = container_of(es, struct cy8ctma300_touch, early_suspend);
-
-	dev_dbg(&tp->spi->dev, "%s: late resume\n", __func__);
-
-	cy8ctma300_touch_resume(tp->spi);
-}
-#endif
-
 static int cy8ctma300_touch_open(struct inode *inode, struct file *file)
 {
 	struct cy8ctma300_touch *tp =
@@ -1972,14 +1943,6 @@ static int cy8ctma300_touch_probe(struct spi_device *spi)
 	if (err)
 		goto err_cleanup_device;
 
-#ifdef CONFIG_EARLYSUSPEND
-	/* register early suspend */
-	tp->early_suspend.level = EARLY_SUSPEND_LEVEL_BLANK_SCREEN + 1;
-	tp->early_suspend.suspend = cy8ctma300_touch_early_suspend;
-	tp->early_suspend.resume = cy8ctma300_touch_late_resume;
-	register_early_suspend(&tp->early_suspend);
-#endif
-
 	/* workaround for irq-on effect to v1.10 and v1.07 */
 	err = request_irq(tp->spi->irq, cy8ctma300_touch_irq,
 			IRQF_TRIGGER_FALLING, tp->spi->dev.driver->name, tp);
@@ -1999,9 +1962,6 @@ static int cy8ctma300_touch_probe(struct spi_device *spi)
 
 err_cleanup_file:
 	device_remove_file(&spi->dev, &dev_attr_touch_cmd);
-#ifdef CONFIG_EARLYSUSPEND
-	unregister_early_suspend(&tp->early_suspend);
-#endif
 err_cleanup_device:
 	device_destroy(tp->device_class, MKDEV(tp->device_major, 0));
 err_cleanup_class:
@@ -2050,10 +2010,6 @@ static int cy8ctma300_touch_remove(struct spi_device *spi)
 		class_destroy(tp->device_class);
 	}
 
-#ifdef CONFIG_EARLYSUSPEND
-	unregister_early_suspend(&tp->early_suspend);
-#endif
-
 	if (tp->input)
 		input_unregister_device(tp->input);
 	if (&tp->device_cdev) {
@@ -2079,10 +2035,8 @@ static struct spi_driver cy8ctma300_touch_driver = {
 		},
 	.probe = cy8ctma300_touch_probe,
 	.remove = cy8ctma300_touch_remove,
-#ifndef CONFIG_EARLYSUSPEND
 	.suspend = cy8ctma300_touch_suspend,
 	.resume = cy8ctma300_touch_resume,
-#endif
 };
 
 module_spi_driver(cy8ctma300_touch_driver);
