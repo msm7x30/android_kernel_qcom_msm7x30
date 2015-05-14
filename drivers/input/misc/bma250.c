@@ -888,18 +888,4 @@ static struct i2c_driver bma250_driver = {
 	.id_table      = bma250_i2c_id,
 };
 
-
-static int __init bma250_init(void)
-{
-	INIT_LIST_HEAD(&dd_list);
-	mutex_init(&bma250_dd_lock);
-	mutex_init(&bma250_power_lock);
-	return i2c_add_driver(&bma250_driver);
-}
-module_init(bma250_init);
-
-static void __exit bma250_exit(void)
-{
-	i2c_del_driver(&bma250_driver);
-}
-module_exit(bma250_exit);
+module_i2c_driver(bma250_driver);
