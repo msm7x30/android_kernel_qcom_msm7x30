@@ -88,49 +88,6 @@ static inline void __raw_remote_ex_spin_unlock(raw_remote_spinlock_t *lock)
 	: "cc");
 }
 
-static inline void __raw_remote_swp_spin_lock(raw_remote_spinlock_t *lock)
-{
-	unsigned long tmp;
-
-	__asm__ __volatile__(
-"1:	swp	%0, %2, [%1]\n"
-"	teq	%0, #0\n"
-"	bne	1b"
-	: "=&r" (tmp)
-	: "r" (&lock->lock), "r" (1)
-	: "cc");
-
-	smp_mb();
-}
-
-static inline int __raw_remote_swp_spin_trylock(raw_remote_spinlock_t *lock)
-{
-	unsigned long tmp;
-
-	__asm__ __volatile__(
-"	swp	%0, %2, [%1]\n"
-	: "=&r" (tmp)
-	: "r" (&lock->lock), "r" (1)
-	: "cc");
-
-	if (tmp == 0) {
-		smp_mb();
-		return 1;
-	}
-	return 0;
-}
-
-static inline void __raw_remote_swp_spin_unlock(raw_remote_spinlock_t *lock)
-{
-	smp_mb();
-
-	__asm__ __volatile__(
-"	str	%1, [%0]"
-	:
-	: "r" (&lock->lock), "r" (0)
-	: "cc");
-}
-
 #define DEK_LOCK_REQUEST		1
 #define DEK_LOCK_YIELD			(!DEK_LOCK_REQUEST)
 #define DEK_YIELD_TURN_SELF		0
@@ -181,25 +138,6 @@ static inline int __raw_remote_dek_spin_release(raw_remote_spinlock_t *lock,
 	return -EINVAL;
 }
 
-static inline void __raw_remote_sfpb_spin_lock(raw_remote_spinlock_t *lock)
-{
-	do {
-		writel_relaxed(SMEM_SPINLOCK_PID_APPS, lock);
-		smp_mb();
-	} while (readl_relaxed(lock) != SMEM_SPINLOCK_PID_APPS);
-}
-
-static inline int __raw_remote_sfpb_spin_trylock(raw_remote_spinlock_t *lock)
-{
-	return 1;
-}
-
-static inline void __raw_remote_sfpb_spin_unlock(raw_remote_spinlock_t *lock)
-{
-	writel_relaxed(0, lock);
-	smp_mb();
-}
-
 /**
  * Release spinlock if it is owned by @pid.
  *
@@ -222,7 +160,7 @@ static inline int __raw_remote_gen_spin_release(raw_remote_spinlock_t *lock,
 	return ret;
 }
 
-#if defined(CONFIG_MSM_SMD) || defined(CONFIG_MSM_REMOTE_SPINLOCK_SFPB)
+#if defined(CONFIG_MSM_SMD)
 int _remote_spin_lock_init(remote_spinlock_id_t, _remote_spinlock_t *lock);
 void _remote_spin_release_all(uint32_t pid);
 #else
@@ -241,20 +179,6 @@ static inline void _remote_spin_release_all(uint32_t pid) {}
 #define _remote_spin_unlock(lock)	__raw_remote_dek_spin_unlock(*lock)
 #define _remote_spin_trylock(lock)	__raw_remote_dek_spin_trylock(*lock)
 #define _remote_spin_release(lock, pid)	__raw_remote_dek_spin_release(*lock,\
-		pid)
-#elif defined(CONFIG_MSM_REMOTE_SPINLOCK_SWP)
-/* Use SWP-based locks when LDREX/STREX are unavailable for shared memory. */
-#define _remote_spin_lock(lock)		__raw_remote_swp_spin_lock(*lock)
-#define _remote_spin_unlock(lock)	__raw_remote_swp_spin_unlock(*lock)
-#define _remote_spin_trylock(lock)	__raw_remote_swp_spin_trylock(*lock)
-#define _remote_spin_release(lock, pid)	__raw_remote_gen_spin_release(*lock,\
-		pid)
-#elif defined(CONFIG_MSM_REMOTE_SPINLOCK_SFPB)
-/* Use SFPB Hardware Mutex Registers */
-#define _remote_spin_lock(lock)		__raw_remote_sfpb_spin_lock(*lock)
-#define _remote_spin_unlock(lock)	__raw_remote_sfpb_spin_unlock(*lock)
-#define _remote_spin_trylock(lock)	__raw_remote_sfpb_spin_trylock(*lock)
-#define _remote_spin_release(lock, pid)	__raw_remote_gen_spin_release(*lock,\
 		pid)
 #else
 /* Use LDREX/STREX for shared memory locking, when available */
