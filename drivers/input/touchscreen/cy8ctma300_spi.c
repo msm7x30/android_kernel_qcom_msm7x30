@@ -33,6 +33,11 @@
 #include <linux/timer.h>
 #include <linux/module.h>
 
+#ifdef CONFIG_FB
+#include <linux/notifier.h>
+#include <linux/fb.h>
+#endif
+
 #ifdef CONFIG_ARM
 #include <asm/mach-types.h>
 #endif
@@ -164,6 +169,10 @@ struct cy8ctma300_touch {
 	u8 active_track_cnt;
 	u8 track_state[TP_TOUCH_CNT_MAX];
 	u8 track_detect[TP_TOUCH_CNT_MAX];
+#ifdef CONFIG_FB
+	struct notifier_block fb_notif;
+#endif
+	bool suspended;
 	int init_complete;
 	struct mutex touch_lock;
 	unsigned long sflag;
@@ -977,6 +986,10 @@ static int cy8ctma300_touch_suspend(struct spi_device *spi,
 	u8 buf[TOUCH_DATA_FSTAT2 + 1];
 	long t = msecs_to_jiffies(900);
 
+	dev_err(&spi->dev, "%s: start\n", __func__);
+	if (tp->suspended)
+		return 0;
+
 	/*
 	 * Ensure that the resume worker has run to completion,
 	 * this is to prevent wrong sequence between resume and suspend.
@@ -1018,6 +1031,10 @@ out:
 		cy8ctma300_esd_tmr_stop(tp);
 done:
 	mutex_unlock(&tp->s_lock);
+
+	tp->suspended = true;
+	dev_err(&spi->dev, "%s: end\n", __func__);
+
 	return 0;
 }
 
@@ -1032,7 +1049,7 @@ static void cy8ctma300_resume_worker(struct work_struct *work)
 	u8 fdetect = 0;
 	u8 read_buf[TOUCH_DATA_BYTES];
 
-	dev_dbg(&spi->dev, "%s: start\n", __func__);
+	dev_err(&spi->dev, "%s: start\n", __func__);
 	mutex_lock(&tp->s_lock);
 	dev_dbg(&spi->dev, "%s: SPI_CS wake-up sequence start\n", __func__);
 	if (!pdata->spi_cs_set)
@@ -1081,12 +1098,17 @@ reset:
 	reset_device(tp);
 done:
 	mutex_unlock(&tp->s_lock);
+	dev_err(&spi->dev, "%s: end\n", __func__);
 	return;
 }
 
 static int cy8ctma300_touch_resume(struct spi_device *spi)
 {
 	struct cy8ctma300_touch *tp = dev_get_drvdata(&spi->dev);
+
+	dev_err(&spi->dev, "%s: start\n", __func__);
+	if (!tp->suspended)
+		return 0;
 
 	mutex_lock(&tp->s_lock);
 	tp->mode &= ~TP_MODE_SUSPEND;
@@ -1099,14 +1121,42 @@ static int cy8ctma300_touch_resume(struct spi_device *spi)
 		mutex_unlock(&tp->s_lock);
 		/* Let the resume worker process the resume sequence */
 		schedule_work(&tp->resume_worker);
+		dev_err(&spi->dev, "%s: end >=0x23\n", __func__);
 		return 0;
 	}
 reset:
 	reset_device(tp);
 done:
 	mutex_unlock(&tp->s_lock);
+
+	tp->suspended = false;
+	dev_err(&spi->dev, "%s: end\n", __func__);
+
 	return 0;
 }
+
+#ifdef CONFIG_FB
+static int fb_notifier_callback(struct notifier_block *self,
+				unsigned long event, void *data)
+{
+	struct fb_event *evdata = data;
+	int *blank;
+	struct cy8ctma300_touch *tp =
+		container_of(self, struct cy8ctma300_touch, fb_notif);
+
+	if (evdata && evdata->data && tp && tp->spi) {
+		if (event == FB_EVENT_BLANK) {
+			blank = evdata->data;
+			if (*blank == FB_BLANK_UNBLANK)
+				cy8ctma300_touch_resume(tp->spi);
+			else if (*blank == FB_BLANK_POWERDOWN)
+				cy8ctma300_touch_suspend(tp->spi, PMSG_SUSPEND);
+		}
+	}
+
+	return 0;
+}
+#endif
 
 static int cy8ctma300_touch_open(struct inode *inode, struct file *file)
 {
@@ -1943,13 +1993,25 @@ static int cy8ctma300_touch_probe(struct spi_device *spi)
 	if (err)
 		goto err_cleanup_device;
 
+#ifdef CONFIG_FB
+	tp->fb_notif.notifier_call = fb_notifier_callback;
+	err = fb_register_client(&tp->fb_notif);
+	if (err) {
+		dev_err(&spi->dev, "%s: Failed to register fb_notifier\n",
+			__func__);
+		goto err_cleanup_file;
+	}
+
+	dev_dbg(&spi->dev, "%s: Registered fb_notifier\n", __func__);
+#endif
+
 	/* workaround for irq-on effect to v1.10 and v1.07 */
 	err = request_irq(tp->spi->irq, cy8ctma300_touch_irq,
 			IRQF_TRIGGER_FALLING, tp->spi->dev.driver->name, tp);
 
 	if (err) {
 		dev_err(&spi->dev, "irq %d busy?\n", tp->spi->irq);
-		goto err_cleanup_file;
+		goto err_cleanup_fb_notif;
 	}
 
 	dev_dbg(&spi->dev, "%s: Registered IRQ\n", __func__);
@@ -1960,6 +2022,10 @@ static int cy8ctma300_touch_probe(struct spi_device *spi)
 
 	return 0;
 
+err_cleanup_fb_notif:
+#ifdef CONFIG_FB
+	fb_unregister_client(&tp->fb_notif);
+#endif
 err_cleanup_file:
 	device_remove_file(&spi->dev, &dev_attr_touch_cmd);
 err_cleanup_device:
@@ -2010,6 +2076,10 @@ static int cy8ctma300_touch_remove(struct spi_device *spi)
 		class_destroy(tp->device_class);
 	}
 
+#ifdef CONFIG_FB
+	fb_unregister_client(&tp->fb_notif);
+#endif
+
 	if (tp->input)
 		input_unregister_device(tp->input);
 	if (&tp->device_cdev) {
@@ -2035,8 +2105,10 @@ static struct spi_driver cy8ctma300_touch_driver = {
 		},
 	.probe = cy8ctma300_touch_probe,
 	.remove = cy8ctma300_touch_remove,
+#ifndef CONFIG_FB
 	.suspend = cy8ctma300_touch_suspend,
 	.resume = cy8ctma300_touch_resume,
+#endif
 };
 
 module_spi_driver(cy8ctma300_touch_driver);
