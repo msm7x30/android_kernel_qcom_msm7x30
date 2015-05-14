@@ -513,14 +513,6 @@ config MSM_SPM_V1
 	  used to manage the processor power during sleep. The driver allows
 	  configuring SPM to allow different power modes.
 
-config MSM_MULTIMEDIA_USE_ION
-	bool "Multimedia suport using Ion"
-	depends on ION_MSM
-	help
-	  Enable support for multimedia drivers using Ion for buffer management
-	  instead of pmem. Selecting this may also involve userspace
-	  dependencies as well.
-
 config MSM_RPC_PMIC
 	tristate "MSM RPC PMIC driver"
 	depends on MSM_ONCRPCROUTER
