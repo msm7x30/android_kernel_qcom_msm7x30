@@ -599,27 +599,4 @@ static struct i2c_driver max17040_driver = {
 	.id_table = max17040_id,
 };
 
-static int __init max17040_init(void)
-{
-	int rc;
-
-	rc = i2c_add_driver(&max17040_driver);
-	if (rc) {
-		printk(KERN_ERR "max17040_init FAILED: i2c_add_driver rc=%d\n",
-		       rc);
-		goto init_exit;
-	}
-	return 0;
-
-init_exit:
-	return rc;
-}
-
-static void __exit max17040_exit(void)
-{
-	i2c_del_driver(&max17040_driver);
-}
-
-module_init(max17040_init);
-module_exit(max17040_exit);
-
+module_i2c_driver(max17040_driver);
