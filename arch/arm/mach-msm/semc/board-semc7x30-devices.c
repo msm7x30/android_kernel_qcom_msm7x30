@@ -21,6 +21,10 @@
 #include <linux/android_pmem.h>
 #include <linux/regulator/machine.h>
 #include <linux/init.h>
+#ifdef CONFIG_PSTORE_RAM
+#include <linux/memblock.h>
+#include <linux/pstore_ram.h>
+#endif
 #include <mach/irqs.h>
 #include <mach/msm_iomap.h>
 #include <mach/dma.h>
@@ -479,6 +483,31 @@ int msm_add_host(unsigned int host, struct msm_usb_host_platform_data *plat)
 	pdev->dev.platform_data = plat;
 	return platform_device_register(pdev);
 }
+
+#ifdef CONFIG_PSTORE_RAM
+#define RAMOOPS_MEM_BASE 0x1cca000
+#define RAMOOPS_MEM_SIZE SZ_512K
+#define RAMOOPS_CONSOLE_SIZE (124 * SZ_1K * 2)
+
+static struct ramoops_platform_data ramoops_data = {
+	.mem_address = RAMOOPS_MEM_BASE,
+	.mem_size = RAMOOPS_MEM_SIZE,
+	.console_size = RAMOOPS_CONSOLE_SIZE,
+	.dump_oops = 1,
+};
+
+struct platform_device ramoops_dev = {
+	.name = "ramoops",
+	.dev = {
+		.platform_data = &ramoops_data,
+	},
+};
+
+void __init reserve_ramoops_memory(void)
+{
+	memblock_reserve(ramoops_data.mem_address, ramoops_data.mem_size);
+}
+#endif
 
 struct platform_device asoc_msm_pcm = {
 	.name   = "msm-dsp-audio",

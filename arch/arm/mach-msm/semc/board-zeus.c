@@ -2680,6 +2680,9 @@ static struct platform_device *devices[] __initdata = {
 #if defined(CONFIG_SERIAL_MSM) || defined(CONFIG_MSM_SERIAL_DEBUGGER)
 	&msm_device_uart3,
 #endif
+#ifdef CONFIG_PSTORE_RAM
+	&ramoops_dev,
+#endif
 #ifdef CONFIG_MSM_PROC_COMM_REGULATOR
 	&msm_proccomm_regulator_dev,
 #endif
@@ -3567,6 +3570,10 @@ static void __init msm7x30_reserve(void)
 			cma_total_size,
 			0x0,
 			0x20000000);
+
+#ifdef CONFIG_PSTORE_RAM
+	reserve_ramoops_memory();
+#endif
 }
 
 static void __init msm7x30_allocate_memory_regions(void)
