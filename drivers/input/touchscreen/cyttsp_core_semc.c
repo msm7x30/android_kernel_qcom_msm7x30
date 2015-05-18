@@ -2204,7 +2204,7 @@ void *cyttsp_core_init(struct cyttsp_bus_ops *bus_ops, struct device *pdev)
 
 	retval = request_threaded_irq(ts->irq, NULL, cyttsp_irq,
 				      IRQF_TRIGGER_FALLING |
-				      IRQF_DISABLED,
+				      IRQF_DISABLED | IRQF_ONESHOT,
 				      input_device->name, ts);
 
 	if (retval) {
