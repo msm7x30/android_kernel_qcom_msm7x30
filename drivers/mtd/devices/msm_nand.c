@@ -6795,7 +6795,7 @@ int msm_nand_scan(struct mtd_info *mtd, int maxchips)
 			if (nand_manuf_ids[i].id == manid)
 				flashman = &nand_manuf_ids[i];
 		for (i = 0; !flashdev && nand_flash_ids[i].id; ++i)
-			if (nand_flash_ids[i].id == devid)
+			if (nand_flash_ids[i].dev_id == devid)
 				flashdev = &nand_flash_ids[i];
 		if (!flashdev || !flashman) {
 			pr_err("ERROR: unknown nand device manuf=%x devid=%x\n",
