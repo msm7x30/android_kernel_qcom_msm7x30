@@ -242,7 +242,7 @@ static void msm_hsusb_set_speed(struct usb_info *ui)
 	unsigned long flags;
 
 	spin_lock_irqsave(&ui->lock, flags);
-	switch (readl(USB_PORTSC) & PORTSC_PSPD_MASK) {
+	switch (readl(IOMEM(USB_PORTSC)) & PORTSC_PSPD_MASK) {
 	case PORTSC_PSPD_FS:
 		dev_dbg(&ui->pdev->dev, "portchange USB_SPEED_FULL\n");
 		ui->gadget.speed = USB_SPEED_FULL;
@@ -293,7 +293,7 @@ static ssize_t print_switch_state(struct switch_dev *sdev, char *buf)
 
 static inline enum chg_type usb_get_chg_type(struct usb_info *ui)
 {
-	if ((readl_relaxed(USB_PORTSC) & PORTSC_LS) == PORTSC_LS) {
+	if ((readl_relaxed(IOMEM(USB_PORTSC)) & PORTSC_LS) == PORTSC_LS) {
 		return USB_CHG_TYPE__WALLCHARGER;
 	} else if (ui->pdata->prop_chg) {
 		if (ui->gadget.speed == USB_SPEED_LOW ||
@@ -476,7 +476,7 @@ static int usb_ep_get_stall(struct msm_endpoint *ept)
 	unsigned int n;
 	struct usb_info *ui = ept->ui;
 
-	n = readl(USB_ENDPTCTRL(ept->num));
+	n = readl(IOMEM(USB_ENDPTCTRL(ept->num)));
 	if (ept->flags & EPT_FLAG_IN)
 		return (CTRL_TXS & n) ? 1 : 0;
 	else
@@ -586,7 +586,7 @@ static void usb_ept_enable(struct msm_endpoint *ept, int yes,
 	int in = ept->flags & EPT_FLAG_IN;
 	unsigned n;
 
-	n = readl(USB_ENDPTCTRL(ept->num));
+	n = readl(IOMEM(USB_ENDPTCTRL(ept->num)));
 
 	if (in) {
 		if (yes) {
@@ -605,7 +605,7 @@ static void usb_ept_enable(struct msm_endpoint *ept, int yes,
 	}
 	/* complete all the updates to ept->head before enabling endpoint*/
 	mb();
-	writel(n, USB_ENDPTCTRL(ept->num));
+	writel(n, IOMEM(USB_ENDPTCTRL(ept->num)));
 
 	/* Ensure endpoint is enabled before returning */
 	mb();
@@ -624,7 +624,7 @@ static void ept_prime_timer_func(unsigned long data)
 	spin_lock_irqsave(&ui->lock, flags);
 
 	ept->false_prime_fail_count++;
-	if ((readl_relaxed(USB_ENDPTPRIME) & n)) {
+	if ((readl_relaxed(IOMEM(USB_ENDPTPRIME)) & n)) {
 		/*
 		 * ---- UNLIKELY ---
 		 * May be hardware is taking long time to process the
@@ -634,7 +634,7 @@ static void ept_prime_timer_func(unsigned long data)
 		mod_timer(&ept->prime_timer, EPT_PRIME_CHECK_DELAY);
 		goto out;
 	}
-	if (readl_relaxed(USB_ENDPTSTAT) & n)
+	if (readl_relaxed(IOMEM(USB_ENDPTSTAT)) & n)
 		goto out;
 
 	/* clear speculative loads on item->info */
@@ -648,7 +648,7 @@ static void ept_prime_timer_func(unsigned long data)
 				ept->flags & EPT_FLAG_IN ? "in" : "out",
 				ept->head->config, ept->head->active,
 				ept->head->next, ept->head->info);
-		writel_relaxed(n, USB_ENDPTPRIME);
+		writel_relaxed(n, IOMEM(USB_ENDPTPRIME));
 		mod_timer(&ept->prime_timer, EPT_PRIME_CHECK_DELAY);
 	}
 out:
@@ -695,7 +695,7 @@ static void usb_ept_start(struct msm_endpoint *ept)
 	 * make decision on re-prime. We can do a busy loop here
 	 * but it leads to high cpu usage.
 	 */
-	writel_relaxed(n, USB_ENDPTPRIME);
+	writel_relaxed(n, IOMEM(USB_ENDPTPRIME));
 	mod_timer(&ept->prime_timer, EPT_PRIME_CHECK_DELAY);
 }
 
@@ -895,28 +895,28 @@ static void ep0_setup_ack_complete(struct usb_ep *ep, struct usb_request *req)
 	switch (test_mode) {
 	case J_TEST:
 		dev_info(&ui->pdev->dev, "usb electrical test mode: (J)\n");
-		temp = readl(USB_PORTSC) & (~PORTSC_PTC);
-		writel(temp | PORTSC_PTC_J_STATE, USB_PORTSC);
+		temp = readl(IOMEM(USB_PORTSC)) & (~PORTSC_PTC);
+		writel(temp | PORTSC_PTC_J_STATE, IOMEM(USB_PORTSC));
 		break;
 
 	case K_TEST:
 		dev_info(&ui->pdev->dev, "usb electrical test mode: (K)\n");
-		temp = readl(USB_PORTSC) & (~PORTSC_PTC);
-		writel(temp | PORTSC_PTC_K_STATE, USB_PORTSC);
+		temp = readl(IOMEM(USB_PORTSC)) & (~PORTSC_PTC);
+		writel(temp | PORTSC_PTC_K_STATE, IOMEM(USB_PORTSC));
 		break;
 
 	case SE0_NAK_TEST:
 		dev_info(&ui->pdev->dev,
 			"usb electrical test mode: (SE0-NAK)\n");
-		temp = readl(USB_PORTSC) & (~PORTSC_PTC);
-		writel(temp | PORTSC_PTC_SE0_NAK, USB_PORTSC);
+		temp = readl(IOMEM(USB_PORTSC)) & (~PORTSC_PTC);
+		writel(temp | PORTSC_PTC_SE0_NAK, IOMEM(USB_PORTSC));
 		break;
 
 	case TST_PKT_TEST:
 		dev_info(&ui->pdev->dev,
 			"usb electrical test mode: (TEST_PKT)\n");
-		temp = readl(USB_PORTSC) & (~PORTSC_PTC);
-		writel(temp | PORTSC_PTC_TST_PKT, USB_PORTSC);
+		temp = readl(IOMEM(USB_PORTSC)) & (~PORTSC_PTC);
+		writel(temp | PORTSC_PTC_TST_PKT, IOMEM(USB_PORTSC));
 		break;
 	}
 }
@@ -931,7 +931,7 @@ static void ep0_setup_ack(struct usb_info *ui)
 
 static void ep0_setup_stall(struct usb_info *ui)
 {
-	writel((1<<16) | (1<<0), USB_ENDPTCTRL(0));
+	writel((1<<16) | (1<<0), IOMEM(USB_ENDPTCTRL(0)));
 }
 
 static void ep0_setup_send(struct usb_info *ui, unsigned length)
@@ -967,7 +967,7 @@ static void handle_setup(struct usb_info *ui)
 	/* Ensure buffer is read before acknowledging to h/w */
 	mb();
 
-	writel(EPT_RX(0), USB_ENDPTSETUPSTAT);
+	writel(EPT_RX(0), IOMEM(USB_ENDPTSETUPSTAT));
 
 	if (ctl.bRequestType & USB_DIR_IN)
 		atomic_set(&ui->ep0_dir, USB_DIR_IN);
@@ -1078,7 +1078,8 @@ static void handle_setup(struct usb_info *ui)
 			/* write address delayed (will take effect
 			** after the next IN txn)
 			*/
-			writel((ctl.wValue << 25) | (1 << 24), USB_DEVICEADDR);
+			writel((ctl.wValue << 25) | (1 << 24),
+					IOMEM(USB_DEVICEADDR));
 			goto ack;
 		} else if (ctl.bRequest == USB_REQ_SET_FEATURE) {
 			switch (ctl.wValue) {
@@ -1233,10 +1234,10 @@ static void flush_endpoint_hw(struct usb_info *ui, unsigned bits)
 	**   (does the fact that this doesn't use the tripwire matter?!)
 	*/
 	do {
-		writel(bits, USB_ENDPTFLUSH);
-		while (readl(USB_ENDPTFLUSH) & bits)
+		writel(bits, IOMEM(USB_ENDPTFLUSH));
+		while (readl(IOMEM(USB_ENDPTFLUSH)) & bits)
 			udelay(100);
-	} while (readl(USB_ENDPTSTAT) & bits);
+	} while (readl(IOMEM(USB_ENDPTSTAT)) & bits);
 }
 
 static void flush_endpoint_sw(struct msm_endpoint *ept)
@@ -1299,8 +1300,8 @@ static irqreturn_t usb_interrupt(int irq, void *data)
 	if (atomic_read(&dev->in_lpm))
 		return IRQ_NONE;
 
-	n = readl(USB_USBSTS);
-	writel(n, USB_USBSTS);
+	n = readl(IOMEM(USB_USBSTS));
+	writel(n, IOMEM(USB_USBSTS));
 
 	/* somehow we got an IRQ while in the reset sequence: ignore it */
 	if (!atomic_read(&ui->running))
@@ -1348,10 +1349,12 @@ static irqreturn_t usb_interrupt(int irq, void *data)
 		if (!ui->gadget.is_a_peripheral)
 			schedule_delayed_work(&ui->chg_stop, 0);
 
-		writel(readl(USB_ENDPTSETUPSTAT), USB_ENDPTSETUPSTAT);
-		writel(readl(USB_ENDPTCOMPLETE), USB_ENDPTCOMPLETE);
-		writel(0xffffffff, USB_ENDPTFLUSH);
-		writel(0, USB_ENDPTCTRL(1));
+		writel(readl(IOMEM(USB_ENDPTSETUPSTAT)),
+				IOMEM(USB_ENDPTSETUPSTAT));
+		writel(readl(IOMEM(USB_ENDPTCOMPLETE)),
+				IOMEM(USB_ENDPTCOMPLETE));
+		writel(0xffffffff, IOMEM(USB_ENDPTFLUSH));
+		writel(0, IOMEM(USB_ENDPTCTRL(1)));
 
 		wake_lock(&ui->wlock);
 		if (atomic_read(&ui->configured)) {
@@ -1399,12 +1402,12 @@ static irqreturn_t usb_interrupt(int irq, void *data)
 	}
 
 	if (n & STS_UI) {
-		n = readl(USB_ENDPTSETUPSTAT);
+		n = readl(IOMEM(USB_ENDPTSETUPSTAT));
 		if (n & EPT_RX(0))
 			handle_setup(ui);
 
-		n = readl(USB_ENDPTCOMPLETE);
-		writel(n, USB_ENDPTCOMPLETE);
+		n = readl(IOMEM(USB_ENDPTCOMPLETE));
+		writel(n, IOMEM(USB_ENDPTCOMPLETE));
 		while (n) {
 			unsigned bit = __ffs(n);
 			handle_endpoint(ui, bit);
@@ -1478,10 +1481,10 @@ static void usb_reset(struct usb_info *ui)
 		otg->reset(ui->xceiv, 1);
 
 	/* set usb controller interrupt threshold to zero*/
-	writel((readl(USB_USBCMD) & ~USBCMD_ITC_MASK) | USBCMD_ITC(0),
-							USB_USBCMD);
+	writel((readl(IOMEM(USB_USBCMD)) & ~USBCMD_ITC_MASK) | USBCMD_ITC(0),
+							IOMEM(USB_USBCMD));
 
-	writel(ui->dma, USB_ENDPOINTLISTADDR);
+	writel(ui->dma, IOMEM(USB_ENDPOINTLISTADDR));
 
 	configure_endpoints(ui);
 
@@ -1498,7 +1501,7 @@ static void usb_reset(struct usb_info *ui)
 	flush_endpoint(&ui->ep0in);
 
 	/* enable interrupts */
-	writel(STS_URI | STS_SLI | STS_UI | STS_PCI, USB_USBINTR);
+	writel(STS_URI | STS_SLI | STS_UI | STS_PCI, IOMEM(USB_USBINTR));
 
 	/* Ensure that h/w RESET is completed before returning */
 	mb();
@@ -1664,9 +1667,10 @@ static void usb_do_work(struct work_struct *w)
 					 * disconnect which may lead to
 					 * IRQ nobody cared error.
 					 */
-					writel_relaxed(0, USB_USBINTR);
-					writel_relaxed(readl_relaxed(USB_USBSTS)
-								, USB_USBSTS);
+					writel_relaxed(0, IOMEM(USB_USBINTR));
+					writel_relaxed(readl_relaxed(IOMEM(
+							USB_USBSTS)),
+							IOMEM(USB_USBSTS));
 					/* Ensure that above STOREs are
 					 * completed before enabling
 					 * interrupts */
@@ -1822,12 +1826,12 @@ void usb_function_reenumerate(void)
 
 	/* disable and re-enable the D+ pullup */
 	dev_dbg(&ui->pdev->dev, "disable pullup\n");
-	writel(readl(USB_USBCMD) & ~USBCMD_RS, USB_USBCMD);
+	writel(readl(IOMEM(USB_USBCMD)) & ~USBCMD_RS, IOMEM(USB_USBCMD));
 
 	msleep(10);
 
 	dev_dbg(&ui->pdev->dev, "enable pullup\n");
-	writel(readl(USB_USBCMD) | USBCMD_RS, USB_USBCMD);
+	writel(readl(IOMEM(USB_USBCMD)) | USBCMD_RS, IOMEM(USB_USBCMD));
 }
 
 static char debug_buffer[PAGE_SIZE];
@@ -1847,16 +1851,16 @@ static ssize_t debug_read_status(struct file *file, char __user *ubuf,
 
 	i += scnprintf(buf + i, PAGE_SIZE - i,
 		   "regs: setup=%08x prime=%08x stat=%08x done=%08x\n",
-		   readl(USB_ENDPTSETUPSTAT),
-		   readl(USB_ENDPTPRIME),
-		   readl(USB_ENDPTSTAT),
-		   readl(USB_ENDPTCOMPLETE));
+		   readl(IOMEM(USB_ENDPTSETUPSTAT)),
+		   readl(IOMEM(USB_ENDPTPRIME)),
+		   readl(IOMEM(USB_ENDPTSTAT)),
+		   readl(IOMEM(USB_ENDPTCOMPLETE)));
 	i += scnprintf(buf + i, PAGE_SIZE - i,
 		   "regs:   cmd=%08x   sts=%08x intr=%08x port=%08x\n\n",
-		   readl(USB_USBCMD),
-		   readl(USB_USBSTS),
-		   readl(USB_USBINTR),
-		   readl(USB_PORTSC));
+		   readl(IOMEM(USB_USBCMD)),
+		   readl(IOMEM(USB_USBSTS)),
+		   readl(IOMEM(USB_USBINTR)),
+		   readl(IOMEM(USB_PORTSC)));
 
 
 	for (n = 0; n < 32; n++) {
@@ -2003,10 +2007,10 @@ static ssize_t debug_reprime_ep(struct file *file, const char __user *ubuf,
 	ept = ui->ept + i;
 	n = 1 << ept->bit;
 
-	if ((readl_relaxed(USB_ENDPTPRIME) & n))
+	if ((readl_relaxed(IOMEM(USB_ENDPTPRIME)) & n))
 		goto out;
 
-	if (readl_relaxed(USB_ENDPTSTAT) & n)
+	if (readl_relaxed(IOMEM(USB_ENDPTSTAT)) & n)
 		goto out;
 
 	/* clear speculative loads on item->info */
@@ -2018,7 +2022,7 @@ static ssize_t debug_reprime_ep(struct file *file, const char __user *ubuf,
 				ept->flags & EPT_FLAG_IN ? "in" : "out",
 				ept->head->config, ept->head->active,
 				ept->head->next, ept->head->info);
-		writel_relaxed(n, USB_ENDPTPRIME);
+		writel_relaxed(n, IOMEM(USB_ENDPTPRIME));
 	}
 out:
 	spin_unlock_irqrestore(&ui->lock, flags);
@@ -2281,10 +2285,10 @@ static int msm72k_dequeue(struct usb_ep *_ep, struct usb_request *_req)
 	del_timer(&ep->prime_timer);
 	/* Stop the transfer */
 	do {
-		writel((1 << ep->bit), USB_ENDPTFLUSH);
-		while (readl(USB_ENDPTFLUSH) & (1 << ep->bit))
+		writel((1 << ep->bit), IOMEM(USB_ENDPTFLUSH));
+		while (readl(IOMEM(USB_ENDPTFLUSH)) & (1 << ep->bit))
 			udelay(100);
-	} while (readl(USB_ENDPTSTAT) & (1 << ep->bit));
+	} while (readl(IOMEM(USB_ENDPTSTAT)) & (1 << ep->bit));
 
 	req->req.status = 0;
 	req->busy = 0;
@@ -2341,7 +2345,7 @@ usb_ept_set_halt(struct usb_ep *_ep, int value)
 
 	spin_lock_irqsave(&ui->lock, flags);
 
-	n = readl(USB_ENDPTCTRL(ept->num));
+	n = readl(IOMEM(USB_ENDPTCTRL(ept->num)));
 
 	if (in) {
 		if (value)
@@ -2358,7 +2362,7 @@ usb_ept_set_halt(struct usb_ep *_ep, int value)
 			n |= CTRL_RXR;
 		}
 	}
-	writel(n, USB_ENDPTCTRL(ept->num));
+	writel(n, IOMEM(USB_ENDPTCTRL(ept->num)));
 	if (!value)
 		ept->wedged = 0;
 	spin_unlock_irqrestore(&ui->lock, flags);
@@ -2424,7 +2428,7 @@ static int msm72k_get_frame(struct usb_gadget *_gadget)
 	struct usb_info *ui = container_of(_gadget, struct usb_info, gadget);
 
 	/* frame number is in bits 13:3 */
-	return (readl(USB_FRINDEX) >> 3) & 0x000007FF;
+	return (readl(IOMEM(USB_FRINDEX)) >> 3) & 0x000007FF;
 }
 
 /* VBUS reporting logically comes from a transceiver */
@@ -2456,10 +2460,12 @@ static int msm72k_pullup_internal(struct usb_gadget *_gadget, int is_active)
 	if (is_active) {
 		spin_lock_irqsave(&ui->lock, flags);
 		if (is_usb_online(ui) && ui->driver)
-			writel(readl(USB_USBCMD) | USBCMD_RS, USB_USBCMD);
+			writel(readl(IOMEM(USB_USBCMD)) | USBCMD_RS,
+					IOMEM(USB_USBCMD));
 		spin_unlock_irqrestore(&ui->lock, flags);
 	} else {
-		writel(readl(USB_USBCMD) & ~USBCMD_RS, USB_USBCMD);
+		writel(readl(IOMEM(USB_USBCMD)) & ~USBCMD_RS,
+				IOMEM(USB_USBCMD));
 		/* S/W workaround, Issue#1 */
 		usb_phy_io_write(ui->xceiv, 0x48, 0x04);
 	}
@@ -2514,8 +2520,9 @@ static int msm72k_wakeup(struct usb_gadget *_gadget)
 
 	disable_irq(otg->irq);
 
-	if (!is_usb_active())
-		writel(readl(USB_PORTSC) | PORTSC_FPR, USB_PORTSC);
+	if (readl(IOMEM(USB_PORTSC)) & PORTSC_SUSP)
+		writel(readl(IOMEM(USB_PORTSC)) | PORTSC_FPR,
+				IOMEM(USB_PORTSC));
 
 	/* Ensure that USB port is resumed before enabling the IRQ */
 	mb();
