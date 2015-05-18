@@ -951,10 +951,7 @@ static void handle_setup(struct usb_info *ui)
 	struct usb_ctrlrequest ctl;
 	struct usb_request *req = ui->setup_req;
 	int ret;
-#ifdef CONFIG_USB_OTG
-	u8 hnp;
-	unsigned long flags;
-#endif
+
 	/* USB hardware sometimes generate interrupt before
 	 * 8 bytes of SETUP packet are written to system memory.
 	 * This results in fetching wrong setup_data sometimes.
