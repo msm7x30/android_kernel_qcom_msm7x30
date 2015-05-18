@@ -50,6 +50,11 @@
 #include <linux/jiffies.h>
 #endif
 
+#ifdef CONFIG_FB
+#include <linux/notifier.h>
+#include <linux/fb.h>
+#endif
+
 #ifdef	CONFIG_ARM
 #include <asm/mach-types.h>
 #endif
@@ -198,6 +203,10 @@ struct cy8ctma300_touch {
 	int					device_major;
 	struct class				*device_class;
 	int					first_irq;
+#ifdef CONFIG_FB
+	struct notifier_block fb_notif;
+#endif
+	bool suspended;
 	int					irq_suspend_enabled;
 	int					init_complete;
 	int					has_been_initialized;
@@ -922,12 +931,21 @@ static int cy8ctma300_touch_suspend(struct spi_device *spi,
 {
 	struct cy8ctma300_touch *this = dev_get_drvdata(&spi->dev);
 
+	dev_err(&spi->dev, "%s: start\n", __func__);
+	if (this->suspended) {
+		dev_err(&spi->dev, "%s: already suspended\n", __func__);
+		return 0;
+	}
+
 	DEBUG_PRINTK(KERN_INFO "CY8CTMA300_TOUCH: %s()\n", __func__);
 	DISABLE_IRQ(this);
 
 	mutex_lock(&this->mutex);
 	this->suspend = 1;
 	mutex_unlock(&this->mutex);
+
+	this->suspended = true;
+	dev_err(&spi->dev, "%s: end\n", __func__);
 
 	return reg_write_byte(spi, TP_REG_HST_MODE, TP_TM_BIT_DEEPSLEEP);
 }
@@ -937,6 +955,13 @@ static int cy8ctma300_touch_resume(struct spi_device *spi)
 	int rc;
 	u8 data;
 	struct cy8ctma300_touch	*this = dev_get_drvdata(&spi->dev);
+
+	dev_err(&spi->dev, "%s: start\n", __func__);
+	if (!this->suspended) {
+		dev_err(&spi->dev, "%s: already resumed\n", __func__);
+		return 0;
+	}
+
 	DEBUG_PRINTK(KERN_INFO "CY8CTMA300_TOUCH: %s()\n", __func__);
 
 	this->suspend = 0;
@@ -953,8 +978,34 @@ static int cy8ctma300_touch_resume(struct spi_device *spi)
 		schedule_work(&this->charger_work);
 	mutex_unlock(&this->mutex);
 
+	tp->suspended = false;
+	dev_err(&spi->dev, "%s: end\n", __func__);
+
 	return rc;
 };
+#endif
+
+#ifdef CONFIG_FB
+static int fb_notifier_callback(struct notifier_block *self,
+				unsigned long event, void *data)
+{
+	struct fb_event *evdata = data;
+	int *blank;
+	struct cy8ctma300_touch *tp =
+		container_of(self, struct cy8ctma300_touch, fb_notif);
+
+	if (evdata && evdata->data && tp && tp->spi) {
+		if (event == FB_EVENT_BLANK) {
+			blank = evdata->data;
+			if (*blank == FB_BLANK_UNBLANK)
+				cy8ctma300_touch_resume(tp->spi);
+			else if (*blank == FB_BLANK_POWERDOWN)
+				cy8ctma300_touch_suspend(tp->spi, PMSG_SUSPEND);
+		}
+	}
+
+	return 0;
+}
 #endif
 
 static int cy8ctma300_touch_open(struct inode *inode, struct file *file)
@@ -1163,11 +1214,23 @@ static int cy8ctma300_deferred_init(struct cy8ctma300_touch *this)
 	}
 	DEBUG_PRINTK(KERN_DEBUG "CY8CTMA300_TOUCH: Device created\n");
 
+#ifdef CONFIG_FB
+	this->fb_notif.notifier_call = fb_notifier_callback;
+	err = fb_register_client(&this->fb_notif);
+	if (err) {
+		dev_err(&spi->dev, "%s: Failed to register fb_notifier\n",
+			__func__);
+		goto err_cleanup_device;
+	}
+
+	dev_dbg(&spi->dev, "%s: Registered fb_notifier\n", __func__);
+#endif
+
 	err = request_irq(pdata->irq, cy8ctma300_touch_irq, pdata->irq_polarity,
 		this->spi->dev.driver->name, this);
 	if (err) {
 		dev_err(&this->spi->dev, "irq %d busy?\n", pdata->irq);
-		goto err_cleanup_device;
+		goto err_cleanup_fb_notif;
 	};
 	/* IRQs are enabled as a side-effect of requesting */
 	this->irq_suspend_enabled++;
@@ -1191,6 +1254,10 @@ static int cy8ctma300_deferred_init(struct cy8ctma300_touch *this)
 
 	return 0;
 
+err_cleanup_fb_notif:
+#ifdef CONFIG_FB
+	fb_unregister_client(&this->fb_notif);
+#endif
 err_cleanup_device:
 	device_destroy(this->device_class, MKDEV(this->device_major, 0));
 err_cleanup_class:
@@ -1369,6 +1436,10 @@ static int cy8ctma300_touch_remove(struct spi_device *spi)
 		return -EBUSY;
 	};
 
+#ifdef CONFIG_FB
+	fb_unregister_client(&this->fb_notif);
+#endif
+
 	if (this->input)
 		input_unregister_device(this->input);
 	if (this->device_class) {
@@ -1396,7 +1467,7 @@ static struct spi_driver cy8ctma300_touch_driver = {
 	},
 	.probe		= cy8ctma300_touch_probe,
 	.remove		= cy8ctma300_touch_remove,
-#ifndef CONFIG_PM
+#if defined(CONFIG_PM) && !defined(CONFIG_FB)
 	.suspend	= cy8ctma300_touch_suspend,
 	.resume		= cy8ctma300_touch_resume,
 #endif
