@@ -770,6 +770,10 @@ static int bma250_probe(struct i2c_client *ic_dev,
 		goto probe_exit;
 	}
 
+	INIT_LIST_HEAD(&dd_list);
+	mutex_init(&bma250_dd_lock);
+	mutex_init(&bma250_power_lock);
+
 	mutex_lock(&bma250_dd_lock);
 	list_add_tail(&dd->next_dd, &dd_list);
 	mutex_unlock(&bma250_dd_lock);
