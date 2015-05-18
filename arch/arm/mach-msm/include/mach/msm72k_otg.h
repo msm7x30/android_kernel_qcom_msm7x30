@@ -46,7 +46,6 @@
 #define is_phy_clk_disabled() (readl(USB_PORTSC) & PORTSC_PHCD)
 #define is_phy_active()       (readl_relaxed(USB_ULPI_VIEWPORT) &\
 						ULPI_SYNC_STATE)
-#define is_usb_active()       (!(readl(USB_PORTSC) & PORTSC_SUSP))
 
 /* Timeout (in msec) values (min - max) associated with OTG timers */
 
