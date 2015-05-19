@@ -23,10 +23,10 @@
 #include <linux/mfd/pmic8058.h>
 #include <linux/slab.h>
 #include <linux/hrtimer.h>
-#include <linux/wakelock.h>
 #include <linux/mfd/pm8xxx/core.h>
 #include <linux/export.h>
 #include <linux/module.h>
+#include <linux/pm.h>
 
 #include "keypad-semc.h"
 
@@ -56,7 +56,7 @@ struct kp_data {
 	struct pm8058_chip *pm_chip;
 	struct pm_gpio *pm_gpio_config;
 	struct hrtimer timer;
-	struct wake_lock wake_lock;
+	struct wakeup_source wakeup_source;
 };
 
 static int kp_pm_gpio_config(struct kp_data *dt,
@@ -95,7 +95,7 @@ static irqreturn_t kp_irq(int irq, void *dev_id)
 		if (dt->keys[i].debounce_time.tv64) {
 			dt->keys[i].debounce_stat = DEBOUNCE_STAT_WAIT;
 			disable_irq_nosync(dt->keys[i].irq);
-			wake_lock(&dt->wake_lock);
+			__pm_stay_awake(&dt->wakeup_source);
 			hrtimer_start(&dt->timer, dt->keys[i].debounce_time,
 					HRTIMER_MODE_REL);
 		} else {
@@ -132,7 +132,7 @@ static enum hrtimer_restart kp_debounce_timer_func(struct hrtimer *timer)
 	}
 
 	if (flag == 1) {
-		wake_unlock(&dt->wake_lock);
+		__pm_relax(&dt->wakeup_source);
 		input_sync(dt->input);
 	}
 
@@ -202,7 +202,7 @@ static int kp_probe(struct platform_device *pdev)
 		goto err_input_alloc_failed;
 	}
 
-	wake_lock_init(&dt->wake_lock, WAKE_LOCK_SUSPEND, KP_NAME);
+	wakeup_source_init(&dt->wakeup_source, KP_NAME);
 
 	for (i = 0; i < dt->num_keys; ++i) {
 		dt->keys[i].irq  = pdata->keymap[i].irq;
@@ -289,7 +289,7 @@ static int kp_remove(struct platform_device *pdev)
 	for (i = 0; i < dt->num_keys; ++i)
 		free_irq(dt->keys[i].irq, &dt->input->dev);
 
-	wake_lock_destroy(&dt->wake_lock);
+	wakeup_source_trash(&dt->wakeup_source);
 
 	input_unregister_device(dt->input);
 	platform_set_drvdata(pdev, NULL);
