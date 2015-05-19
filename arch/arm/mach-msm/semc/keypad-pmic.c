@@ -255,7 +255,8 @@ static int kp_probe(struct platform_device *pdev)
 		}
 		rc = request_threaded_irq(dt->keys[i].irq, NULL, kp_irq,
 				IRQF_TRIGGER_RISING | IRQF_TRIGGER_FALLING |
-				IRQF_DISABLED, KP_NAME, &dt->input->dev);
+				IRQF_DISABLED | IRQF_ONESHOT, KP_NAME,
+				&dt->input->dev);
 		if (rc < 0) {
 			dev_err(&dt->input->dev, "unable to request irq\n");
 			goto err_request_irq;
