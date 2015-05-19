@@ -1074,9 +1074,15 @@ static chanspec_t wl_cfg80211_get_shared_freq(struct wiphy *wiphy)
 	return chspec;
 }
 
+#if defined(WL_CFG80211_P2P_DEV_IF)
+static bcm_struct_cfgdev *
+wl_cfg80211_add_monitor_if(const char *name)
+{
+#else
 static bcm_struct_cfgdev *
 wl_cfg80211_add_monitor_if(char *name)
 {
+#endif /* WL_CFG80211_P2P_DEV_IF */
 #if defined(WL_ENABLE_P2P_IF) || defined(WL_CFG80211_P2P_DEV_IF)
 	WL_INFO(("wl_cfg80211_add_monitor_if: No more support monitor interface\n"));
 	return ERR_PTR(-EOPNOTSUPP);
