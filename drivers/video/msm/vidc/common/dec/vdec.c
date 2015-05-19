@@ -35,10 +35,12 @@
 #include "vcd_res_tracker_api.h"
 #include "vdec_internal.h"
 
-
-
+#if DEBUG
 #define DBG(x...) pr_debug(x)
-#define INFO(x...) pr_info(x)
+#else
+#define DBG(x...)
+#endif
+
 #define ERR(x...) pr_err(x)
 
 #define VID_DEC_NAME "msm_vidc_dec"
@@ -275,7 +277,7 @@ static void vid_dec_output_frame_done(struct video_client_ctx *client_ctx,
 		if (res_trk_check_for_sec_session() &&
 			res_trk_get_enable_sec_metadata() &&
 			event == VCD_EVT_RESP_OUTPUT_DONE) {
-			DBG("Buffer Index = %d", buffer_index);
+			DBG("Buffer Index = %d\n", buffer_index);
 			if (buffer_index != -1) {
 				if (client_ctx->meta_addr_table[buffer_index].
 					kernel_vir_addr_iommu &&
@@ -293,7 +295,7 @@ static void vid_dec_output_frame_done(struct video_client_ctx *client_ctx,
 					DBG("Copying Meta Buffer from "\
 						"secure memory"
 						"kernel_virt_iommu = %p "
-						"kernel_virt = %p",
+						"kernel_virt = %p\n",
 						client_ctx->
 						meta_addr_table[buffer_index].
 						kernel_vir_addr_iommu,
@@ -387,7 +389,7 @@ static void vid_dec_output_frame_done(struct video_client_ctx *client_ctx,
 				pmem_fd, kernel_vaddr, buffer_index,
 				&buff_handle);
 		if (ion_flag == ION_FLAG_CACHED && buff_handle) {
-			DBG("%s: Cache invalidate: size %u", __func__,
+			DBG("%s: Cache invalidate: size %u\n", __func__,
 				vcd_frame_data->alloc_len);
 			msm_ion_do_cache_op(client_ctx->user_ion_client,
 					buff_handle,
@@ -424,49 +426,49 @@ static void vid_dec_lean_event(struct video_client_ctx *client_ctx,
 	switch (event) {
 	case VCD_EVT_IND_OUTPUT_RECONFIG:
 		DBG("msm_vidc_dec: Sending VDEC_MSG_EVT_CONFIG_CHANGED"
-			 " to client");
+			 " to client\n");
 		vdec_msg->vdec_msg_info.msgcode = VDEC_MSG_EVT_CONFIG_CHANGED;
 		break;
 	case VCD_EVT_IND_RESOURCES_LOST:
 		DBG("msm_vidc_dec: Sending VDEC_EVT_RESOURCES_LOST"
-			 " to client");
+			 " to client\n");
 		vdec_msg->vdec_msg_info.msgcode = VDEC_EVT_RESOURCES_LOST;
 		break;
 	case VCD_EVT_RESP_FLUSH_INPUT_DONE:
 		DBG("msm_vidc_dec: Sending VDEC_MSG_RESP_FLUSH_INPUT_DONE"
-			 " to client");
+			 " to client\n");
 		vdec_msg->vdec_msg_info.msgcode =
 		    VDEC_MSG_RESP_FLUSH_INPUT_DONE;
 		break;
 	case VCD_EVT_RESP_FLUSH_OUTPUT_DONE:
 		DBG("msm_vidc_dec: Sending VDEC_MSG_RESP_FLUSH_OUTPUT_DONE"
-			 " to client");
+			 " to client\n");
 		vdec_msg->vdec_msg_info.msgcode =
 		    VDEC_MSG_RESP_FLUSH_OUTPUT_DONE;
 		break;
 	case VCD_EVT_IND_HWERRFATAL:
 		DBG("msm_vidc_dec: Sending VDEC_MSG_EVT_HW_ERROR"
-			 " to client");
+			 " to client\n");
 		vdec_msg->vdec_msg_info.msgcode = VDEC_MSG_EVT_HW_ERROR;
 		break;
 	case VCD_EVT_RESP_START:
 		DBG("msm_vidc_dec: Sending VDEC_MSG_RESP_START_DONE"
-			 " to client");
+			 " to client\n");
 		vdec_msg->vdec_msg_info.msgcode = VDEC_MSG_RESP_START_DONE;
 		break;
 	case VCD_EVT_RESP_STOP:
 		DBG("msm_vidc_dec: Sending VDEC_MSG_RESP_STOP_DONE"
-			 " to client");
+			 " to client\n");
 		vdec_msg->vdec_msg_info.msgcode = VDEC_MSG_RESP_STOP_DONE;
 		break;
 	case VCD_EVT_RESP_PAUSE:
 		DBG("msm_vidc_dec: Sending VDEC_MSG_RESP_PAUSE_DONE"
-			 " to client");
+			 " to client\n");
 		vdec_msg->vdec_msg_info.msgcode = VDEC_MSG_RESP_PAUSE_DONE;
 		break;
 	case VCD_EVT_IND_INFO_OUTPUT_RECONFIG:
 		DBG("msm_vidc_dec: Sending VDEC_MSG_EVT_INFO_CONFIG_CHANGED"
-			 " to client");
+			 " to client\n");
 		vdec_msg->vdec_msg_info.msgcode =
 			 VDEC_MSG_EVT_INFO_CONFIG_CHANGED;
 		break;
@@ -521,7 +523,7 @@ void vid_dec_vcd_cb(u32 event, u32 status,
 			vid_dec_handle_field_drop(client_ctx, event,
 			status,	*((int64_t *)info));
 		else
-			pr_err("Wrong Payload for Field dropped\n");
+			ERR("Wrong Payload for Field dropped\n");
 		break;
 	case VCD_EVT_RESP_OUTPUT_DONE:
 	case VCD_EVT_RESP_OUTPUT_FLUSHED:
@@ -693,7 +695,7 @@ static u32 vid_dec_get_curr_perf_level(struct video_client_ctx *client_ctx,
 	vcd_status = vcd_get_property(client_ctx->vcd_handle,
 				      &vcd_property_hdr, &perf_lvl);
 	if (vcd_status) {
-		ERR("VCD_I_GET_PERF_LEVEL failed!!");
+		ERR("VCD_I_GET_PERF_LEVEL failed!!\n");
 		*perf_level = 0;
 		return false;
 	} else {
@@ -716,7 +718,7 @@ static u32 vid_dec_set_turbo_clk(struct video_client_ctx *client_ctx)
 	vcd_status = vcd_set_property(client_ctx->vcd_handle,
 				      &vcd_property_hdr, &perf_level);
 	if (vcd_status) {
-		ERR("%s: set turbo perf_level failed", __func__);
+		ERR("%s: set turbo perf_level failed\n", __func__);
 		return false;
 	} else {
 		return true;
@@ -947,7 +949,7 @@ static u32 vid_dec_set_meta_buffers(struct video_client_ctx *client_ctx,
 	vcd_meta_buffer->pmem_fd_iommu = meta_buffers->pmem_fd_iommu;
 
 	if (meta_buffers->count > MAX_META_BUFFERS) {
-		ERR("meta buffers maximum count reached, count = %d",
+		ERR("meta buffers maximum count reached, count = %d\n",
 			meta_buffers->count);
 		return false;
 	}
@@ -970,7 +972,7 @@ static u32 vid_dec_set_meta_buffers(struct video_client_ctx *client_ctx,
 				sizeof(vidc_mmu_subsystem)/
 				sizeof(unsigned int));
 		if (IS_ERR(mapped_buffer)) {
-			pr_err("buffer map failed");
+			ERR("buffer map failed\n");
 			return false;
 		}
 		vcd_meta_buffer->client_data = (void *) mapped_buffer;
@@ -994,7 +996,7 @@ static u32 vid_dec_set_meta_buffers(struct video_client_ctx *client_ctx,
 				sizeof(vidc_mmu_subsystem)/
 				sizeof(unsigned int));
 		if (IS_ERR(mapped_buffer_iommu)) {
-			pr_err("buffer map failed");
+			ERR("buffer map failed\n");
 			return false;
 		}
 		vcd_meta_buffer->client_data_iommu =
@@ -1013,8 +1015,7 @@ static u32 vid_dec_set_meta_buffers(struct video_client_ctx *client_ctx,
 					client_ctx->meta_buffer_ion_handle,
 					&ionflag);
 		if (rc) {
-			ERR("%s():get_ION_flags fail\n",
-					 __func__);
+			ERR("%s(): get_ION_flags fail\n", __func__);
 			goto import_ion_error;
 		}
 		vcd_meta_buffer->kernel_virtual_addr =
@@ -1031,8 +1032,8 @@ static u32 vid_dec_set_meta_buffers(struct video_client_ctx *client_ctx,
 			(ion_phys_addr_t *) (&(vcd_meta_buffer->
 			physical_addr)), &len);
 		if (rc) {
-			ERR("%s():get_ION_kernel physical addr fail\n",
-				__func__);
+			ERR("%s(): get_ION_kernel physical addr fail\n",
+				 __func__);
 			goto ion_map_error;
 		}
 		vcd_meta_buffer->client_data = NULL;
@@ -1052,8 +1053,7 @@ static u32 vid_dec_set_meta_buffers(struct video_client_ctx *client_ctx,
 					meta_buffer_iommu_ion_handle,
 					&ionflag);
 		if (rc) {
-			ERR("%s():get_ION_flags fail\n",
-					 __func__);
+			ERR("%s(): get_ION_flags fail\n", __func__);
 			goto import_ion_error;
 		}
 		vcd_meta_buffer->kernel_virt_addr_iommu =
@@ -1070,8 +1070,8 @@ static u32 vid_dec_set_meta_buffers(struct video_client_ctx *client_ctx,
 			(ion_phys_addr_t *) (&(vcd_meta_buffer->
 			physical_addr_iommu)), &len_iommu);
 		if (rc) {
-			ERR("%s():get_ION_kernel physical addr fail\n",
-				__func__);
+			ERR("%s(): get_ION_kernel physical addr fail\n",
+				 __func__);
 			goto ion_map_error_iommu;
 		}
 		vcd_meta_buffer->client_data_iommu = NULL;
@@ -1090,22 +1090,22 @@ static u32 vid_dec_set_meta_buffers(struct video_client_ctx *client_ctx,
 			ker_vir_addr;
 		client_ctx->meta_addr_table[index].kernel_vir_addr_iommu =
 			ker_vir_addr_iommu;
-		DBG("[%d] kernel_virtual = %p kernel_vir_iommu = %p",
+		DBG("[%d] kernel_virtual = %p kernel_vir_iommu = %p\n",
 			index, ker_vir_addr, ker_vir_addr_iommu);
 		ker_vir_addr += buf_size;
 		ker_vir_addr_iommu += buf_size;
 	}
 
-	DBG("Meta Buffer: Virt: %p, Phys %p, fd: %d",
+	DBG("Meta Buffer: Virt: %p, Phys %p, fd: %d\n",
 			vcd_meta_buffer->kernel_virtual_addr,
 			vcd_meta_buffer->physical_addr,
 			vcd_meta_buffer->pmem_fd);
-	DBG("IOMMU Meta Buffer: Virt: %p, Phys %p, fd: %d",
+	DBG("IOMMU Meta Buffer: Virt: %p, Phys %p, fd: %d\n",
 			vcd_meta_buffer->kernel_virt_addr_iommu,
 			vcd_meta_buffer->physical_addr_iommu,
 			vcd_meta_buffer->pmem_fd_iommu);
-	DBG("Meta_buffer: Dev addr %p", vcd_meta_buffer->dev_addr);
-	DBG("IOMMU Meta_buffer: Dev addr %p",
+	DBG("Meta_buffer: Dev addr %p\n", vcd_meta_buffer->dev_addr);
+	DBG("IOMMU Meta_buffer: Dev addr %p\n",
 			vcd_meta_buffer->dev_addr_iommu);
 	vcd_status = vcd_set_property(client_ctx->vcd_handle,
 					  &vcd_property_hdr,
@@ -1167,7 +1167,7 @@ static u32 vid_dec_set_h264_mv_buffers(struct video_client_ctx *client_ctx,
 	vcd_h264_mv_buffer->offset = mv_data->offset;
 
 	if (mv_data->count > MAX_MV_BUFFERS) {
-		ERR("MV buffers maximum count reached, count = %d",
+		ERR("MV buffers maximum count reached, count = %d\n",
 			mv_data->count);
 		return false;
 	}
@@ -1190,7 +1190,7 @@ static u32 vid_dec_set_h264_mv_buffers(struct video_client_ctx *client_ctx,
 				sizeof(vidc_mmu_subsystem)/
 				sizeof(unsigned int));
 		if (IS_ERR(mapped_buffer)) {
-			pr_err("buffer map failed");
+			ERR("buffer map failed\n");
 			return false;
 		}
 		vcd_h264_mv_buffer->client_data = (void *) mapped_buffer;
@@ -1207,8 +1207,7 @@ static u32 vid_dec_set_h264_mv_buffers(struct video_client_ctx *client_ctx,
 					client_ctx->h264_mv_ion_handle,
 					&ionflag);
 		if (rc) {
-			ERR("%s():get_ION_flags fail\n",
-					 __func__);
+			ERR("%s(): get_ION_flags fail\n", __func__);
 			goto import_ion_error;
 		}
 		vcd_h264_mv_buffer->kernel_virtual_addr = (u8 *) ion_map_kernel(
@@ -1224,18 +1223,18 @@ static u32 vid_dec_set_h264_mv_buffers(struct video_client_ctx *client_ctx,
 			(ion_phys_addr_t *) (&(vcd_h264_mv_buffer->
 			physical_addr)), &len);
 		if (rc) {
-			ERR("%s():get_ION_kernel physical addr fail\n",
-				__func__);
+			ERR("%s(): get_ION_kernel physical addr fail\n",
+				 __func__);
 			goto ion_map_error;
 		}
 		vcd_h264_mv_buffer->client_data = NULL;
 		vcd_h264_mv_buffer->dev_addr = (u8 *)
 			vcd_h264_mv_buffer->physical_addr;
 	}
-	DBG("Virt: %p, Phys %p, fd: %d", vcd_h264_mv_buffer->
+	DBG("Virt: %p, Phys %p, fd: %d\n", vcd_h264_mv_buffer->
 		kernel_virtual_addr, vcd_h264_mv_buffer->physical_addr,
 		vcd_h264_mv_buffer->pmem_fd);
-	DBG("Dev addr %p", vcd_h264_mv_buffer->dev_addr);
+	DBG("Dev addr %p\n", vcd_h264_mv_buffer->dev_addr);
 	vcd_status = vcd_set_property(client_ctx->vcd_handle,
 				      &vcd_property_hdr, vcd_h264_mv_buffer);
 
@@ -1437,7 +1436,7 @@ static u32 vid_dec_set_buffer(struct video_client_ctx *client_ctx,
 		(unsigned long)buffer_info->buffer.bufferaddr,
 		&kernel_vaddr, buffer_info->buffer.pmem_fd,
 		buf_adr_offset, MAX_VIDEO_NUM_OF_BUFF, length)) {
-		DBG("%s() : user_virt_addr = %p cannot be set.",
+		DBG("%s() : user_virt_addr = %p cannot be set.\n",
 		    __func__, buffer_info->buffer.bufferaddr);
 		return false;
 	}
@@ -1472,7 +1471,7 @@ static u32 vid_dec_free_buffer(struct video_client_ctx *client_ctx,
 	if (!vidc_delete_addr_table(client_ctx, dir_buffer,
 				(unsigned long)buffer_info->buffer.bufferaddr,
 				&kernel_vaddr)) {
-		DBG("%s() : user_virt_addr = %p has not been set.",
+		DBG("%s() : user_virt_addr = %p has not been set.\n",
 		    __func__, buffer_info->buffer.bufferaddr);
 		return true;
 	}
@@ -1490,7 +1489,7 @@ static u32 vid_dec_pause_resume(struct video_client_ctx *client_ctx, u32 pause)
   u32 vcd_status;
 
 	if (!client_ctx) {
-		ERR("\n %s(): Invalid client_ctx", __func__);
+		ERR("%s(): Invalid client_ctx\n", __func__);
 		return false;
 	}
 
@@ -1516,15 +1515,15 @@ static u32 vid_dec_start_stop(struct video_client_ctx *client_ctx, u32 start)
 	struct vid_dec_msg *vdec_msg = NULL;
 	u32 vcd_status;
 
-	DBG("msm_vidc_dec: Inside %s()", __func__);
+	DBG("msm_vidc_dec: Inside %s()\n", __func__);
 	if (!client_ctx) {
-		ERR("\n Invalid client_ctx");
+		ERR("Invalid client_ctx\n");
 		return false;
 	}
 
 	if (start) {
 		if (client_ctx->seq_header_set) {
-			DBG("%s(): Seq Hdr set: Send START_DONE to client",
+			DBG("%s(): Seq Hdr set: Send START_DONE to client\n",
 				 __func__);
 			vdec_msg = kzalloc(sizeof(*vdec_msg), GFP_KERNEL);
 			if (!vdec_msg) {
@@ -1546,7 +1545,7 @@ static u32 vid_dec_start_stop(struct video_client_ctx *client_ctx, u32 start)
 			    client_ctx);
 
 		} else {
-			DBG("%s(): Calling decode_start()", __func__);
+			DBG("%s(): Calling decode_start()\n", __func__);
 			vcd_status =
 			    vcd_decode_start(client_ctx->vcd_handle, NULL);
 
@@ -1559,7 +1558,7 @@ static u32 vid_dec_start_stop(struct video_client_ctx *client_ctx, u32 start)
 
 		client_ctx->stop_called = false;
 	} else {
-		DBG("%s(): Calling vcd_stop()", __func__);
+		DBG("%s(): Calling vcd_stop()\n", __func__);
 		mutex_lock(&vid_dec_device_p->lock);
 		vcd_status = VCD_ERR_FAIL;
 		if (!client_ctx->stop_called) {
@@ -1716,10 +1715,10 @@ static u32 vid_dec_flush(struct video_client_ctx *client_ctx,
 {
 	u32 vcd_status = VCD_ERR_FAIL;
 
-	DBG("msm_vidc_dec: %s() called with dir = %u", __func__,
+	DBG("msm_vidc_dec: %s() called with dir = %u\n", __func__,
 		 flush_dir);
 	if (!client_ctx) {
-		ERR("\n Invalid client_ctx");
+		ERR("Invalid client_ctx\n");
 		return false;
 	}
 
@@ -1735,7 +1734,7 @@ static u32 vid_dec_flush(struct video_client_ctx *client_ctx,
 		vcd_status = vcd_flush(client_ctx->vcd_handle, VCD_FLUSH_ALL);
 		break;
 	default:
-		ERR("%s(): Inavlid flush cmd. flush_dir = %u\n", __func__,
+		ERR("%s(): Invalid flush cmd. flush_dir = %u\n", __func__,
 		    flush_dir);
 		return false;
 		break;
@@ -1924,7 +1923,7 @@ static long vid_dec_ioctl(struct file *file,
 		buffer_req.meta_buffer_size = vdec_buf_req.meta_buffer_size;
 		DBG("SET_BUF_REQ: port = %u, min = %u, max = %u, "\
 			"act = %u, size = %u, align = %u, pool = %u, "\
-			"meta_buf_size = %u",
+			"meta_buf_size = %u\n",
 			(u32)vdec_buf_req.buffer_type,
 			(u32)buffer_req.min_count,
 			(u32)buffer_req.max_count,
@@ -1971,7 +1970,7 @@ static long vid_dec_ioctl(struct file *file,
 			DBG("GET_BUF_REQ: port = %u, min = %u, "\
 				"max = %u, act = %u, size = %u, "\
 				"align = %u, pool = %u, "\
-				"meta_buf_size = %u",
+				"meta_buf_size = %u\n",
 				(u32)vdec_buf_req.buffer_type,
 				(u32)vdec_buf_req.mincount,
 				(u32)vdec_buf_req.maxcount,
@@ -2099,7 +2098,7 @@ static long vid_dec_ioctl(struct file *file,
 		result = vid_dec_get_curr_perf_level(client_ctx,
 			&curr_perf_level);
 		if (!result) {
-			ERR("get_curr_perf_level failed!!");
+			ERR("get_curr_perf_level failed!!\n");
 			return -EIO;
 		}
 		DBG("VDEC_IOCTL_GET_PERF_LEVEL %u\n",
@@ -2212,8 +2211,7 @@ static long vid_dec_ioctl(struct file *file,
 						client_ctx->seq_hdr_ion_handle,
 						&ionflag);
 			if (rc) {
-				ERR("%s():get_ION_flags fail\n",
-							 __func__);
+				ERR("%s(): get_ION_flags fail\n", __func__);
 				ion_free(client_ctx->user_ion_client,
 					client_ctx->seq_hdr_ion_handle);
 				return false;
@@ -2222,8 +2220,8 @@ static long vid_dec_ioctl(struct file *file,
 				client_ctx->user_ion_client,
 				client_ctx->seq_hdr_ion_handle);
 			if (IS_ERR_OR_NULL((void *)ker_vaddr)) {
-				ERR("%s():get_ION_kernel virtual addr fail\n",
-							 __func__);
+				ERR("%s(): get_ION_kernel virtual addr fail\n",
+					 __func__);
 				ion_free(client_ctx->user_ion_client,
 					client_ctx->seq_hdr_ion_handle);
 				return false;
@@ -2233,8 +2231,8 @@ static long vid_dec_ioctl(struct file *file,
 					client_ctx->seq_hdr_ion_handle,
 					(ion_phys_addr_t *)&phy_addr, &ion_len);
 			if (rc) {
-				ERR("%s():get_ION_kernel physical addr fail\n",
-						 __func__);
+				ERR("%s(): get_ION_kernel physical addr fail\n",
+					 __func__);
 				ion_unmap_kernel(client_ctx->user_ion_client,
 					client_ctx->seq_hdr_ion_handle);
 				ion_free(client_ctx->user_ion_client,
@@ -2260,7 +2258,7 @@ static long vid_dec_ioctl(struct file *file,
 		wait_for_completion(&client_ctx->event);
 		vcd_seq_hdr.sequence_header = NULL;
 		if (client_ctx->event_status) {
-			ERR("Set Seq Header status is failed");
+			ERR("Set Seq Header status is failed\n");
 			return -EFAULT;
 		}
 		if (vcd_get_ion_status()) {
@@ -2475,7 +2473,7 @@ static long vid_dec_ioctl(struct file *file,
 			return -EFAULT;
 		result = vid_dec_get_h264_mv_buffer_size(client_ctx, &mv_buff);
 		if (result) {
-			DBG(" Returning W: %d, H: %d, S: %d, A: %d",
+			DBG("Returning W: %d, H: %d, S: %d, A: %d\n",
 				mv_buff.width, mv_buff.height,
 				mv_buff.size, mv_buff.alignment);
 			if (copy_to_user(vdec_msg.out, &mv_buff,
@@ -2515,9 +2513,9 @@ static u32 vid_dec_close_client(struct video_client_ctx *client_ctx)
 	struct vid_dec_msg *vdec_msg;
 	u32 vcd_status;
 
-	DBG("msm_vidc_dec: Inside %s()", __func__);
+	DBG("msm_vidc_dec: Inside %s()\n", __func__);
 	if (!client_ctx || (!client_ctx->vcd_handle)) {
-		ERR("\n Invalid client_ctx");
+		ERR("Invalid client_ctx\n");
 		return false;
 	}
 
@@ -2526,10 +2524,10 @@ static u32 vid_dec_close_client(struct video_client_ctx *client_ctx)
 		client_ctx->stop_called = true;
 		client_ctx->stop_sync_cb = true;
 		vcd_status = vcd_stop(client_ctx->vcd_handle);
-		DBG("\n Stuck at the stop call");
+		DBG("Stuck at the stop call\n");
 		if (!vcd_status)
 			wait_for_completion(&client_ctx->event);
-		DBG("\n Came out of wait event");
+		DBG("Came out of wait event\n");
 	}
 	mutex_lock(&client_ctx->msg_queue_lock);
 	while (!list_empty(&client_ctx->msg_queue)) {
@@ -2599,7 +2597,7 @@ int vid_dec_open_client(struct video_client_ctx **vid_clnt_ctx, int flags)
 	if (vcd_get_ion_status()) {
 		client_ctx->user_ion_client = vcd_get_ion_client();
 		if (!client_ctx->user_ion_client) {
-			ERR("vcd_open ion client get failed");
+			ERR("vcd_open ion client get failed\n");
 			rc = -ENOMEM;
 			goto client_failure;
 		}
@@ -2609,13 +2607,13 @@ int vid_dec_open_client(struct video_client_ctx **vid_clnt_ctx, int flags)
 	if (!rc) {
 		wait_for_completion(&client_ctx->event);
 		if (client_ctx->event_status) {
-			ERR("callback for vcd_open returned error: %u",
+			ERR("callback for vcd_open returned error: %u\n",
 				client_ctx->event_status);
 			rc = -ENODEV;
 			goto client_failure;
 		}
 	} else {
-		ERR("vcd_open returned error: %u", rc);
+		ERR("vcd_open returned error: %u\n", rc);
 		goto client_failure;
 	}
 	client_ctx->seq_header_set = false;
@@ -2659,7 +2657,7 @@ static int vid_dec_open(struct inode *inode, struct file *file)
 {
 	int rc = 0;
 	struct video_client_ctx *client_ctx;
-	INFO("msm_vidc_dec: Inside %s()", __func__);
+	DBG("msm_vidc_dec: Inside %s()\n", __func__);
 	mutex_lock(&vid_dec_device_p->lock);
 	rc = vid_dec_open_client(&client_ctx, 0);
 	if (rc) {
@@ -2680,7 +2678,7 @@ static int vid_dec_release_secure(struct inode *inode, struct file *file)
 {
 	struct video_client_ctx *client_ctx = file->private_data;
 
-	INFO("msm_vidc_dec: Inside %s()", __func__);
+	DBG("msm_vidc_dec: Inside %s()\n", __func__);
 	vidc_cleanup_addr_table(client_ctx, BUFFER_TYPE_OUTPUT);
 	vidc_cleanup_addr_table(client_ctx, BUFFER_TYPE_INPUT);
 	vid_dec_close_client(client_ctx);
@@ -2688,7 +2686,7 @@ static int vid_dec_release_secure(struct inode *inode, struct file *file)
 #ifndef USE_RES_TRACKER
 	vidc_disable_clk();
 #endif
-	INFO("msm_vidc_dec: Return from %s()", __func__);
+	DBG("msm_vidc_dec: Return from %s()\n", __func__);
 	return 0;
 }
 
@@ -2696,7 +2694,7 @@ static int vid_dec_release(struct inode *inode, struct file *file)
 {
 	struct video_client_ctx *client_ctx = file->private_data;
 
-	INFO("msm_vidc_dec: Inside %s()", __func__);
+	DBG("msm_vidc_dec: Inside %s()\n", __func__);
 	vidc_cleanup_addr_table(client_ctx, BUFFER_TYPE_OUTPUT);
 	vidc_cleanup_addr_table(client_ctx, BUFFER_TYPE_INPUT);
 	vid_dec_close_client(client_ctx);
@@ -2704,7 +2702,7 @@ static int vid_dec_release(struct inode *inode, struct file *file)
 #ifndef USE_RES_TRACKER
 	vidc_disable_clk();
 #endif
-	INFO("msm_vidc_dec: Return from %s()", __func__);
+	DBG("msm_vidc_dec: Return from %s()\n", __func__);
 	return 0;
 }
 
@@ -2748,7 +2746,7 @@ static int vid_dec_vcd_init(void)
 	u32 i;
 
 	/* init_timer(&hw_timer); */
-	DBG("msm_vidc_dec: Inside %s()", __func__);
+	DBG("msm_vidc_dec: Inside %s()\n", __func__);
 	vid_dec_device_p->num_clients = 0;
 
 	for (i = 0; i < VIDC_MAX_NUM_CLIENTS; i++) {
@@ -2790,7 +2788,7 @@ static int __init vid_dec_init(void)
 	int rc = 0, i = 0, j = 0;
 	struct device *class_devp;
 
-	DBG("msm_vidc_dec: Inside %s()", __func__);
+	DBG("msm_vidc_dec: Inside %s()\n", __func__);
 	vid_dec_device_p = kzalloc(sizeof(struct vid_dec_dev), GFP_KERNEL);
 	if (!vid_dec_device_p) {
 		ERR("%s Unable to allocate memory for vid_dec_dev\n",
@@ -2861,14 +2859,14 @@ error_vid_dec_alloc_chrdev_region:
 static void __exit vid_dec_exit(void)
 {
 	int i = 0;
-	INFO("msm_vidc_dec: Inside %s()", __func__);
+	DBG("msm_vidc_dec: Inside %s()\n", __func__);
 	for (i = 0; i < NUM_OF_DRIVER_NODES; i++)
 		cdev_del(&(vid_dec_device_p->cdev[i]));
 	device_destroy(vid_dec_class, vid_dec_dev_num);
 	class_destroy(vid_dec_class);
 	unregister_chrdev_region(vid_dec_dev_num, NUM_OF_DRIVER_NODES);
 	kfree(vid_dec_device_p);
-	DBG("msm_vidc_dec: Return from %s()", __func__);
+	DBG("msm_vidc_dec: Return from %s()\n", __func__);
 }
 
 MODULE_LICENSE("GPL v2");

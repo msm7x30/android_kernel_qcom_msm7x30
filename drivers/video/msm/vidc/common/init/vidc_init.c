@@ -37,14 +37,14 @@
 #include "vcd_res_tracker_api.h"
 
 #if DEBUG
-#define DBG(x...) printk(KERN_DEBUG x)
+#define DBG(x...) pr_debug(x)
 #else
 #define DBG(x...)
 #endif
 
-#define VIDC_NAME "msm_vidc_reg"
+#define ERR(x...) pr_err(x)
 
-#define ERR(x...) printk(KERN_ERR x)
+#define VIDC_NAME "msm_vidc_reg"
 
 static struct vidc_dev *vidc_device_p;
 static dev_t vidc_dev_num;
@@ -122,11 +122,11 @@ static void vidc_timer_handler(struct work_struct *work)
 
 static void vidc_work_handler(struct work_struct *work)
 {
-	DBG("vidc_work_handler()");
+	DBG("vidc_work_handler()\n");
 	vcd_read_and_clear_interrupt();
 	vcd_response_handler();
 	enable_irq(vidc_device_p->irq);
-	DBG("vidc_work_handler() done");
+	DBG("vidc_work_handler() done\n");
 }
 
 static DECLARE_WORK(vidc_work, vidc_work_handler);
@@ -218,7 +218,7 @@ static void __exit vidc_exit(void)
 
 static irqreturn_t vidc_isr(int irq, void *dev)
 {
-	DBG("\n vidc_isr() %d ", irq);
+	DBG("\n vidc_isr() %d\n", irq);
 	disable_irq_nosync(irq);
 	queue_work(vidc_wq, &vidc_work);
 	return IRQ_HANDLED;
@@ -532,7 +532,7 @@ u32 vidc_lookup_addr_table(struct video_client_ctx *client_ctx,
 				*kernel_vaddr = buf_addr_table[i].kernel_vaddr;
 				found = true;
 				DBG("%s() : client_ctx = %p."
-				" user_virt_addr = 0x%08lx is found",
+				" user_virt_addr = 0x%08lx is found\n",
 				__func__, client_ctx, *user_vaddr);
 				break;
 			}
@@ -541,7 +541,7 @@ u32 vidc_lookup_addr_table(struct video_client_ctx *client_ctx,
 				*user_vaddr = buf_addr_table[i].user_vaddr;
 				found = true;
 				DBG("%s() : client_ctx = %p."
-				" kernel_virt_addr = 0x%08lx is found",
+				" kernel_virt_addr = 0x%08lx is found\n",
 				__func__, client_ctx, *kernel_vaddr);
 				break;
 			}
@@ -619,12 +619,12 @@ u32 vidc_insert_addr_table(struct video_client_ctx *client_ctx,
 		vcd_status = vcd_get_property(client_ctx->vcd_handle,
 						&vcd_property_hdr, &codec);
 		if (vcd_status) {
-			ERR("%s(): get codec failed", __func__);
+			ERR("%s(): get codec failed\n", __func__);
 		} else {
 			if (codec.codec != VCD_CODEC_H264) {
 				/* workaround for iommu video h/w bug */
 				DBG("%s(): Double iommu map size from %u "\
-				"to %u for non-H264", __func__,
+				"to %u for non-H264\n", __func__,
 				(u32)length, (u32)(length * 2));
 				mapped_length = length * 2;
 			}
@@ -632,7 +632,7 @@ u32 vidc_insert_addr_table(struct video_client_ctx *client_ctx,
 	}
 
 	if (*num_of_buffers == max_num_buffers) {
-		ERR("%s(): Num of buffers reached max value : %d",
+		ERR("%s(): Num of buffers reached max value : %d\n",
 			__func__, max_num_buffers);
 		goto bail_out_add;
 	}
@@ -643,7 +643,7 @@ u32 vidc_insert_addr_table(struct video_client_ctx *client_ctx,
 		i++;
 	if (i < *num_of_buffers) {
 		DBG("%s() : client_ctx = %p."
-			" user_virt_addr = 0x%08lx already set",
+			" user_virt_addr = 0x%08lx already set\n",
 			__func__, client_ctx, user_vaddr);
 		goto bail_out_add;
 	} else {
@@ -661,7 +661,7 @@ u32 vidc_insert_addr_table(struct video_client_ctx *client_ctx,
 			mapped_length, flags, vidc_mmu_subsystem,
 			sizeof(vidc_mmu_subsystem)/sizeof(unsigned int));
 			if (IS_ERR(mapped_buffer)) {
-				pr_err("buffer map failed");
+				ERR("buffer map failed\n");
 				goto bail_out_add;
 			}
 			buf_addr_table[*num_of_buffers].client_data = (void *)
@@ -672,21 +672,19 @@ u32 vidc_insert_addr_table(struct video_client_ctx *client_ctx,
 			buff_ion_handle = ion_import_dma_buf(
 				client_ctx->user_ion_client, pmem_fd);
 			if (IS_ERR_OR_NULL(buff_ion_handle)) {
-				ERR("%s(): get_ION_handle failed\n",
-				 __func__);
+				ERR("%s(): get_ION_handle failed\n", __func__);
 				goto bail_out_add;
 			}
 			if (ion_handle_get_flags(client_ctx->user_ion_client,
 						buff_ion_handle,
 						&ionflag)) {
-				ERR("%s():ION flags fail\n",
-				 __func__);
+				ERR("%s(): ION flags fail\n", __func__);
 				goto bail_out_add;
 			}
 			if (ion_phys(client_ctx->user_ion_client,
 				buff_ion_handle, (ion_phys_addr_t *)&phys_addr,
 				&ion_len)) {
-				ERR("%s():ION physical addr fail\n", __func__);
+				ERR("%s(): ION physical addr fail\n", __func__);
 				goto ion_map_error;
 			}
 			len = (unsigned long) ion_len;
@@ -708,7 +706,7 @@ u32 vidc_insert_addr_table(struct video_client_ctx *client_ctx,
 						ionflag;
 		*num_of_buffers = *num_of_buffers + 1;
 		DBG("%s() : client_ctx = %p, user_virt_addr = 0x%08lx, "
-			"kernel_vaddr = 0x%08lx phys_addr=%lu inserted!",
+			"kernel_vaddr = 0x%08lx phys_addr=%lu inserted!\n",
 			__func__, client_ctx, user_vaddr, *kernel_vaddr,
 			phys_addr);
 	}
@@ -755,7 +753,7 @@ u32 vidc_insert_addr_table_kernel(struct video_client_ctx *client_ctx,
 	}
 
 	if (*num_of_buffers == max_num_buffers) {
-		ERR("%s(): Num of buffers reached max value : %d",
+		ERR("%s(): Num of buffers reached max value : %d\n",
 			__func__, max_num_buffers);
 		goto bail_out_add;
 	}
@@ -767,7 +765,7 @@ u32 vidc_insert_addr_table_kernel(struct video_client_ctx *client_ctx,
 	}
 	if (i < *num_of_buffers) {
 		DBG("%s() : client_ctx = %p."
-			" user_virt_addr = 0x%08lx already set",
+			" user_virt_addr = 0x%08lx already set\n",
 			__func__, client_ctx, user_vaddr);
 		goto bail_out_add;
 	} else {
@@ -784,7 +782,7 @@ u32 vidc_insert_addr_table_kernel(struct video_client_ctx *client_ctx,
 		buf_addr_table[*num_of_buffers].buff_ion_handle = NULL;
 		*num_of_buffers = *num_of_buffers + 1;
 		DBG("%s() : client_ctx = %p, user_virt_addr = 0x%08lx, "
-			"kernel_vaddr = 0x%08lx inserted!", __func__,
+			"kernel_vaddr = 0x%08lx inserted!\n", __func__,
 			client_ctx, user_vaddr, kernel_vaddr);
 	}
 	mutex_unlock(&client_ctx->enrty_queue_lock);
@@ -824,8 +822,8 @@ u32 vidc_delete_addr_table(struct video_client_ctx *client_ctx,
 		user_vaddr != buf_addr_table[i].user_vaddr)
 		i++;
 	if (i == *num_of_buffers) {
-		pr_err("%s() : client_ctx = %p."
-			" user_virt_addr = 0x%08lx NOT found",
+		ERR("%s() : client_ctx = %p."
+			" user_virt_addr = 0x%08lx NOT found\n",
 			__func__, client_ctx, user_vaddr);
 		goto bail_out_del;
 	}
@@ -862,7 +860,7 @@ u32 vidc_delete_addr_table(struct video_client_ctx *client_ctx,
 	}
 	*num_of_buffers = *num_of_buffers - 1;
 	DBG("%s() : client_ctx = %p."
-		" user_virt_addr = 0x%08lx is found and deleted",
+		" user_virt_addr = 0x%08lx is found and deleted\n",
 		__func__, client_ctx, user_vaddr);
 	mutex_unlock(&client_ctx->enrty_queue_lock);
 	return true;
@@ -877,12 +875,12 @@ u32 vidc_timer_create(void (*timer_handler)(void *),
 {
 	struct vidc_timer *hw_timer = NULL;
 	if (!timer_handler || !timer_handle) {
-		DBG("%s(): timer creation failed\n ", __func__);
+		DBG("%s(): timer creation failed\n", __func__);
 		return false;
 	}
 	hw_timer = kzalloc(sizeof(struct vidc_timer), GFP_KERNEL);
 	if (!hw_timer) {
-		DBG("%s(): timer creation failed in allocation\n ", __func__);
+		DBG("%s(): timer creation failed in allocation\n", __func__);
 		return false;
 	}
 	init_timer(&hw_timer->hw_timeout);
@@ -904,7 +902,7 @@ EXPORT_SYMBOL(vidc_timer_release);
 void  vidc_timer_start(void *timer_handle, u32 time_out)
 {
 	struct vidc_timer *hw_timer = (struct vidc_timer *)timer_handle;
-	DBG("%s(): start timer\n ", __func__);
+	DBG("%s(): start timer\n", __func__);
 	if (hw_timer) {
 		hw_timer->hw_timeout.expires = jiffies + 1*HZ;
 		add_timer(&hw_timer->hw_timeout);
@@ -915,7 +913,7 @@ EXPORT_SYMBOL(vidc_timer_start);
 void  vidc_timer_stop(void *timer_handle)
 {
 	struct vidc_timer *hw_timer = (struct vidc_timer *)timer_handle;
-	DBG("%s(): stop timer\n ", __func__);
+	DBG("%s(): stop timer\n", __func__);
 	if (hw_timer)
 		del_timer(&hw_timer->hw_timeout);
 }
