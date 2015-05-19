@@ -35,10 +35,7 @@
 #include "vcd_res_tracker_api.h"
 #include "vdec_internal.h"
 
-
-
 #define DBG(x...) pr_debug(x)
-#define INFO(x...) pr_info(x)
 #define ERR(x...) pr_err(x)
 
 #define VID_DEC_NAME "msm_vidc_dec"
@@ -2659,7 +2656,7 @@ static int vid_dec_open(struct inode *inode, struct file *file)
 {
 	int rc = 0;
 	struct video_client_ctx *client_ctx;
-	INFO("msm_vidc_dec: Inside %s()", __func__);
+	DBG("msm_vidc_dec: Inside %s()", __func__);
 	mutex_lock(&vid_dec_device_p->lock);
 	rc = vid_dec_open_client(&client_ctx, 0);
 	if (rc) {
@@ -2680,7 +2677,7 @@ static int vid_dec_release_secure(struct inode *inode, struct file *file)
 {
 	struct video_client_ctx *client_ctx = file->private_data;
 
-	INFO("msm_vidc_dec: Inside %s()", __func__);
+	DBG("msm_vidc_dec: Inside %s()", __func__);
 	vidc_cleanup_addr_table(client_ctx, BUFFER_TYPE_OUTPUT);
 	vidc_cleanup_addr_table(client_ctx, BUFFER_TYPE_INPUT);
 	vid_dec_close_client(client_ctx);
@@ -2688,7 +2685,7 @@ static int vid_dec_release_secure(struct inode *inode, struct file *file)
 #ifndef USE_RES_TRACKER
 	vidc_disable_clk();
 #endif
-	INFO("msm_vidc_dec: Return from %s()", __func__);
+	DBG("msm_vidc_dec: Return from %s()", __func__);
 	return 0;
 }
 
@@ -2696,7 +2693,7 @@ static int vid_dec_release(struct inode *inode, struct file *file)
 {
 	struct video_client_ctx *client_ctx = file->private_data;
 
-	INFO("msm_vidc_dec: Inside %s()", __func__);
+	DBG("msm_vidc_dec: Inside %s()", __func__);
 	vidc_cleanup_addr_table(client_ctx, BUFFER_TYPE_OUTPUT);
 	vidc_cleanup_addr_table(client_ctx, BUFFER_TYPE_INPUT);
 	vid_dec_close_client(client_ctx);
@@ -2704,7 +2701,7 @@ static int vid_dec_release(struct inode *inode, struct file *file)
 #ifndef USE_RES_TRACKER
 	vidc_disable_clk();
 #endif
-	INFO("msm_vidc_dec: Return from %s()", __func__);
+	DBG("msm_vidc_dec: Return from %s()", __func__);
 	return 0;
 }
 
@@ -2861,7 +2858,7 @@ error_vid_dec_alloc_chrdev_region:
 static void __exit vid_dec_exit(void)
 {
 	int i = 0;
-	INFO("msm_vidc_dec: Inside %s()", __func__);
+	DBG("msm_vidc_dec: Inside %s()", __func__);
 	for (i = 0; i < NUM_OF_DRIVER_NODES; i++)
 		cdev_del(&(vid_dec_device_p->cdev[i]));
 	device_destroy(vid_dec_class, vid_dec_dev_num);

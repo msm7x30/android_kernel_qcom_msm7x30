@@ -43,7 +43,6 @@ static char *node_name[2] = {"", "_sec"};
 #define DBG(x...)
 #endif
 
-#define INFO(x...) printk(KERN_INFO x)
 #define ERR(x...) printk(KERN_ERR x)
 
 static struct vid_enc_dev *vid_enc_device_p;
@@ -313,41 +312,41 @@ static void vid_enc_lean_event(struct video_client_ctx *client_ctx,
 
 	switch (event) {
 	case VCD_EVT_RESP_FLUSH_INPUT_DONE:
-		INFO("\n msm_vidc_enc: Sending VCD_EVT_RESP_FLUSH_INPUT_DONE"
+		DBG("msm_vidc_enc: Sending VCD_EVT_RESP_FLUSH_INPUT_DONE"
 			 " to client");
 		venc_msg->venc_msg_info.msgcode =
 			VEN_MSG_FLUSH_INPUT_DONE;
 		break;
 	case VCD_EVT_RESP_FLUSH_OUTPUT_DONE:
-		INFO("\n msm_vidc_enc: Sending VCD_EVT_RESP_FLUSH_OUTPUT_DONE"
+		DBG("msm_vidc_enc: Sending VCD_EVT_RESP_FLUSH_OUTPUT_DONE"
 			 " to client");
 		venc_msg->venc_msg_info.msgcode =
 			VEN_MSG_FLUSH_OUPUT_DONE;
 		break;
 
 	case VCD_EVT_RESP_START:
-		INFO("\n msm_vidc_enc: Sending VCD_EVT_RESP_START"
+		DBG("msm_vidc_enc: Sending VCD_EVT_RESP_START"
 			 " to client");
 		venc_msg->venc_msg_info.msgcode =
 			VEN_MSG_START;
 		break;
 
 	case VCD_EVT_RESP_STOP:
-		INFO("\n msm_vidc_enc: Sending VCD_EVT_RESP_STOP"
+		DBG("msm_vidc_enc: Sending VCD_EVT_RESP_STOP"
 			 " to client");
 		venc_msg->venc_msg_info.msgcode =
 			VEN_MSG_STOP;
 		break;
 
 	case VCD_EVT_RESP_PAUSE:
-		INFO("\n msm_vidc_enc: Sending VCD_EVT_RESP_PAUSE"
+		DBG("msm_vidc_enc: Sending VCD_EVT_RESP_PAUSE"
 			 " to client");
 		venc_msg->venc_msg_info.msgcode =
 			VEN_MSG_PAUSE;
 		break;
 
 	case VCD_EVT_IND_INFO_LTRUSE_FAILED:
-		INFO("\n msm_vidc_enc: Sending VEN_MSG_LTRUSE_FAILED"\
+		DBG("msm_vidc_enc: Sending VEN_MSG_LTRUSE_FAILED"\
 			" to client");
 		venc_msg->venc_msg_info.msgcode =
 			VEN_MSG_LTRUSE_FAILED;
@@ -485,7 +484,7 @@ static u32 vid_enc_close_client(struct video_client_ctx *client_ctx)
 	u32 vcd_status;
 	int rc;
 
-	INFO("\n msm_vidc_enc: Inside %s()", __func__);
+	DBG("msm_vidc_enc: Inside %s()", __func__);
 	if (!client_ctx || (!client_ctx->vcd_handle)) {
 		ERR("\n %s(): Invalid client_ctx", __func__);
 		return false;
@@ -543,7 +542,7 @@ static int vid_enc_open_client(struct video_client_ctx **vid_clnt_ctx,
 	int rc = 0;
 	u8 client_count = 0;
 
-	INFO("\n msm_vidc_enc: Inside %s()", __func__);
+	DBG("msm_vidc_enc: Inside %s()", __func__);
 	if (!vid_clnt_ctx) {
 		ERR("Invalid input\n");
 		rc = -EINVAL;
@@ -616,7 +615,7 @@ static int vid_enc_open(struct inode *inode, struct file *file)
 {
 	int rc = 0;
 	struct video_client_ctx *client_ctx = NULL;
-	INFO("msm_vidc_venc: Inside %s()", __func__);
+	DBG("msm_vidc_venc: Inside %s()", __func__);
 	mutex_lock(&vid_enc_device_p->lock);
 	rc = vid_enc_open_client(&client_ctx, 0);
 	if (rc)
@@ -634,7 +633,7 @@ static int vid_enc_open(struct inode *inode, struct file *file)
 static int vid_enc_release(struct inode *inode, struct file *file)
 {
 	struct video_client_ctx *client_ctx = file->private_data;
-	INFO("\n msm_vidc_enc: Inside %s()", __func__);
+	DBG("msm_vidc_enc: Inside %s()", __func__);
 	vidc_cleanup_addr_table(client_ctx, BUFFER_TYPE_OUTPUT);
 	vidc_cleanup_addr_table(client_ctx, BUFFER_TYPE_INPUT);
 	vid_enc_close_client(client_ctx);
@@ -642,7 +641,7 @@ static int vid_enc_release(struct inode *inode, struct file *file)
 #ifndef USE_RES_TRACKER
 	vidc_disable_clk();
 #endif
-	INFO("\n msm_vidc_enc: Return from %s()", __func__);
+	DBG("msm_vidc_enc: Return from %s()", __func__);
 	return 0;
 }
 static int vid_enc_open_secure(struct inode *inode, struct file *file)
@@ -652,7 +651,7 @@ static int vid_enc_open_secure(struct inode *inode, struct file *file)
 	struct vcd_property_hdr vcd_property_hdr;
 	struct vcd_property_sps_pps_for_idr_enable idr_enable;
 
-	INFO("msm_vidc_enc: Inside %s()", __func__);
+	DBG("msm_vidc_enc: Inside %s()", __func__);
 	mutex_lock(&vid_enc_device_p->lock);
 	rc = vid_enc_open_client(&client_ctx, VCD_CP_SESSION);
 	if (rc || !client_ctx) {
@@ -726,7 +725,7 @@ static int vid_enc_vcd_init(void)
 	struct vcd_init_config vcd_init_config;
 	u32 i;
 
-	INFO("\n msm_vidc_enc: Inside %s()", __func__);
+	DBG("msm_vidc_enc: Inside %s()", __func__);
 	vid_enc_device_p->num_clients = 0;
 
 	for (i = 0; i < VIDC_MAX_NUM_CLIENTS; i++) {
@@ -768,7 +767,7 @@ static int __init vid_enc_init(void)
 	int rc = 0, i = 0, j = 0;
 	struct device *class_devp;
 
-	INFO("\n msm_vidc_enc: Inside %s()", __func__);
+	DBG("msm_vidc_enc: Inside %s()", __func__);
 	vid_enc_device_p = kzalloc(sizeof(struct vid_enc_dev),
 					 GFP_KERNEL);
 	if (!vid_enc_device_p) {
@@ -838,14 +837,14 @@ error_vid_enc_alloc_chrdev_region:
 static void __exit vid_enc_exit(void)
 {
 	int i = 0;
-	INFO("\n msm_vidc_enc: Inside %s()", __func__);
+	DBG("msm_vidc_enc: Inside %s()", __func__);
 	for (i = 0; i < NUM_OF_DRIVER_NODES; i++)
 		cdev_del(&(vid_enc_device_p->cdev[i]));
 	device_destroy(vid_enc_class, vid_enc_dev_num);
 	class_destroy(vid_enc_class);
 	unregister_chrdev_region(vid_enc_dev_num, 1);
 	kfree(vid_enc_device_p);
-	INFO("\n msm_vidc_enc: Return from %s()", __func__);
+	DBG("msm_vidc_enc: Return from %s()", __func__);
 }
 static long vid_enc_ioctl(struct file *file,
 		unsigned cmd, unsigned long u_arg)
@@ -1032,7 +1031,7 @@ static long vid_enc_ioctl(struct file *file,
 		if (copy_from_user(&bufferflush, venc_msg.in,
 			sizeof(bufferflush)))
 			return -EFAULT;
-		INFO("\n %s(): Calling vid_enc_flush with mode = %lu",
+		DBG("%s(): Calling vid_enc_flush with mode = %lu",
 			 __func__, bufferflush.flush_mode);
 		result = vid_enc_flush(client_ctx, &bufferflush);
 
@@ -1044,7 +1043,7 @@ static long vid_enc_ioctl(struct file *file,
 	}
 	case VEN_IOCTL_CMD_START:
 	{
-		INFO("\n %s(): Executing VEN_IOCTL_CMD_START", __func__);
+		DBG("%s(): Executing VEN_IOCTL_CMD_START", __func__);
 		result = vid_enc_start_stop(client_ctx, true);
 		if (!result) {
 			ERR("setting VEN_IOCTL_CMD_START failed\n");
@@ -1055,7 +1054,7 @@ static long vid_enc_ioctl(struct file *file,
 	}
 	case VEN_IOCTL_CMD_STOP:
 	{
-		INFO("\n %s(): Executing VEN_IOCTL_CMD_STOP", __func__);
+		DBG("%s(): Executing VEN_IOCTL_CMD_STOP", __func__);
 		result = vid_enc_start_stop(client_ctx, false);
 		if (!result) {
 			ERR("setting VEN_IOCTL_CMD_STOP failed\n");
@@ -1066,7 +1065,7 @@ static long vid_enc_ioctl(struct file *file,
 	}
 	case VEN_IOCTL_CMD_PAUSE:
 	{
-		INFO("\n %s(): Executing VEN_IOCTL_CMD_PAUSE", __func__);
+		DBG("%s(): Executing VEN_IOCTL_CMD_PAUSE", __func__);
 		result = vid_enc_pause_resume(client_ctx, true);
 		if (!result) {
 			ERR("setting VEN_IOCTL_CMD_PAUSE failed\n");
@@ -1076,7 +1075,7 @@ static long vid_enc_ioctl(struct file *file,
 	}
 	case VEN_IOCTL_CMD_RESUME:
 	{
-		INFO("\n %s(): Executing VEN_IOCTL_CMD_RESUME", __func__);
+		DBG("%s(): Executing VEN_IOCTL_CMD_RESUME", __func__);
 		result = vid_enc_pause_resume(client_ctx, false);
 		if (!result) {
 			ERR("setting VEN_IOCTL_CMD_RESUME failed\n");
