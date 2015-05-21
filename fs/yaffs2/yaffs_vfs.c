@@ -3519,7 +3519,7 @@ static int yaffs_proc_debug_write(struct file *file, const char *buf,
 }
 
 
-#if (LINUX_VERSION_CODE < KERNEL_VERSION(3, 14, 0))
+#if (LINUX_VERSION_CODE < KERNEL_VERSION(3, 10, 0))
 static int yaffs_proc_write(struct file *file, const char *buf,
 			    unsigned long count, void *ppos)
 #else
