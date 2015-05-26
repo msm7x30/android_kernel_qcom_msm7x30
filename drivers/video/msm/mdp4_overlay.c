@@ -2943,6 +2943,7 @@ static int mdp4_calc_pipe_mdp_clk(struct msm_fb_data_type *mfd,
 	return 0;
 }
 
+#ifdef CONFIG_MSM_BUS_SCALING
 static int mdp4_calc_pipe_mdp_bw(struct msm_fb_data_type *mfd,
 			 struct mdp4_overlay_pipe *pipe)
 {
@@ -3034,6 +3035,7 @@ int mdp4_calc_blt_mdp_bw(struct msm_fb_data_type *mfd,
 
 	return 0;
 }
+#endif
 
 static int mdp4_axi_port_read_client_pipe(struct mdp4_overlay_pipe *pipe)
 {
@@ -3132,6 +3134,7 @@ int mdp4_overlay_mdp_perf_req(struct msm_fb_data_type *mfd)
 		if (pipe->mixer_num == MDP4_MIXER2)
 			perf_req->use_ov_blt[MDP4_MIXER2] = 1;
 
+#ifdef CONFIG_MSM_BUS_SCALING
 		if (pipe->pipe_type != OVERLAY_TYPE_BF) {
 			ab_quota_total += pipe->bw_ab_quota;
 			ib_quota_total += pipe->bw_ib_quota;
@@ -3149,6 +3152,7 @@ int mdp4_overlay_mdp_perf_req(struct msm_fb_data_type *mfd)
 				ib_quota_min = min(ib_quota_min,
 						   pipe->bw_ib_quota);
 		}
+#endif
 
 		if (mfd->mdp_rev == MDP_REV_41) {
 			/*
@@ -3169,6 +3173,7 @@ int mdp4_overlay_mdp_perf_req(struct msm_fb_data_type *mfd)
 	perf_req->mdp_clk_rate = min(worst_mdp_clk, mdp_max_clk);
 	perf_req->mdp_clk_rate = mdp_clk_round_rate(perf_req->mdp_clk_rate);
 
+#ifdef CONFIG_MSM_BUS_SCALING
 	for (i = 0; i < MDP4_MIXER_MAX; i++) {
 		if (perf_req->use_ov_blt[i]) {
 			ab_quota_total += perf_req->mdp_ov_ab_bw[i];
@@ -3239,6 +3244,7 @@ int mdp4_overlay_mdp_perf_req(struct msm_fb_data_type *mfd)
 		 perf_req->mdp_clk_rate,
 		 perf_req->use_ov_blt[0],
 		 perf_req->use_ov_blt[1]);
+#endif
 
 	return 0;
 }
@@ -3253,11 +3259,13 @@ int mdp4_overlay_mdp_pipe_req(struct mdp4_overlay_pipe *pipe,
 		       __func__, ret);
 		ret = -EINVAL;
 	}
+#ifdef CONFIG_MSM_BUS_SCALING
 	if (mdp4_calc_pipe_mdp_bw(mfd, pipe)) {
 		pr_err("%s unable to calc mdp pipe bandwidth ret=%d\n",
 		       __func__, ret);
 		ret = -EINVAL;
 	}
+#endif
 	return ret;
 }
 
@@ -3287,6 +3295,7 @@ void mdp4_overlay_mdp_perf_upd(struct msm_fb_data_type *mfd,
 			perf_cur->mdp_clk_rate =
 				perf_req->mdp_clk_rate;
 		}
+#ifdef CONFIG_MSM_BUS_SCALING
 		if ((perf_req->mdp_ab_bw > perf_cur->mdp_ab_bw) ||
 		    (perf_req->mdp_ib_bw > perf_cur->mdp_ib_bw)) {
 			mdp_bus_scale_update_request
@@ -3307,6 +3316,7 @@ void mdp4_overlay_mdp_perf_upd(struct msm_fb_data_type *mfd,
 			perf_cur->mdp_ab_bw = perf_req->mdp_ab_bw;
 			perf_cur->mdp_ib_bw = perf_req->mdp_ib_bw;
 		}
+#endif
 
 		if ((mfd->panel_info.pdest == DISPLAY_1 &&
 		     perf_req->use_ov_blt[0] && !perf_cur->use_ov_blt[0])) {
@@ -3332,6 +3342,7 @@ void mdp4_overlay_mdp_perf_upd(struct msm_fb_data_type *mfd,
 			perf_cur->mdp_clk_rate =
 				perf_req->mdp_clk_rate;
 		}
+#ifdef CONFIG_MSM_BUS_SCALING
 		if (perf_req->mdp_ab_bw < perf_cur->mdp_ab_bw ||
 		    perf_req->mdp_ib_bw < perf_cur->mdp_ib_bw) {
 			mdp_bus_scale_update_request
@@ -3352,6 +3363,7 @@ void mdp4_overlay_mdp_perf_upd(struct msm_fb_data_type *mfd,
 			perf_cur->mdp_ab_bw = perf_req->mdp_ab_bw;
 			perf_cur->mdp_ib_bw = perf_req->mdp_ib_bw;
 		}
+#endif
 
 		if ((mfd->panel_info.pdest == DISPLAY_1 &&
 		     !perf_req->use_ov_blt[0] && perf_cur->use_ov_blt[0])) {
