@@ -1159,7 +1159,7 @@ static int64_t msm_pm_timer_exit_suspend(int64_t time, int64_t period)
 /*
  * Put CPU in low power mode.
  */
-void arch_idle(void)
+static void arch_idle(void)
 {
 	bool allow[MSM_PM_SLEEP_MODE_NR];
 	uint32_t sleep_limit = SLEEP_LIMIT_NONE;
@@ -1523,6 +1523,9 @@ static int __init msm_pm_init(void)
 	msm_pm_add_stats(enable_stats, ARRAY_SIZE(enable_stats));
 
 	atomic_set(&msm_pm_init_done, 1);
+
+	arm_pm_idle = arch_idle;
+
 	return 0;
 }
 
