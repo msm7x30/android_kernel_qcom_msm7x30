@@ -26,13 +26,6 @@ obj-$(CONFIG_MSM_VIC) += irq-vic.o
 
 obj-$(CONFIG_CPU_V7) += idle-v7.o
 
-quiet_cmd_mkrpcsym = MKCAP   $@
-      cmd_mkrpcsym = $(PERL) $(srctree)/$(src)/mkrpcsym.pl $< $@
-
-targets += smd_rpc_sym.c
-$(obj)/smd_rpc_sym.c: $(src)/smd_rpc_sym $(src)/mkrpcsym.pl
-	$(call if_changed,mkrpcsym)
-
 obj-$(CONFIG_MSM_FIQ_SUPPORT) += fiq_glue.o
 obj-$(CONFIG_MSM_SMD_LOGGING) += smem_log.o
 obj-$(CONFIG_MSM_SMD) += smd.o smd_debug.o remote_spinlock.o smd_private.o
