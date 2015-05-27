@@ -37,6 +37,10 @@
 #include <linux/workqueue.h>
 #include <linux/byteorder/generic.h>
 #include <linux/bitops.h>
+#ifdef CONFIG_FB
+#include <linux/notifier.h>
+#include <linux/fb.h>
+#endif
 #include <linux/input/cyttsp_semc.h>
 #include <linux/ctype.h>
 #include <linux/sched.h>
@@ -299,6 +303,9 @@ struct cyttsp {
 	struct input_dev *input;
 	struct delayed_work work;
 	struct mutex mutex;
+#ifdef CONFIG_FB
+	struct notifier_block fb_notif;
+#endif
 	char phys[32];
 	struct cyttsp_platform_data *platform_data;
 	struct cyttsp_bootloader_data bl_data;
@@ -314,7 +321,7 @@ struct cyttsp {
 #endif
 	struct cyttsp_bus_ops *bus_ops;
 	unsigned fw_loader_mode:1;
-	unsigned suspended:1;
+	bool suspended;
 	u16 appid;
 	u16 appver;
 	u16 ttspid;
@@ -1737,6 +1744,77 @@ static int cyttsp_suspend(struct cyttsp *ts)
 	return retval;
 }
 
+#ifdef CONFIG_FB
+static void cyttsp_ts_suspend(struct cyttsp *ts)
+{
+	dev_err(ts->pdev, "%s: Enter\n", __func__);
+
+	if (ts->suspended) {
+		dev_err(ts->pdev, "%s: already suspended\n", __func__);
+		return;
+	}
+
+	LOCK(ts->mutex);
+	if (!ts->fw_loader_mode) {
+		disable_irq(ts->irq);
+		dev_dbg(ts->pdev, "%s: stop ESD check\n", __func__);
+		cancel_delayed_work_sync(&ts->work);
+		cyttsp_suspend(ts);
+	}
+	UNLOCK(ts->mutex);
+
+	ts->suspended = true;
+	dev_err(ts->pdev, "%s: Exit\n", __func__);
+}
+
+static void cyttsp_ts_resume(struct cyttsp *ts)
+{
+	dev_err(ts->pdev, "%s: Enter\n", __func__);
+
+	if (!ts->suspended) {
+		dev_err(ts->pdev, "%s: already resumed\n", __func__);
+		return;
+	}
+
+	LOCK(ts->mutex);
+	if (!ts->fw_loader_mode) {
+		if (cyttsp_resume(ts) < 0)
+			printk(KERN_ERR "%s: Error, cyttsp_resume.\n",
+				__func__);
+		dev_dbg(ts->pdev, "%s: start ESD check\n", __func__);
+		schedule_delayed_work(&ts->work, ESD_CHECK_INTERVAL);
+#ifdef CONFIG_TOUCHSCREEN_CYTTSP_CHARGER_MODE
+		schedule_work(&ts->charger_status_work);
+#endif
+		enable_irq(ts->irq);
+	}
+	UNLOCK(ts->mutex);
+
+	ts->suspended = false;
+	dev_err(ts->pdev, "%s: Exit\n", __func__);
+}
+
+static int fb_notifier_callback(struct notifier_block *self,
+				unsigned long event, void *data)
+{
+	struct fb_event *evdata = data;
+	int *blank;
+	struct cyttsp *ts = container_of(self, struct cyttsp, fb_notif);
+
+	if (evdata && evdata->data && ts) {
+		if (event == FB_EVENT_BLANK) {
+			blank = evdata->data;
+			if (*blank == FB_BLANK_UNBLANK)
+				cyttsp_ts_resume(ts);
+			else if (*blank == FB_BLANK_POWERDOWN)
+				cyttsp_ts_suspend(ts);
+		}
+	}
+
+	return 0;
+}
+#endif
+
 static bool is_ttsp_fwwr_done(struct cyttsp *ts)
 {
 	struct {
@@ -2169,9 +2247,22 @@ void *cyttsp_core_init(struct cyttsp_bus_ops *bus_ops, struct device *pdev)
 	}
 	DBG(printk(KERN_INFO "%s: Interrupt=%d\n",
 			__func__, ts->irq);)
+
+#ifdef CONFIG_FB
+	ts->fb_notif.notifier_call = fb_notifier_callback;
+	retval = fb_register_client(&ts->fb_notif);
+	if (retval) {
+		dev_err(ts->pdev, "%s: Failed to register fb_notifier\n",
+			__func__);
+		goto error_free_irq;
+	}
+
+	dev_dbg(ts->pdev, "%s: Registered fb_notifier\n", __func__);
+#endif
+
 	retval = add_sysfs_interfaces(pdev);
 	if (retval)
-		goto attr_create_error;
+		goto err_cleanup_fb_notif;
 
 	dev_set_drvdata(pdev, ts);
 	printk(KERN_INFO "%s: Successful.\n", __func__);
@@ -2188,7 +2279,10 @@ void *cyttsp_core_init(struct cyttsp_bus_ops *bus_ops, struct device *pdev)
 	return ts;
 error_power_on:
 	remove_sysfs_interfaces(ts->pdev);
-attr_create_error:
+err_cleanup_fb_notif:
+#ifdef CONFIG_FB
+	fb_unregister_client(&ts->fb_notif);
+#endif
 error_free_irq:
 	free_irq(ts->irq, ts);
 	input_unregister_device(input_device);
@@ -2211,6 +2305,9 @@ void cyttsp_core_release(void *handle)
 
 	DBG(printk(KERN_INFO"%s: Enter\n", __func__);)
 	remove_sysfs_interfaces(ts->pdev);
+#ifdef CONFIG_FB
+	fb_unregister_client(&ts->fb_notif);
+#endif
 	free_irq(ts->irq, ts);
 	input_unregister_device(ts->input);
 	input_free_device(ts->input);
