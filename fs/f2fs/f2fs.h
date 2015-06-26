@@ -1626,7 +1626,7 @@ int f2fs_fiemap(struct inode *inode, struct fiemap_extent_info *, u64, u64);
 void init_extent_cache_info(struct f2fs_sb_info *);
 int __init create_extent_cache(void);
 void destroy_extent_cache(void);
-void f2fs_invalidate_page(struct page *, unsigned long);
+void f2fs_invalidate_page(struct page *, unsigned int, unsigned int);
 int f2fs_release_page(struct page *, gfp_t);
 
 /*
