@@ -18,6 +18,7 @@
 
 /* physical offset of RAM */
 #define PLAT_PHYS_OFFSET UL(CONFIG_PHYS_OFFSET)
+#define PHYS_OFFSET PLAT_PHYS_OFFSET
 
 #define MAX_PHYSMEM_BITS 32
 #define SECTION_SIZE_BITS 28
@@ -46,11 +47,13 @@ extern unsigned long ebi1_phys_offset;
 #if defined(CONFIG_VMSPLIT_3G)
 
 #define __phys_to_virt(phys)				\
+	(unsigned long)					\
 	((phys) >= EBI1_PHYS_OFFSET ?			\
 	(phys) - EBI1_PHYS_OFFSET + EBI1_PAGE_OFFSET :	\
 	(phys) - EBI0_PHYS_OFFSET + EBI0_PAGE_OFFSET)
 
 #define __virt_to_phys(virt)				\
+	(unsigned long)					\
 	((virt) >= EBI1_PAGE_OFFSET ?			\
 	(virt) - EBI1_PAGE_OFFSET + EBI1_PHYS_OFFSET :	\
 	(virt) - EBI0_PAGE_OFFSET + EBI0_PHYS_OFFSET)
