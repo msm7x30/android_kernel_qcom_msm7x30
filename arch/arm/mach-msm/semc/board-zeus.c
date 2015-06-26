@@ -3296,13 +3296,21 @@ static struct msm_spm_platform_data msm_spm_data __initdata = {
 
 #ifdef CONFIG_INPUT_KEYRESET
 #include <linux/keyreset.h>
-/* keyreset platform device */
+
+static int semc_reset_keys_fn(void)
+{
+	arm_pm_restart('h', NULL);
+	return 1;
+}
+
 static int semc_reset_keys_up[] = {
 	KEY_VOLUMEDOWN,
 	0
 };
 
 static struct keyreset_platform_data semc_reset_keys_pdata = {
+	.reset_fn = semc_reset_keys_fn,
+	.key_down_delay = 1500,
 	.keys_up = semc_reset_keys_up,
 	.keys_down = {
 		KEY_POWER,
