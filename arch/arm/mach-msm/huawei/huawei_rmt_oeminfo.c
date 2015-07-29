@@ -20,6 +20,7 @@
 #include <linux/kernel.h>
 #include <linux/miscdevice.h>
 #include <linux/module.h>
+#include <linux/of.h>
 #include <linux/slab.h>
 #include <linux/wakelock.h>
 #include <mach/msm_rpcrouter.h>
@@ -323,12 +324,21 @@ static int rmt_oeminfo_remove(struct platform_device *pdev)
 	return 0;
 }
 
+#ifdef CONFIG_OF
+static struct of_device_id rmt_oeminfo_of_match_table[] = {
+	{ .compatible = "huawei,rmt-oeminfo", },
+	{ /* end of table */ }
+};
+MODULE_DEVICE_TABLE(of, rmt_oeminfo_of_match_table);
+#endif
+
 static struct platform_driver rmt_oeminfo_driver = {
 	.probe		= rmt_oeminfo_probe,
 	.remove		= rmt_oeminfo_remove,
 	.driver		= {
 		.name	= "rmt_oeminfo",
 		.owner	= THIS_MODULE,
+		.of_match_table = of_match_ptr(rmt_oeminfo_of_match_table),
 	},
 };
 
