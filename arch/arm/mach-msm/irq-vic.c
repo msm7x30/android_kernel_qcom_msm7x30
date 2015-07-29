@@ -74,15 +74,9 @@ module_param_named(debug_mask, msm_irq_debug_mask, int,
 #define VIC_INT_POLARITY3   VIC_REG(0x005C)  /* 1: NEG, 0: POS */
 #define VIC_NO_PEND_VAL     VIC_REG(0x0060)
 
-#if defined(CONFIG_ARCH_MSM_SCORPION) && !defined(CONFIG_MSM_SMP)
 #define VIC_NO_PEND_VAL_FIQ VIC_REG(0x0064)
 #define VIC_INT_MASTEREN    VIC_REG(0x0068)  /* 1: IRQ, 2: FIQ     */
 #define VIC_CONFIG          VIC_REG(0x006C)  /* 1: USE SC VIC */
-#else
-#define VIC_INT_MASTEREN    VIC_REG(0x0064)  /* 1: IRQ, 2: FIQ     */
-#define VIC_PROTECTION      VIC_REG(0x006C)  /* 1: ENABLE          */
-#define VIC_CONFIG          VIC_REG(0x0068)  /* 1: USE ARM1136 VIC */
-#endif
 
 #define VIC_IRQ_STATUS0     VIC_REG(0x0080)
 #define VIC_IRQ_STATUS1     VIC_REG(0x0084)
@@ -108,7 +102,6 @@ module_param_named(debug_mask, msm_irq_debug_mask, int,
 #define VIC_IRQ_VEC_PEND_RD VIC_REG(0x00D4)  /* pending vector addr */
 #define VIC_IRQ_VEC_WR      VIC_REG(0x00D8)
 
-#if defined(CONFIG_ARCH_MSM_SCORPION) && !defined(CONFIG_MSM_SMP)
 #define VIC_FIQ_VEC_RD      VIC_REG(0x00DC)
 #define VIC_FIQ_VEC_PEND_RD VIC_REG(0x00E0)
 #define VIC_FIQ_VEC_WR      VIC_REG(0x00E4)
@@ -118,29 +111,12 @@ module_param_named(debug_mask, msm_irq_debug_mask, int,
 #define VIC_FIQ_IN_STACK    VIC_REG(0x00F4)
 #define VIC_TEST_BUS_SEL    VIC_REG(0x00F8)
 #define VIC_IRQ_CTRL_CONFIG VIC_REG(0x00FC)
-#else
-#define VIC_IRQ_IN_SERVICE  VIC_REG(0x00E0)
-#define VIC_IRQ_IN_STACK    VIC_REG(0x00E4)
-#define VIC_TEST_BUS_SEL    VIC_REG(0x00E8)
-#endif
 
 #define VIC_VECTPRIORITY(n) VIC_REG(0x0200+((n) * 4))
 #define VIC_VECTADDR(n)     VIC_REG(0x0400+((n) * 4))
 
-#if defined(CONFIG_ARCH_MSM7X30) || defined(CONFIG_ARCH_FSM9XXX)
 #define VIC_NUM_REGS	    4
-#else
-#define VIC_NUM_REGS	    2
-#endif
 
-#if VIC_NUM_REGS == 2
-#define DPRINT_REGS(base_reg, format, ...)	      			\
-	printk(KERN_INFO format " %x %x\n", ##__VA_ARGS__,		\
-			readl(base_reg ## 0), readl(base_reg ## 1))
-#define DPRINT_ARRAY(array, format, ...)				\
-	printk(KERN_INFO format " %x %x\n", ##__VA_ARGS__,		\
-			array[0], array[1])
-#elif VIC_NUM_REGS == 4
 #define DPRINT_REGS(base_reg, format, ...) \
 	printk(KERN_INFO format " %x %x %x %x\n", ##__VA_ARGS__,	\
 			readl(base_reg ## 0), readl(base_reg ## 1),	\
@@ -149,9 +125,6 @@ module_param_named(debug_mask, msm_irq_debug_mask, int,
 	printk(KERN_INFO format " %x %x %x %x\n", ##__VA_ARGS__,	\
 			array[0], array[1],				\
 			array[2], array[3])
-#else
-#error "VIC_NUM_REGS set to illegal value"
-#endif
 
 static uint32_t msm_irq_smsm_wake_enable[2];
 static struct {
@@ -163,13 +136,10 @@ static struct {
 static uint32_t msm_irq_idle_disable[VIC_NUM_REGS];
 
 #define SMSM_FAKE_IRQ (0xff)
-#if !defined(CONFIG_ARCH_FSM9XXX)
 static uint8_t msm_irq_to_smsm[NR_IRQS] = {
-#if !defined(CONFIG_ARCH_MSM7X27A)
 	[INT_MDDI_EXT] = 1,
 	[INT_MDDI_PRI] = 2,
 	[INT_MDDI_CLIENT] = 3,
-#endif
 	[INT_USB_OTG] = 4,
 
 	[INT_PWB_I2C] = 5,
@@ -190,9 +160,6 @@ static uint8_t msm_irq_to_smsm[NR_IRQS] = {
 	[INT_UART1DM_IRQ] = 17,
 	[INT_UART1DM_RX] = 18,
 	[INT_KEYSENSE] = 19,
-#if !defined(CONFIG_ARCH_MSM7X30)
-	[INT_AD_HSSD] = 20,
-#endif
 
 	[INT_NAND_WR_ER_DONE] = 21,
 	[INT_NAND_OP_DONE] = 22,
@@ -218,23 +185,7 @@ static uint8_t msm_irq_to_smsm[NR_IRQS] = {
 	[INT_GP_TIMER_EXP] = SMSM_FAKE_IRQ,
 	[INT_DEBUG_TIMER_EXP] = SMSM_FAKE_IRQ,
 	[INT_ADSP_A11] = SMSM_FAKE_IRQ,
-#ifdef CONFIG_ARCH_QSD8X50
-	[INT_SIRC_0] = SMSM_FAKE_IRQ,
-	[INT_SIRC_1] = SMSM_FAKE_IRQ,
-#endif
 };
-# else /* CONFIG_ARCH_FSM9XXX */
-static uint8_t msm_irq_to_smsm[NR_IRQS] = {
-	[INT_UART1] = 11,
-	[INT_A9_M2A_0] = SMSM_FAKE_IRQ,
-	[INT_A9_M2A_1] = SMSM_FAKE_IRQ,
-	[INT_A9_M2A_5] = SMSM_FAKE_IRQ,
-	[INT_GP_TIMER_EXP] = SMSM_FAKE_IRQ,
-	[INT_DEBUG_TIMER_EXP] = SMSM_FAKE_IRQ,
-	[INT_SIRC_0] = 10,
-	[INT_ADSP_A11] = SMSM_FAKE_IRQ,
-};
-#endif /* CONFIG_ARCH_FSM9XXX */
 
 static inline void msm_irq_write_all_regs(void __iomem *base, unsigned int val)
 {
