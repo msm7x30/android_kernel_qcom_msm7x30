@@ -1,7 +1,7 @@
 /*
  * Huawei Battery Driver
  * Copyright (c) 2009-2013, The Linux Foundation. All rights reserved.
- * Copyright (C) 2014  Rudolf Tammekivi <rtammekivi@gmail.com>
+ * Copyright (C) 2014-2015  Rudolf Tammekivi <rtammekivi@gmail.com>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -21,6 +21,7 @@
 
 #include <linux/err.h>
 #include <linux/module.h>
+#include <linux/of.h>
 #include <linux/platform_device.h>
 #include <linux/power_supply.h>
 #include <linux/slab.h>
@@ -126,11 +127,10 @@ static const uint32_t rpc_consumer_entry[HW_BAT_CONSUMER_MAX] = {
 	[HW_BAT_CONSUMER_NONE]			= 0xff,
 };
 
-static int huawei_bat_notify_rpc(uint32_t consumer,
-	uint32_t state)
+static int huawei_bat_notify_rpc(struct huawei_bat_data *data,
+				 uint32_t consumer, uint32_t state)
 {
 	int ret;
-	struct huawei_bat_data *data = bat_data;
 	struct device *dev = data->dev;
 
 	struct {
@@ -139,14 +139,11 @@ static int huawei_bat_notify_rpc(uint32_t consumer,
 		u32 state;
 	} req;
 
-	if (!data || IS_ERR_OR_NULL(data->pm_ep))
-		return -EPERM;
-
 	req.consumer = cpu_to_be32(consumer);
 	req.state = cpu_to_be32(state);
 
 	ret = msm_rpc_call(data->pm_ep, PM_LIB_CONSUMER_NOTIFY_PROC,
-		&req, sizeof(req), msecs_to_jiffies(5000));
+			   &req, sizeof(req), msecs_to_jiffies(5000));
 	if (ret) {
 		dev_err(dev, "failed to do rpc call for consumer %d ret=%d\n",
 			consumer, ret);
@@ -168,15 +165,15 @@ static void huawei_bat_work(struct work_struct *work)
 	switch(entry->consumer) {
 	case HW_BAT_CONSUMER_LCD:
 		dev_vdbg(dev, "Notifying LCD level %d\n",
-			state.backlight_level);
-		ret = huawei_bat_notify_rpc(rpc_consumer,
-			state.backlight_level);
+			 state.backlight_level);
+		ret = huawei_bat_notify_rpc(data, rpc_consumer,
+					    state.backlight_level);
 		break;
 	case HW_BAT_CONSUMER_FRONT_CAMERA:
 	case HW_BAT_CONSUMER_BACK_CAMERA:
 	case HW_BAT_CONSUMER_CAMERA:
 		dev_vdbg(dev, "Notifying camera on %d\n", state.on);
-		ret = huawei_bat_notify_rpc(rpc_consumer, state.on);
+		ret = huawei_bat_notify_rpc(data, rpc_consumer, state.on);
 		break;
 	case HW_BAT_CONSUMER_WIFI:
 	case HW_BAT_CONSUMER_BT:
@@ -185,8 +182,9 @@ static void huawei_bat_work(struct work_struct *work)
 		break;
 	case HW_BAT_CONSUMER_CAMERA_FLASH:
 		dev_vdbg(dev, "Notifying flash current %d\n",
-			state.flash_current);
-		ret = huawei_bat_notify_rpc(rpc_consumer, state.flash_current);
+			 state.flash_current);
+		ret = huawei_bat_notify_rpc(data, rpc_consumer,
+					    state.flash_current);
 		break;
 	case HW_BAT_CONSUMER_KEYPAD:
 	case HW_BAT_CONSUMER_VIBRATOR:
@@ -201,28 +199,22 @@ static void huawei_bat_work(struct work_struct *work)
 		break;
 	}
 
-	if (ret) {
+	if (ret)
 		dev_err(dev, "failed to notify rpc ret=%d\n", ret);
-	}
 
 	kfree(work);
 }
 
 int huawei_bat_notify(enum huawei_bat_consumer consumer,
-	union huawei_bat_state state)
+		      union huawei_bat_state state)
 {
 	int ret;
 	struct huawei_bat_data *data = bat_data;
 	struct device *dev;
-	struct work_entry *work = kzalloc(sizeof(*work), GFP_KERNEL);
-	if (!work)
-		return -ENOMEM;
-
-	INIT_WORK((struct work_struct *)work, huawei_bat_work);
+	struct work_entry *work;
 
 	if (!data || IS_ERR_OR_NULL(data->pm_ep) || !data->workqueue)
 		return -EPERM;
-	work->data = data;
 
 	dev = data->dev;
 
@@ -230,16 +222,29 @@ int huawei_bat_notify(enum huawei_bat_consumer consumer,
 		dev_err(dev, "invalid consumer %d\n", consumer);
 		return -EINVAL;
 	}
+
+	work = kzalloc(sizeof(*work), GFP_KERNEL);
+	if (!work) {
+		dev_err(dev, "failed to allocate work memory\n");
+		return -ENOMEM;
+	}
+
+	INIT_WORK((struct work_struct *)work, huawei_bat_work);
+	work->data = data;
 	work->consumer = consumer;
 	work->state = state;
 
 	ret = queue_work(data->workqueue, (struct work_struct *)work);
 	if (ret < 0) {
 		dev_err(dev, "failed to queue work ret=%d\n", ret);
-		return ret;
+		goto err_free_work;
 	}
 
 	return 0;
+
+err_free_work:
+	kfree(work);
+	return ret;
 }
 EXPORT_SYMBOL(huawei_bat_notify);
 
@@ -247,6 +252,11 @@ void huawei_bat_charger_connected(enum chg_type chgtype)
 {
 	int ret;
 	struct huawei_bat_data *data = bat_data;
+
+	if (!data) {
+		pr_err("%s: data not ready\n", __func__);
+		return;
+	}
 
 	pr_debug("%s: %d\n", __func__, chgtype);
 
@@ -263,10 +273,10 @@ void huawei_bat_charger_connected(enum chg_type chgtype)
 		req.otg_dev = cpu_to_be32(chgtype);
 
 		ret = msm_rpc_call(data->chg_ep, CHG_SET_CHARGER_CONNECTED,
-			&req, sizeof(req), msecs_to_jiffies(5000));
+				   &req, sizeof(req), msecs_to_jiffies(5000));
 		if (ret)
 			pr_err("%s: failed to do rpc call ret=%d\n",
-				__func__, ret);
+			       __func__, ret);
 	} else {
 		struct {
 			struct rpc_request_hdr hdr;
@@ -275,10 +285,10 @@ void huawei_bat_charger_connected(enum chg_type chgtype)
 		memset(&req, 0, sizeof(req));
 
 		ret = msm_rpc_call(data->chg_ep, CHG_SET_CHARGER_DISCONNECTED,
-			&req, sizeof(req), msecs_to_jiffies(5000));
+				   &req, sizeof(req), msecs_to_jiffies(5000));
 		if (ret)
 			pr_err("%s: failed to do rpc call ret=%d\n",
-				__func__, ret);
+			       __func__, ret);
 
 		/* Notify no current available. */
 		huawei_bat_charger_draw(0);
@@ -295,6 +305,11 @@ void huawei_bat_charger_draw(unsigned int ma)
 	int ret;
 	struct huawei_bat_data *data = bat_data;
 
+	if (!data) {
+		pr_err("%s: data not ready\n", __func__);
+		return;
+	}
+
 	pr_debug("%s: %d\n", __func__, ma);
 
 	if (ma != 0) {
@@ -308,10 +323,10 @@ void huawei_bat_charger_draw(unsigned int ma)
 		req.i_ma = cpu_to_be32(ma);
 
 		ret = msm_rpc_call(data->chg_ep, CHG_SET_CURRENT_AVAILABLE,
-			&req, sizeof(req), msecs_to_jiffies(5000));
+				   &req, sizeof(req), msecs_to_jiffies(5000));
 		if (ret)
 			pr_err("%s: failed to do rpc call ret=%d\n",
-				__func__, ret);
+			       __func__, ret);
 	} else {
 		struct {
 			struct rpc_request_hdr hdr;
@@ -320,16 +335,16 @@ void huawei_bat_charger_draw(unsigned int ma)
 		memset(&req, 0, sizeof(req));
 
 		ret = msm_rpc_call(data->chg_ep, CHG_SET_CURRENT_UNAVAILABLE,
-			&req, sizeof(req), msecs_to_jiffies(5000));
+				   &req, sizeof(req), msecs_to_jiffies(5000));
 		if (ret)
 			pr_err("%s: failed to do rpc call ret=%d\n",
-				__func__, ret);
+			       __func__, ret);
 	}
 }
 EXPORT_SYMBOL(huawei_bat_charger_draw);
 
 static int huawei_bat_get_capacity(struct huawei_bat_data *data,
-	uint8_t *capacity)
+				   uint8_t *capacity)
 {
 	int ret;
 	int8_t ret_capacity;
@@ -346,7 +361,8 @@ static int huawei_bat_get_capacity(struct huawei_bat_data *data,
 	memset(&rep, 0, sizeof(rep));
 
 	ret = msm_rpc_call_reply(data->chg_ep, CHG_GET_CAPACITY_PROC,
-		&req, sizeof(req), &rep, sizeof(rep), msecs_to_jiffies(5000));
+				 &req, sizeof(req), &rep, sizeof(rep),
+				 msecs_to_jiffies(5000));
 	if (ret < 0)
 		return ret;
 
@@ -371,12 +387,12 @@ static uint8_t huawei_bat_calculate_capacity(struct huawei_bat_data *data)
 	else if (current_voltage >= high_voltage)
 		return 100;
 	else
-		return (current_voltage - low_voltage) * 100
-			/ (high_voltage - low_voltage);
+		return (current_voltage - low_voltage) * 100 /
+		       (high_voltage - low_voltage);
 }
 
 static int huawei_bat_batt_get(struct huawei_bat_data *data,
-	struct huawei_bat_batt *battery)
+			       struct huawei_bat_batt *battery)
 {
 	int ret;
 
@@ -407,7 +423,8 @@ static int huawei_bat_batt_get(struct huawei_bat_data *data,
 	req.more_data = cpu_to_be32(1);
 
 	ret = msm_rpc_call_reply(data->chg_ep, CHG_GET_GENERAL_STATUS_PROC,
-		&req, sizeof(req), &rep, sizeof(rep), msecs_to_jiffies(5000));
+				 &req, sizeof(req), &rep, sizeof(rep),
+				 msecs_to_jiffies(5000));
 	if (ret < 0)
 		return ret;
 
@@ -415,9 +432,8 @@ static int huawei_bat_batt_get(struct huawei_bat_data *data,
 	battery->temperature = be32_to_cpu(rep.battery_temp);
 
 	ret = huawei_bat_get_capacity(data, &(battery->capacity));
-	if (ret) {
+	if (ret)
 		battery->capacity = huawei_bat_calculate_capacity(data);
-	}
 
 	return 0;
 }
@@ -430,20 +446,20 @@ static int huawei_bat_update(struct huawei_bat_data *data)
 	ret = huawei_bat_batt_get(data, battery);
 	if (ret) {
 		pr_err("%s: Failed to get battery info ret=%d\n",
-			__func__, ret);
+		       __func__, ret);
 		return ret;
 	}
 
 	power_supply_changed(&data->battery_ps);
 
 	pr_debug("%s: C:%d V:%d T:%d\n", __func__,
-		battery->capacity, battery->voltage, battery->temperature);
+		 battery->capacity, battery->voltage, battery->temperature);
 
 	return 0;
 }
 
 static int huawei_bat_batt_cb(struct msm_rpc_client *client, void *buffer,
-	int in_size)
+			      int in_size)
 {
 	int ret;
 	struct huawei_bat_data *data = bat_data;
@@ -461,7 +477,7 @@ static int huawei_bat_batt_cb(struct msm_rpc_client *client, void *buffer,
 	}
 
 	msm_rpc_start_accepted_reply(client, be32_to_cpu(req->xid),
-		accept_status);
+				     accept_status);
 
 	ret = msm_rpc_send_accepted_reply(client, 0);
 	if (ret) {
@@ -497,7 +513,7 @@ struct batt_client_registration_rep {
 };
 
 static int huawei_bat_batt_register_arg(struct msm_rpc_client *batt_client,
-	void *buf, void *data)
+					void *buf, void *data)
 {
 	struct batt_client_registration_req *batt_reg_req = data;
 
@@ -531,7 +547,7 @@ static int huawei_bat_batt_register_arg(struct msm_rpc_client *batt_client,
 }
 
 static int huawei_bat_batt_register_ret(struct msm_rpc_client *batt_client,
-	void *buf, void *data)
+					void *buf, void *data)
 {
 	struct batt_client_registration_rep *data_ptr, *buf_ptr;
 
@@ -560,9 +576,9 @@ static int huawei_bat_batt_register(struct huawei_bat_data *data)
 	req.batt_error = 0;
 
 	ret = msm_rpc_client_req(data->batt_client, BATTERY_REGISTER_PROC,
-		huawei_bat_batt_register_arg, &req,
-		huawei_bat_batt_register_ret, &rep,
-		msecs_to_jiffies(5000));
+				 huawei_bat_batt_register_arg, &req,
+				 huawei_bat_batt_register_ret, &rep,
+				 msecs_to_jiffies(5000));
 	if (ret)
 		return ret;
 
@@ -578,12 +594,14 @@ static int huawei_bat_connect_rpc(struct huawei_bat_data *data)
 
 	/* Connect to Battery RPC service. */
 	data->batt_client = msm_rpc_register_client("battery",
-		BATTERY_RPC_PROG, BATTERY_RPC_VERS, 1, huawei_bat_batt_cb);
+						    BATTERY_RPC_PROG,
+						    BATTERY_RPC_VERS, 1,
+						    huawei_bat_batt_cb);
 	if (IS_ERR(data->batt_client)) {
 		ret = PTR_ERR(data->batt_client);
 		dev_err(dev, "failed to connect to batt rpc service ret=%d\n",
 			ret);
-		goto err;
+		return ret;
 	}
 
 	/* Connect to CHG RPC service. */
@@ -612,7 +630,6 @@ err_close_chg:
 err_close_battery:
 	msm_rpc_unregister_client(data->batt_client);
 	data->batt_client = NULL;
-err:
 	return ret;
 }
 
@@ -689,7 +706,7 @@ static int huawei_ac_ps_get_online(struct huawei_bat_data *data)
 static int huawei_usb_ps_get_online(struct huawei_bat_data *data)
 {
 	return (data->charger_type == USB_CHG_TYPE__SDP ||
-		data->charger_type == USB_CHG_TYPE__CARKIT);
+	       data->charger_type == USB_CHG_TYPE__CARKIT);
 }
 
 static int huawei_bat_ps_get_capacity_level(struct huawei_bat_data *data)
@@ -711,7 +728,8 @@ static int huawei_bat_ps_get_capacity_level(struct huawei_bat_data *data)
 }
 
 static int huawei_ps_get_property(struct power_supply *psy,
-	enum power_supply_property psp, union power_supply_propval *val)
+				  enum power_supply_property psp,
+				  union power_supply_propval *val)
 {
 	struct huawei_bat_data *data = NULL;
 
@@ -795,7 +813,7 @@ static int huawei_bat_register_ps(struct huawei_bat_data *data)
 	ret = power_supply_register(dev, &data->battery_ps);
 	if (ret) {
 		dev_err(dev, "failed to register battery ps ret=%d\n", ret);
-		goto err;
+		return ret;
 	}
 
 	data->ac_ps.name = "huawei-ac";
@@ -832,7 +850,6 @@ err_free_ac_ps:
 	power_supply_unregister(&data->ac_ps);
 err_free_bat_ps:
 	power_supply_unregister(&data->battery_ps);
-err:
 	return ret;
 }
 
@@ -843,77 +860,124 @@ static void huawei_bat_unregister_ps(struct huawei_bat_data *data)
 	power_supply_unregister(&data->battery_ps);
 }
 
+static int huawei_bat_populate_pdata(struct device *dev,
+				     struct huawei_bat_platform_data *pdata)
+{
+	struct device_node *node = dev->of_node;
+	int ret;
+	uint32_t val;
+	const char *tech;
+
+	ret = of_property_read_u32(node, "voltage-min-design", &val);
+	if (ret) {
+		dev_err(dev, "failed to read 'voltage-min-design' ret=%d\n",
+			ret);
+		return ret;
+	}
+	pdata->voltage_min_design = val;
+
+	ret = of_property_read_u32(node, "voltage-max-design", &val);
+	if (ret) {
+		dev_err(dev, "failed to read 'voltage-max-design' ret=%d\n",
+			ret);
+		return ret;
+	}
+	pdata->voltage_max_design = val;
+
+	ret = of_property_read_string(node, "technology", &tech);
+	if (ret) {
+		dev_warn(dev, "failed to read 'technology' ret=%d\n", ret);
+		pdata->technology = POWER_SUPPLY_TECHNOLOGY_LIPO;
+	}
+
+	if (!strncmp(tech, "LION", 4))
+		pdata->technology = POWER_SUPPLY_TECHNOLOGY_LION;
+	else
+		pdata->technology = POWER_SUPPLY_TECHNOLOGY_LIPO;
+
+	return 0;
+}
+
 static int huawei_bat_probe(struct platform_device *pdev)
 {
 	struct device *dev = &pdev->dev;
 	struct huawei_bat_platform_data *pdata = dev_get_platdata(dev);
+	struct device_node *node = dev->of_node;
 	struct huawei_bat_data *data;
 	int ret = 0;
 
 	if (pdev->id != -1) {
 		dev_err(dev, "multiple devices not supported\n");
-		goto err_exit;
+		return -EINVAL;
 	}
 
-	if (!pdata) {
-		dev_err(dev, "no platform data\n");
-		goto err_exit;
+	if (!pdata && !node) {
+		dev_err(dev, "no platform/device tree data supplied\n");
+		return -EINVAL;
 	}
 
-	data = kzalloc(sizeof(*data), GFP_KERNEL);
+	/* In case of DT, allocate and populate pdata. */
+	if (node) {
+		pdata = devm_kzalloc(dev, sizeof(*pdata), GFP_KERNEL);
+		if (!pdata) {
+			dev_err(dev, "failed to allocate pdata memory\n");
+			return -ENOMEM;
+		}
+		ret = huawei_bat_populate_pdata(dev, pdata);
+		if (ret)
+			return ret;
+	}
+
+	data = devm_kzalloc(dev, sizeof(*data), GFP_KERNEL);
 	if (!data) {
 		dev_err(dev, "failed to allocate memory\n");
-		ret = -ENOMEM;
-		goto err_exit;
+		return -ENOMEM;
 	}
 
-	bat_data = data;
-
 	platform_set_drvdata(pdev, data);
-
 	data->pdata = pdata;
 	data->dev = dev;
 	data->charger_type = USB_CHG_TYPE__INVALID;
+
+	bat_data = data;
 
 	/* Connect to RPC services. */
 	ret = huawei_bat_connect_rpc(data);
 	if (ret) {
 		dev_err(dev, "failed to connect rpc ret=%d\n", ret);
-		goto err_free;
+		goto err_free_mem;
 	}
 
 	ret = huawei_bat_batt_register(data);
 	if (ret) {
 		dev_err(dev, "failed to register batt ret=%d\n", ret);
-		goto err_disconnect;
+		goto err_disconnect_rpc;
 	}
 
 	data->workqueue = create_workqueue("huawei_bat_queue");
 	if (!data->workqueue) {
 		dev_err(dev, "failed to create workqueue\n");
 		ret = -EPERM;
-		goto err_disconnect;
+		goto err_disconnect_rpc;
 	}
 
 	ret = huawei_bat_register_ps(data);
 	if (ret) {
 		dev_err(dev, "failed to register ps ret=%d\n", ret);
-		goto err_workqueue;
+		goto err_remove_workqueue;
 	}
 
 	huawei_bat_update(data);
 
 	return 0;
 
-err_workqueue:
+err_remove_workqueue:
 	flush_workqueue(data->workqueue);
 	destroy_workqueue(data->workqueue);
-err_disconnect:
+err_disconnect_rpc:
 	huawei_bat_disconnect_rpc(data);
-err_free:
+err_free_mem:
 	bat_data = NULL;
-	kfree(data);
-err_exit:
 	return ret;
 }
 
@@ -929,44 +993,28 @@ static int huawei_bat_remove(struct platform_device *pdev)
 	huawei_bat_disconnect_rpc(data);
 
 	bat_data = NULL;
-	kfree(data);
 
 	return 0;
 }
 
-static int huawei_bat_suspend(struct platform_device *pdev, pm_message_t state)
-{
-	return 0;
-}
-
-static int huawei_bat_resume(struct platform_device *pdev)
-{
-	return 0;
-}
+#ifdef CONFIG_OF
+static struct of_device_id huawei_bat_of_match_table[] = {
+	{ .compatible = "huawei,battery", },
+	{ /* end of table */ }
+};
+MODULE_DEVICE_TABLE(of, huawei_bat_of_match_table);
+#endif
 
 static struct platform_driver huawei_bat_driver = {
 	.probe		= huawei_bat_probe,
 	.remove		= huawei_bat_remove,
-	.suspend	= huawei_bat_suspend,
-	.resume		= huawei_bat_resume,
 	.driver		= {
-		.name	= "huawei_battery",
-		.owner	= THIS_MODULE,
+		.name		= "huawei_battery",
+		.owner		= THIS_MODULE,
+		.of_match_table	= of_match_ptr(huawei_bat_of_match_table),
 	},
 };
-
-static int __init huawei_bat_init(void)
-{
-	return platform_driver_register(&huawei_bat_driver);
-}
-
-static void __exit huawei_bat_exit(void)
-{
-	platform_driver_unregister(&huawei_bat_driver);
-}
-
-module_init(huawei_bat_init);
-module_exit(huawei_bat_exit);
+module_platform_driver(huawei_bat_driver);
 
 MODULE_DESCRIPTION("Huawei Battery Driver");
 MODULE_LICENSE("GPL");
