@@ -13,25 +13,22 @@
  *
  */
 
-#include <linux/init.h>
-#include <linux/module.h>
-#include <linux/sched.h>
-#include <linux/interrupt.h>
-#include <linux/ptrace.h>
-#include <linux/timer.h>
-#include <linux/irq.h>
-#include <linux/io.h>
-
 #include <asm/cacheflush.h>
-#include <asm/io.h>
-#include <asm/exception.h>
 #include <asm/cp15.h>
+#include <asm/exception.h>
 
-#include <mach/msm_iomap.h>
-#include <mach/fiq.h>
+#include <linux/interrupt.h>
+#include <linux/io.h>
+#include <linux/irq.h>
+#include <linux/irqdomain.h>
+#include <linux/module.h>
+#include <linux/of.h>
+#include <linux/of_address.h>
+
+#include <mach/msm_smsm.h>
 
 #include "fiq.h"
-#include "smd_private.h"
+#include "../../../drivers/irqchip/irqchip.h"
 
 enum {
 	IRQ_DEBUG_SLEEP_INT_TRIGGER = 1U << 0,
@@ -44,7 +41,7 @@ static int msm_irq_debug_mask;
 module_param_named(debug_mask, msm_irq_debug_mask, int,
 		   S_IRUGO | S_IWUSR | S_IWGRP);
 
-#define VIC_REG(off) (MSM_VIC_BASE + (off))
+#define VIC_REG(off) (vic_data.base + (off))
 #define VIC_INT_TO_REG_ADDR(base, irq) (base + (irq / 32) * 4)
 #define VIC_INT_TO_REG_INDEX(irq) ((irq >> 5) & 3)
 
@@ -136,7 +133,7 @@ static struct {
 static uint32_t msm_irq_idle_disable[VIC_NUM_REGS];
 
 #define SMSM_FAKE_IRQ (0xff)
-static uint8_t msm_irq_to_smsm[NR_IRQS] = {
+static uint8_t msm_irq_to_smsm[] = {
 	[INT_MDDI_EXT] = 1,
 	[INT_MDDI_PRI] = 2,
 	[INT_MDDI_CLIENT] = 3,
@@ -186,6 +183,12 @@ static uint8_t msm_irq_to_smsm[NR_IRQS] = {
 	[INT_DEBUG_TIMER_EXP] = SMSM_FAKE_IRQ,
 	[INT_ADSP_A11] = SMSM_FAKE_IRQ,
 };
+
+struct vic_device {
+	void __iomem *base;
+	struct irq_domain *domain;
+};
+static struct vic_device vic_data;
 
 static inline void msm_irq_write_all_regs(void __iomem *base, unsigned int val)
 {
@@ -521,47 +524,7 @@ void msm_irq_exit_sleep3(uint32_t irq_mask, uint32_t wakeup_reason,
 			smsm_get_state(SMSM_MODEM_STATE));
 }
 
-static struct irq_chip msm_irq_chip = {
-	.name		= "msm",
-	.irq_disable	= msm_irq_disable,
-	.irq_ack	= msm_irq_ack,
-	.irq_mask	= msm_irq_mask,
-	.irq_unmask	= msm_irq_unmask,
-	.irq_set_wake	= msm_irq_set_wake,
-	.irq_set_type	= msm_irq_set_type,
-};
-
-void __init msm_init_irq(void)
-{
-	unsigned n;
-
-	/* select level interrupts */
-	msm_irq_write_all_regs(VIC_INT_TYPE0, 0);
-
-	/* select highlevel interrupts */
-	msm_irq_write_all_regs(VIC_INT_POLARITY0, 0);
-
-	/* select IRQ for all INTs */
-	msm_irq_write_all_regs(VIC_INT_SELECT0, 0);
-
-	/* disable all INTs */
-	msm_irq_write_all_regs(VIC_INT_EN0, 0);
-
-	/* don't use vic */
-	writel(0, VIC_CONFIG);
-
-
-	for (n = 0; n < NR_MSM_IRQS; n++) {
-		irq_set_chip_and_handler(n, &msm_irq_chip, handle_level_irq);
-		set_irq_flags(n, IRQF_VALID);
-	}
-
-	/* enable interrupt controller */
-	writel(3, VIC_INT_MASTEREN);
-	mb();
-}
-
-static inline void msm_vic_handle_irq(void __iomem *base_addr, struct pt_regs
+static inline void msm_vic_handle_irq(struct vic_device *vic, struct pt_regs
 		*regs)
 {
 	u32 irqnr;
@@ -571,8 +534,8 @@ static inline void msm_vic_handle_irq(void __iomem *base_addr, struct pt_regs
 		 * 0xD4 has irq# or -1 if none pending *but* if you just
 		 * read 0xD4 you never get the first irq for some reason
 		 */
-		irqnr = readl_relaxed(base_addr + 0xD0);
-		irqnr = readl_relaxed(base_addr + 0xD4);
+		irqnr = readl_relaxed(vic->base + 0xD0);
+		irqnr = readl_relaxed(vic->base + 0xD4);
 		if (irqnr == -1)
 			break;
 		handle_IRQ(irqnr, regs);
@@ -582,10 +545,10 @@ static inline void msm_vic_handle_irq(void __iomem *base_addr, struct pt_regs
 /* enable imprecise aborts */
 #define local_cpsie_enable()  __asm__ __volatile__("cpsie a    @ enable")
 
-asmlinkage void __exception_irq_entry vic_handle_irq(struct pt_regs *regs)
+static asmlinkage void __exception_irq_entry vic_handle_irq(struct pt_regs *regs)
 {
 	local_cpsie_enable();
-	msm_vic_handle_irq((void __iomem *)MSM_VIC_BASE, regs);
+	msm_vic_handle_irq(&vic_data, regs);
 }
 
 #if defined(CONFIG_MSM_FIQ_SUPPORT)
@@ -670,3 +633,67 @@ int msm_fiq_set_handler(void (*func)(void *data, void *regs), void *data)
 	return ret;
 }
 #endif
+
+static struct irq_chip msm_irq_chip = {
+	.name		= "msm-vic",
+	.irq_disable	= msm_irq_disable,
+	.irq_ack	= msm_irq_ack,
+	.irq_mask	= msm_irq_mask,
+	.irq_unmask	= msm_irq_unmask,
+	.irq_set_wake	= msm_irq_set_wake,
+	.irq_set_type	= msm_irq_set_type,
+};
+
+static int __init msm_init_irq(struct device_node *node,
+	struct device_node *parent)
+{
+	int ret;
+	void __iomem *regs;
+	uint32_t num_irqs;
+	int i;
+
+	regs = of_iomap(node, 0);
+	if (WARN_ON(!regs))
+		return -EIO;
+	vic_data.base = regs;
+
+	ret = of_property_read_u32(node, "num-irqs", &num_irqs);
+	if (ret) {
+		pr_err("%s: failed to read num-irqs ret=%d\n", __func__, ret);
+		return ret;
+	}
+
+	/* select level interrupts */
+	msm_irq_write_all_regs(VIC_INT_TYPE0, 0);
+
+	/* select highlevel interrupts */
+	msm_irq_write_all_regs(VIC_INT_POLARITY0, 0);
+
+	/* select IRQ for all INTs */
+	msm_irq_write_all_regs(VIC_INT_SELECT0, 0);
+
+	/* disable all INTs */
+	msm_irq_write_all_regs(VIC_INT_EN0, 0);
+
+	/* don't use vic */
+	writel(0, VIC_CONFIG);
+
+	set_handle_irq(vic_handle_irq);
+
+	for (i = 0; i < num_irqs; i++) {
+		irq_set_chip_and_handler(i, &msm_irq_chip, handle_level_irq);
+		set_irq_flags(i, IRQF_VALID);
+	}
+
+	vic_data.domain = irq_domain_add_legacy(
+		node, num_irqs, 0, 0, &irq_domain_simple_ops, &vic_data);
+	if (!vic_data.domain) {
+		pr_err("%s: failed to register irq domain\n", __func__);
+	}
+
+	/* enable interrupt controller */
+	writel(3, VIC_INT_MASTEREN);
+	mb();
+	return 0;
+}
+IRQCHIP_DECLARE(msm_vic, "qcom,msm-vic", msm_init_irq);

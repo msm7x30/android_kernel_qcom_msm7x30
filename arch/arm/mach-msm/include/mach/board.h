@@ -862,8 +862,6 @@ struct isp1763_platform_data {
 void msm_add_devices(void);
 void msm_map_common_io(void);
 void msm_map_msm7x30_io(void);
-void msm_init_irq(void);
-void vic_handle_irq(struct pt_regs *regs);
 
 struct mmc_platform_data;
 int msm_add_sdcc(unsigned int controller,
