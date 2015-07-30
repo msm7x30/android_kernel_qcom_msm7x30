@@ -14,15 +14,12 @@
  *
  */
 
-#include <linux/bitops.h>
 #include <linux/gpio.h>
-#include <linux/interrupt.h>
 #include <linux/io.h>
-#include <linux/irq.h>
 #include <linux/irqchip/chained_irq.h>
+#include <linux/irqdomain.h>
 #include <linux/module.h>
 #include <linux/platform_device.h>
-#include <asm/mach/irq.h>
 #include <mach/gpiomux.h>
 #include <mach/msm_iomap.h>
 #include <mach/msm_smsm.h>
@@ -434,7 +431,7 @@ static void msm_gpio_irq_handler(unsigned int irq, struct irq_desc *desc)
 }
 
 static struct irq_chip msm_gpio_irq_chip = {
-	.name      = "msmgpio",
+	.name		= "msm-gpio",
 	.irq_ack	= msm_gpio_irq_ack,
 	.irq_mask	= msm_gpio_irq_mask,
 	.irq_unmask	= msm_gpio_irq_unmask,
@@ -495,7 +492,7 @@ void msm_gpio_enter_sleep(int from_idle)
 
 	for (i = 0; i < ARRAY_SIZE(msm_gpio_chips); i++) {
 		__raw_writel(msm_gpio_chips[i].int_enable[!from_idle],
-		       msm_gpio_chips[i].regs.int_en);
+			msm_gpio_chips[i].regs.int_en);
 		if (smem_gpio) {
 			uint32_t tmp;
 			int start, index, shiftl, shiftr;
@@ -526,11 +523,11 @@ void msm_gpio_enter_sleep(int from_idle)
 		if (msm_gpio_debug_mask & GPIO_DEBUG_SLEEP)
 			for (i = 0; i < ARRAY_SIZE(smem_gpio->enabled); i++) {
 				printk("msm_gpio_enter_sleep gpio %d-%d: enable"
-				       " %08x, edge %08x, polarity %08x\n",
-				       i * 32, i * 32 + 31,
-				       smem_gpio->enabled[i],
-				       smem_gpio->detection[i],
-				       smem_gpio->polarity[i]);
+					" %08x, edge %08x, polarity %08x\n",
+					i * 32, i * 32 + 31,
+					smem_gpio->enabled[i],
+					smem_gpio->detection[i],
+					smem_gpio->polarity[i]);
 			}
 		for (i = 0; i < GPIO_SMEM_NUM_GROUPS; i++)
 			smem_gpio->num_fired[i] = 0;
@@ -546,14 +543,15 @@ void msm_gpio_exit_sleep(void)
 
 	for (i = 0; i < ARRAY_SIZE(msm_gpio_chips); i++) {
 		__raw_writel(msm_gpio_chips[i].int_enable[0],
-		       msm_gpio_chips[i].regs.int_en);
+			msm_gpio_chips[i].regs.int_en);
 	}
 	mb();
 
 	if (smem_gpio && (smem_gpio->num_fired[0] || smem_gpio->num_fired[1])) {
 		if (msm_gpio_debug_mask & GPIO_DEBUG_SLEEP)
 			printk(KERN_INFO "gpio: fired %x %x\n",
-			      smem_gpio->num_fired[0], smem_gpio->num_fired[1]);
+				smem_gpio->num_fired[0],
+				smem_gpio->num_fired[1]);
 		tasklet_schedule(&msm_gpio_sleep_int_tasklet);
 	}
 }
@@ -594,7 +592,7 @@ int msm_gpios_request(const struct msm_gpio *table, int size)
 		rc = gpio_request(GPIO_PIN(g->gpio_cfg), g->label);
 		if (rc) {
 			pr_err("gpio_request(%d) <%s> failed: %d\n",
-			       GPIO_PIN(g->gpio_cfg), g->label ?: "?", rc);
+				GPIO_PIN(g->gpio_cfg), g->label ?: "?", rc);
 			goto err;
 		}
 	}
@@ -626,12 +624,12 @@ int msm_gpios_enable(const struct msm_gpio *table, int size)
 		rc = gpio_tlmm_config(g->gpio_cfg, GPIO_CFG_ENABLE);
 		if (rc) {
 			pr_err("gpio_tlmm_config(0x%08x, GPIO_CFG_ENABLE)"
-			       " <%s> failed: %d\n",
-			       g->gpio_cfg, g->label ?: "?", rc);
+				" <%s> failed: %d\n",
+				g->gpio_cfg, g->label ?: "?", rc);
 			pr_err("pin %d func %d dir %d pull %d drvstr %d\n",
-			       GPIO_PIN(g->gpio_cfg), GPIO_FUNC(g->gpio_cfg),
-			       GPIO_DIR(g->gpio_cfg), GPIO_PULL(g->gpio_cfg),
-			       GPIO_DRVSTR(g->gpio_cfg));
+				GPIO_PIN(g->gpio_cfg), GPIO_FUNC(g->gpio_cfg),
+				GPIO_DIR(g->gpio_cfg), GPIO_PULL(g->gpio_cfg),
+				GPIO_DRVSTR(g->gpio_cfg));
 			goto err;
 		}
 	}
@@ -653,12 +651,12 @@ int msm_gpios_disable(const struct msm_gpio *table, int size)
 		tmp = gpio_tlmm_config(g->gpio_cfg, GPIO_CFG_DISABLE);
 		if (tmp) {
 			pr_err("gpio_tlmm_config(0x%08x, GPIO_CFG_DISABLE)"
-			       " <%s> failed: %d\n",
-			       g->gpio_cfg, g->label ?: "?", rc);
+				" <%s> failed: %d\n",
+				g->gpio_cfg, g->label ?: "?", rc);
 			pr_err("pin %d func %d dir %d pull %d drvstr %d\n",
-			       GPIO_PIN(g->gpio_cfg), GPIO_FUNC(g->gpio_cfg),
-			       GPIO_DIR(g->gpio_cfg), GPIO_PULL(g->gpio_cfg),
-			       GPIO_DRVSTR(g->gpio_cfg));
+				GPIO_PIN(g->gpio_cfg), GPIO_FUNC(g->gpio_cfg),
+				GPIO_DIR(g->gpio_cfg), GPIO_PULL(g->gpio_cfg),
+				GPIO_DRVSTR(g->gpio_cfg));
 			if (!rc)
 				rc = tmp;
 		}
@@ -685,7 +683,27 @@ void msm_gpio_find_out(const unsigned gpio, void __iomem **out,
 	*offset = gpio - msm_chip->chip.base;
 }
 
-static int msm_gpio_probe(struct platform_device *dev)
+#ifdef CONFIG_OF_GPIO
+static int msm_gpio_of_xlate(struct gpio_chip *gc,
+	const struct of_phandle_args *gpiospec, u32 *flags)
+{
+	int i;
+
+	for (i = ARRAY_SIZE(msm_gpio_chips); i-- > 0 ; )
+		if (gpiospec->args[0] >= msm_gpio_chips[i].chip.base)
+			break;
+
+	if (gc != &msm_gpio_chips[i].chip)
+		return -EINVAL;
+
+	if (flags)
+		*flags = gpiospec->args[1];
+
+	return gpiospec->args[0] - msm_gpio_chips[i].chip.base;
+}
+#endif
+
+static int msm_gpio_probe(struct platform_device *pdev)
 {
 	int i, j = 0;
 	int grp_irq;
@@ -701,8 +719,11 @@ static int msm_gpio_probe(struct platform_device *dev)
 		set_irq_flags(i, IRQF_VALID);
 	}
 
-	for (i = 0; i < dev->num_resources; i++) {
-		grp_irq = platform_get_irq(dev, i);
+	irq_domain_add_legacy(pdev->dev.of_node, NR_GPIO_IRQS, FIRST_GPIO_IRQ,
+		0, &irq_domain_simple_ops, NULL);
+
+	for (i = 0; i < pdev->num_resources; i++) {
+		grp_irq = platform_get_irq(pdev, i);
 		if (grp_irq < 0)
 			return -ENXIO;
 
@@ -713,6 +734,13 @@ static int msm_gpio_probe(struct platform_device *dev)
 	for (i = 0; i < ARRAY_SIZE(msm_gpio_chips); i++) {
 		spin_lock_init(&msm_gpio_chips[i].lock);
 		__raw_writel(0, msm_gpio_chips[i].regs.int_en);
+		msm_gpio_chips[i].chip.label = "msm-gpio";
+		msm_gpio_chips[i].chip.dev = &pdev->dev;
+#ifdef CONFIG_OF_GPIO
+		msm_gpio_chips[i].chip.of_node = pdev->dev.of_node;
+		msm_gpio_chips[i].chip.of_xlate = msm_gpio_of_xlate;
+		msm_gpio_chips[i].chip.of_gpio_n_cells = 2;
+#endif
 		gpiochip_add(&msm_gpio_chips[i].chip);
 	}
 
@@ -720,11 +748,18 @@ static int msm_gpio_probe(struct platform_device *dev)
 	return 0;
 }
 
+static struct of_device_id msm_gpio_of_match_table[] = {
+	{.compatible = "qcom,msm-gpio-v1", },
+	{ },
+};
+MODULE_DEVICE_TABLE(of, msm_gpio_of_match_table);
+
 static struct platform_driver msm_gpio_driver = {
 	.probe = msm_gpio_probe,
 	.driver = {
-		.name = "msmgpio",
+		.name = "msm-gpio",
 		.owner = THIS_MODULE,
+		.of_match_table = msm_gpio_of_match_table,
 	},
 };
 
