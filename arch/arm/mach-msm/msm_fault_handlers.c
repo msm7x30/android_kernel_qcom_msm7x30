@@ -8,10 +8,8 @@
  * published by the Free Software Foundation.
  */
 
-#include <linux/kernel.h>
-#include <linux/init.h>
-#include <linux/signal.h>
 #include <linux/cpumask.h>
+#include <linux/signal.h>
 #include "acpuclock.h"
 
 #define __str(x) #x
