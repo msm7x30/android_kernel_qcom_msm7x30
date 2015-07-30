@@ -15,15 +15,10 @@
  *
  */
 
-#include <linux/module.h>
-#include <linux/kernel.h>
-#include <linux/err.h>
-#include <mach/msm_rpcrouter.h>
-#include "rpc_server_time_remote.h"
 #include <linux/rtc.h>
+#include <mach/msm_rpcrouter.h>
 
 /* time_remote_mtoa server definitions. */
-
 #define TIME_REMOTE_MTOA_PROG 0x3000005d
 #define TIME_REMOTE_MTOA_VERS_OLD 0
 #define TIME_REMOTE_MTOA_VERS 0x9202a8e4
@@ -31,11 +26,6 @@
 #define RPC_TIME_REMOTE_MTOA_NULL   0
 #define RPC_TIME_TOD_SET_APPS_BASES 2
 #define RPC_TIME_GET_APPS_USER_TIME 3
-
-struct rpc_time_tod_set_apps_bases_args {
-	uint32_t tick;
-	uint64_t stamp;
-};
 
 static int read_rtc0_time(struct msm_rpc_server *server,
 		   struct rpc_request_hdr *req,
@@ -144,6 +134,4 @@ static int __init rpc_server_init(void)
 		return ret;
 	return msm_rpc_create_server(&rpc_server[0]);
 }
-
-
 module_init(rpc_server_init);
