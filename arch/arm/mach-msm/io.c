@@ -57,7 +57,6 @@ static void __init msm_map_io(struct map_desc *io_desc, int size)
 
 #ifdef CONFIG_ARCH_MSM7X30
 static struct map_desc msm7x30_io_desc[] __initdata = {
-	MSM_CHIP_DEVICE(VIC, MSM7X30),
 	MSM_CHIP_DEVICE(CSR, MSM7X30),
 	MSM_CHIP_DEVICE(TMR, MSM7X30),
 	MSM_CHIP_DEVICE(GPIO1, MSM7X30),
