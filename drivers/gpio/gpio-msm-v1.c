@@ -40,84 +40,8 @@
 ** macros.
 */
 
-#if defined(CONFIG_ARCH_MSM7X30)
 #define MSM_GPIO1_REG(off) (MSM_GPIO1_BASE + (off))
 #define MSM_GPIO2_REG(off) (MSM_GPIO2_BASE + 0x400 + (off))
-#else
-#define MSM_GPIO1_REG(off) (MSM_GPIO1_BASE + 0x800 + (off))
-#define MSM_GPIO2_REG(off) (MSM_GPIO2_BASE + 0xC00 + (off))
-#endif
-
-#if defined(CONFIG_ARCH_MSM7X00A) || defined(CONFIG_ARCH_MSM7X25) ||\
-    defined(CONFIG_ARCH_MSM7X27)
-
-/* output value */
-#define MSM_GPIO_OUT_0         MSM_GPIO1_REG(0x00)  /* gpio  15-0  */
-#define MSM_GPIO_OUT_1         MSM_GPIO2_REG(0x00)  /* gpio  42-16 */
-#define MSM_GPIO_OUT_2         MSM_GPIO1_REG(0x04)  /* gpio  67-43 */
-#define MSM_GPIO_OUT_3         MSM_GPIO1_REG(0x08)  /* gpio  94-68 */
-#define MSM_GPIO_OUT_4         MSM_GPIO1_REG(0x0C)  /* gpio 106-95 */
-#define MSM_GPIO_OUT_5         MSM_GPIO1_REG(0x50)  /* gpio 107-121 */
-
-/* same pin map as above, output enable */
-#define MSM_GPIO_OE_0          MSM_GPIO1_REG(0x10)
-#define MSM_GPIO_OE_1          MSM_GPIO2_REG(0x08)
-#define MSM_GPIO_OE_2          MSM_GPIO1_REG(0x14)
-#define MSM_GPIO_OE_3          MSM_GPIO1_REG(0x18)
-#define MSM_GPIO_OE_4          MSM_GPIO1_REG(0x1C)
-#define MSM_GPIO_OE_5          MSM_GPIO1_REG(0x54)
-
-/* same pin map as above, input read */
-#define MSM_GPIO_IN_0          MSM_GPIO1_REG(0x34)
-#define MSM_GPIO_IN_1          MSM_GPIO2_REG(0x20)
-#define MSM_GPIO_IN_2          MSM_GPIO1_REG(0x38)
-#define MSM_GPIO_IN_3          MSM_GPIO1_REG(0x3C)
-#define MSM_GPIO_IN_4          MSM_GPIO1_REG(0x40)
-#define MSM_GPIO_IN_5          MSM_GPIO1_REG(0x44)
-
-/* same pin map as above, 1=edge 0=level interrup */
-#define MSM_GPIO_INT_EDGE_0    MSM_GPIO1_REG(0x60)
-#define MSM_GPIO_INT_EDGE_1    MSM_GPIO2_REG(0x50)
-#define MSM_GPIO_INT_EDGE_2    MSM_GPIO1_REG(0x64)
-#define MSM_GPIO_INT_EDGE_3    MSM_GPIO1_REG(0x68)
-#define MSM_GPIO_INT_EDGE_4    MSM_GPIO1_REG(0x6C)
-#define MSM_GPIO_INT_EDGE_5    MSM_GPIO1_REG(0xC0)
-
-/* same pin map as above, 1=positive 0=negative */
-#define MSM_GPIO_INT_POS_0     MSM_GPIO1_REG(0x70)
-#define MSM_GPIO_INT_POS_1     MSM_GPIO2_REG(0x58)
-#define MSM_GPIO_INT_POS_2     MSM_GPIO1_REG(0x74)
-#define MSM_GPIO_INT_POS_3     MSM_GPIO1_REG(0x78)
-#define MSM_GPIO_INT_POS_4     MSM_GPIO1_REG(0x7C)
-#define MSM_GPIO_INT_POS_5     MSM_GPIO1_REG(0xBC)
-
-/* same pin map as above, interrupt enable */
-#define MSM_GPIO_INT_EN_0      MSM_GPIO1_REG(0x80)
-#define MSM_GPIO_INT_EN_1      MSM_GPIO2_REG(0x60)
-#define MSM_GPIO_INT_EN_2      MSM_GPIO1_REG(0x84)
-#define MSM_GPIO_INT_EN_3      MSM_GPIO1_REG(0x88)
-#define MSM_GPIO_INT_EN_4      MSM_GPIO1_REG(0x8C)
-#define MSM_GPIO_INT_EN_5      MSM_GPIO1_REG(0xB8)
-
-/* same pin map as above, write 1 to clear interrupt */
-#define MSM_GPIO_INT_CLEAR_0   MSM_GPIO1_REG(0x90)
-#define MSM_GPIO_INT_CLEAR_1   MSM_GPIO2_REG(0x68)
-#define MSM_GPIO_INT_CLEAR_2   MSM_GPIO1_REG(0x94)
-#define MSM_GPIO_INT_CLEAR_3   MSM_GPIO1_REG(0x98)
-#define MSM_GPIO_INT_CLEAR_4   MSM_GPIO1_REG(0x9C)
-#define MSM_GPIO_INT_CLEAR_5   MSM_GPIO1_REG(0xB4)
-
-/* same pin map as above, 1=interrupt pending */
-#define MSM_GPIO_INT_STATUS_0  MSM_GPIO1_REG(0xA0)
-#define MSM_GPIO_INT_STATUS_1  MSM_GPIO2_REG(0x70)
-#define MSM_GPIO_INT_STATUS_2  MSM_GPIO1_REG(0xA4)
-#define MSM_GPIO_INT_STATUS_3  MSM_GPIO1_REG(0xA8)
-#define MSM_GPIO_INT_STATUS_4  MSM_GPIO1_REG(0xAC)
-#define MSM_GPIO_INT_STATUS_5  MSM_GPIO1_REG(0xB0)
-
-#endif
-
-#if defined(CONFIG_ARCH_MSM7X30)
 
 /* output value */
 #define MSM_GPIO_OUT_0         MSM_GPIO1_REG(0x00)   /* gpio  15-0   */
@@ -198,8 +122,6 @@
 #define MSM_GPIO_INT_STATUS_5  MSM_GPIO1_REG(0xB0)
 #define MSM_GPIO_INT_STATUS_6  MSM_GPIO1_REG(0xE0)
 #define MSM_GPIO_INT_STATUS_7  MSM_GPIO1_REG(0x234)
-
-#endif
 
 enum {
 	GPIO_DEBUG_SLEEP = 1U << 0,
@@ -383,21 +305,6 @@ static void msm_gpio_free(struct gpio_chip *chip, unsigned offset)
 #endif
 
 struct msm_gpio_chip msm_gpio_chips[] = {
-#if defined(CONFIG_ARCH_MSM7X00A)
-	MSM_GPIO_BANK(0,   0,  15),
-	MSM_GPIO_BANK(1,  16,  42),
-	MSM_GPIO_BANK(2,  43,  67),
-	MSM_GPIO_BANK(3,  68,  94),
-	MSM_GPIO_BANK(4,  95, 106),
-	MSM_GPIO_BANK(5, 107, 121),
-#elif defined(CONFIG_ARCH_MSM7X25) || defined(CONFIG_ARCH_MSM7X27)
-	MSM_GPIO_BANK(0,   0,  15),
-	MSM_GPIO_BANK(1,  16,  42),
-	MSM_GPIO_BANK(2,  43,  67),
-	MSM_GPIO_BANK(3,  68,  94),
-	MSM_GPIO_BANK(4,  95, 106),
-	MSM_GPIO_BANK(5, 107, 132),
-#elif defined(CONFIG_ARCH_MSM7X30)
 	MSM_GPIO_BANK(0,   0,  15),
 	MSM_GPIO_BANK(1,  16,  43),
 	MSM_GPIO_BANK(2,  44,  67),
@@ -406,16 +313,6 @@ struct msm_gpio_chip msm_gpio_chips[] = {
 	MSM_GPIO_BANK(5, 107, 133),
 	MSM_GPIO_BANK(6, 134, 150),
 	MSM_GPIO_BANK(7, 151, 181),
-#elif defined(CONFIG_ARCH_QSD8X50)
-	MSM_GPIO_BANK(0,   0,  15),
-	MSM_GPIO_BANK(1,  16,  42),
-	MSM_GPIO_BANK(2,  43,  67),
-	MSM_GPIO_BANK(3,  68,  94),
-	MSM_GPIO_BANK(4,  95, 103),
-	MSM_GPIO_BANK(5, 104, 121),
-	MSM_GPIO_BANK(6, 122, 152),
-	MSM_GPIO_BANK(7, 153, 164),
-#endif
 };
 
 static void msm_gpio_irq_ack(struct irq_data *d)
