@@ -29,6 +29,7 @@
 #include <linux/kernel.h>
 #include <linux/kthread.h>
 #include <linux/module.h>
+#include <linux/of.h>
 #include <linux/uaccess.h>
 #include <linux/wait.h>
 #include <linux/slab.h>
@@ -1184,14 +1185,22 @@ static ssize_t adsp_debug_write(struct file *file, const char __user *buf,
 }
 #endif
 
+#ifdef CONFIG_OF
+static struct of_device_id msm_adsp_of_match_table[] = {
+	{ .compatible = "qcom,qdsp5v2-adsp", },
+	{ /* end of table */ }
+};
+MODULE_DEVICE_TABLE(of, msm_adsp_of_match_table);
+#endif
+
 static struct platform_driver msm_adsp_driver = {
 	.probe = msm_adsp_probe,
 	.driver = {
+		.name = "msm_adsp",
 		.owner = THIS_MODULE,
+		.of_match_table = of_match_ptr(msm_adsp_of_match_table),
 	},
 };
-
-static char msm_adsp_driver_name[] = "msm_adsp";
 
 #ifdef CONFIG_DEBUG_FS
 static const struct file_operations adsp_debug_fops = {
@@ -1202,24 +1211,22 @@ static const struct file_operations adsp_debug_fops = {
 
 static int __init adsp_init(void)
 {
-	int rc;
-
 #ifdef CONFIG_DEBUG_FS
-	dentry_adsp    = debugfs_create_dir("adsp_cmd", 0);
+	dentry_adsp = debugfs_create_dir("adsp_cmd", 0);
 	if (!IS_ERR(dentry_adsp)) {
-		dentry_wdata   = debugfs_create_file("write_log", \
-		 S_IFREG | S_IRUGO, dentry_adsp,
-		 (void *) "write_log" , &adsp_debug_fops);
-		dentry_rdata   = debugfs_create_file("read_log", \
-		 S_IFREG | S_IRUGO, dentry_adsp,
-		 (void *) "read_log", &adsp_debug_fops);
+		dentry_wdata = debugfs_create_file("write_log",
+						   S_IFREG | S_IRUGO,
+						   dentry_adsp,
+						   "write_log",
+						   &adsp_debug_fops);
+		dentry_rdata = debugfs_create_file("read_log",
+						   S_IFREG | S_IRUGO,
+						   dentry_adsp,
+						   "read_log",
+						   &adsp_debug_fops);
 	}
 #endif /* CONFIG_DEBUG_FS */
 
-	msm_adsp_driver.driver.name = msm_adsp_driver_name;
-	rc = platform_driver_register(&msm_adsp_driver);
-	MM_INFO("%s -- %d\n", msm_adsp_driver_name, rc);
-	return rc;
+	return platform_driver_register(&msm_adsp_driver);
 }
-
-device_initcall(adsp_init);
+module_init(adsp_init);
