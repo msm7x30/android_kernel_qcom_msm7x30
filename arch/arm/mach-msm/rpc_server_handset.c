@@ -216,7 +216,7 @@ static struct hs_subs_rpc_req *hs_subs_req;
 struct msm_handset {
 	struct input_dev *ipdev;
 	struct switch_dev sdev;
-	struct msm_handset_platform_data *hs_pdata;
+	struct msm_handset_platform_data *pdata;
 	bool mic_on, hs_on;
 };
 
@@ -450,7 +450,7 @@ static int hs_rpc_pwr_cmd_arg(struct msm_rpc_client *client,
 	hs_pwr_cmd->handle = cpu_to_be32(hs_subs_req->hs_handle_data);
 	hs_pwr_cmd->disc_id1 = cpu_to_be32(HS_EXT_CMD_KPD_SET_PWR_KEY_THOLD);
 	hs_pwr_cmd->input_ptr = cpu_to_be32(0x01);
-	hs_pwr_cmd->input_val = cpu_to_be32(hs->hs_pdata->pwr_key_delay_ms);
+	hs_pwr_cmd->input_val = cpu_to_be32(hs->pdata->pwr_key_delay_ms);
 	hs_pwr_cmd->input_len = cpu_to_be32(0x01);
 	hs_pwr_cmd->disc_id2 = cpu_to_be32(HS_EXT_CMD_KPD_SET_PWR_KEY_THOLD);
 	hs_pwr_cmd->output_len = cpu_to_be32(0x00);
@@ -635,10 +635,10 @@ static int hs_probe(struct platform_device *pdev)
 	hs->ipdev = ipdev;
 
 	if (pdev->dev.platform_data)
-		hs->hs_pdata = pdev->dev.platform_data;
+		hs->pdata = pdev->dev.platform_data;
 
-	if (hs->hs_pdata->hs_name)
-		ipdev->name = hs->hs_pdata->hs_name;
+	if (hs->pdata->hs_name)
+		ipdev->name = hs->pdata->hs_name;
 	else
 		ipdev->name	= DRIVER_NAME;
 
