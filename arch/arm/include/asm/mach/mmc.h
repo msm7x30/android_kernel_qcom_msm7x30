@@ -8,7 +8,7 @@
 #include <linux/mmc/card.h>
 #include <linux/mmc/sdio_func.h>
 #include <mach/gpio.h>
-#include <mach/msm_bus.h>
+#include <linux/msm-bus.h>
 
 #define SDC_DAT1_DISABLE 0
 #define SDC_DAT1_ENABLE  1
@@ -144,14 +144,12 @@ struct mmc_platform_data {
 	unsigned int uhs_caps;
 	/* More capabilities */
 	unsigned int uhs_caps2;
-	/* Supported packed write */
-	unsigned int packed_write;
 	void (*sdio_lpm_gpio_setup)(struct device *, unsigned int);
         unsigned int status_irq;
 	int status_gpio;
 	/* Indicates the polarity of the GPIO line when card is inserted */
 	bool is_status_gpio_active_low;
-        unsigned int sdiowakeup_irq;
+	int sdiowakeup_irq;
         unsigned long irq_flags;
         unsigned long mmc_bus_width;
         int (*wpswitch) (struct device *);

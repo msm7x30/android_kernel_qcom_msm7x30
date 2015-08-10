@@ -22,6 +22,8 @@
 
 struct mmc_ios {
 	unsigned int	clock;			/* clock rate */
+	unsigned int	old_rate;       /* saved clock rate */
+	unsigned long	clk_ts;         /* time stamp of last updated clock */
 	unsigned short	vdd;
 
 /* vdd stores the bit number of the selected voltage range from below. */
@@ -149,6 +151,8 @@ struct mmc_host_ops {
 	unsigned long (*get_max_frequency)(struct mmc_host *host);
 	unsigned long (*get_min_frequency)(struct mmc_host *host);
 	int	(*notify_load)(struct mmc_host *, enum mmc_load);
+	int	(*stop_request)(struct mmc_host *host);
+	unsigned int	(*get_xfer_remain)(struct mmc_host *host);
 };
 
 struct mmc_card;
@@ -157,11 +161,18 @@ struct device;
 struct mmc_async_req {
 	/* active mmc request */
 	struct mmc_request	*mrq;
+	unsigned int cmd_flags; /* copied from struct request */
+
 	/*
 	 * Check error status of completed mmc request.
 	 * Returns 0 if success otherwise non zero.
 	 */
 	int (*err_check) (struct mmc_card *, struct mmc_async_req *);
+	/* Reinserts request back to the block layer */
+	void (*reinsert_req) (struct mmc_async_req *);
+	/* update what part of request is not done (packed_fail_idx) */
+	int (*update_interrupted_req) (struct mmc_card *,
+			struct mmc_async_req *);
 };
 
 /**
@@ -186,7 +197,10 @@ struct mmc_slot {
  * mmc_context_info - synchronization details for mmc context
  * @is_done_rcv		wake up reason was done request
  * @is_new_req		wake up reason was new request
- * @is_waiting_last_req	mmc context waiting for single running request
+ * @is_waiting_last_req	is true, when 1 request running on the bus and
+ *			NULL fetched as second request. MMC_BLK_NEW_REQUEST
+ *			notification will wake up mmc thread from waiting.
+ * @is_urgent		wake up reason was urgent request
  * @wait		wait queue
  * @lock		lock to protect data fields
  */
@@ -194,6 +208,7 @@ struct mmc_context_info {
 	bool			is_done_rcv;
 	bool			is_new_req;
 	bool			is_waiting_last_req;
+	bool			is_urgent;
 	wait_queue_head_t	wait;
 	spinlock_t		lock;
 };
@@ -291,9 +306,13 @@ struct mmc_host {
 #define MMC_CAP2_PACKED_CMD	(MMC_CAP2_PACKED_RD | \
 				 MMC_CAP2_PACKED_WR)
 #define MMC_CAP2_NO_PRESCAN_POWERUP (1 << 14)	/* Don't power up before scan */
-#define MMC_CAP2_INIT_BKOPS	(1 << 15)	/* Need to set BKOPS_EN */
-#define MMC_CAP2_CLK_SCALE	(1 << 16)	/* Allow dynamic clk scaling */
-
+#define MMC_CAP2_INIT_BKOPS	    (1 << 15)	/* Need to set BKOPS_EN */
+#define MMC_CAP2_PACKED_WR_CONTROL (1 << 16) /* Allow write packing control */
+#define MMC_CAP2_CLK_SCALE	(1 << 17)	/* Allow dynamic clk scaling */
+#define MMC_CAP2_STOP_REQUEST	(1 << 18)	/* Allow stop ongoing request */
+#define MMC_CAP2_SANITIZE	(1 << 20)		/* Support Sanitize */
+/* Allows Asynchronous SDIO irq while card is in 4-bit mode */
+#define MMC_CAP2_ASYNC_SDIO_IRQ_4BIT_MODE (1 << 21)
 	mmc_pm_flag_t		pm_caps;	/* supported pm features */
 
 #ifdef CONFIG_MMC_CLKGATE
@@ -338,11 +357,12 @@ struct mmc_host {
 
 	wait_queue_head_t	wq;
 	struct task_struct	*claimer;	/* task that has host claimed */
-	int			claim_cnt;	/* "claim" nesting count */
 	struct task_struct	*suspend_task;
+	int			claim_cnt;	/* "claim" nesting count */
 
 	struct delayed_work	detect;
 	struct wake_lock	detect_wake_lock;
+	const char		*wlock_name;
 	int			detect_change;	/* card detect flag */
 	struct mmc_slot		slot;
 
@@ -389,6 +409,17 @@ struct mmc_host {
 	} embedded_sdio_data;
 #endif
 
+#ifdef CONFIG_MMC_PERF_PROFILING
+	struct {
+
+		unsigned long rbytes_drv;  /* Rd bytes MMC Host  */
+		unsigned long wbytes_drv;  /* Wr bytes MMC Host  */
+		ktime_t rtime_drv;	   /* Rd time  MMC Host  */
+		ktime_t wtime_drv;	   /* Wr time  MMC Host  */
+		ktime_t start;
+	} perf;
+	bool perf_enable;
+#endif
 	struct {
 		unsigned long	busy_time_us;
 		unsigned long	window_time;
@@ -457,8 +488,7 @@ static inline void mmc_signal_sdio_irq(struct mmc_host *host)
 {
 	host->ops->enable_sdio_irq(host, 0);
 	host->sdio_irq_pending = true;
-	if (host->sdio_irq_thread)
-		wake_up_process(host->sdio_irq_thread);
+	wake_up_process(host->sdio_irq_thread);
 }
 
 #ifdef CONFIG_REGULATOR

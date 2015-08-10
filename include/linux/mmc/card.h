@@ -175,7 +175,8 @@ struct sdio_cccr {
 				wide_bus:1,
 				high_power:1,
 				high_speed:1,
-				disable_cd:1;
+				disable_cd:1,
+				async_intr_sup:1;
 };
 
 struct sdio_cis {
@@ -188,6 +189,7 @@ struct sdio_cis {
 struct mmc_host;
 struct sdio_func;
 struct sdio_func_tuple;
+struct mmc_queue;
 
 #define SDIO_MAX_FUNCS		7
 
@@ -201,6 +203,30 @@ enum mmc_blk_status {
 	MMC_BLK_ECC_ERR,
 	MMC_BLK_NOMEDIUM,
 	MMC_BLK_NEW_REQUEST,
+	MMC_BLK_URGENT,
+	MMC_BLK_URGENT_DONE,
+};
+
+enum mmc_packed_stop_reasons {
+	EXCEEDS_SEGMENTS = 0,
+	EXCEEDS_SECTORS,
+	WRONG_DATA_DIR,
+	FLUSH_OR_DISCARD,
+	EMPTY_QUEUE,
+	REL_WRITE,
+	THRESHOLD,
+	LARGE_SEC_ALIGN,
+	RANDOM,
+	FUA,
+	MAX_REASONS,
+};
+
+struct mmc_wr_pack_stats {
+	u32 *packing_events;
+	u32 pack_stop_reason[MAX_REASONS];
+	spinlock_t lock;
+	bool enabled;
+	bool print_in_read;
 };
 
 /* The number of MMC physical partitions.  These consist of:
@@ -226,6 +252,67 @@ struct mmc_part {
 #define MMC_BLK_DATA_AREA_RPMB	(1<<3)
 };
 
+#define BKOPS_NUM_OF_SEVERITY_LEVELS	3
+#define BKOPS_SEVERITY_1_INDEX		0
+#define BKOPS_SEVERITY_2_INDEX		1
+#define BKOPS_SEVERITY_3_INDEX		2
+struct mmc_bkops_stats {
+	spinlock_t		lock;
+	bool			enabled;
+	unsigned int		hpi;    /* hpi issued   */
+	unsigned int		suspend;/* card sleed issued */
+	bool			print_stats;
+	unsigned int bkops_level[BKOPS_NUM_OF_SEVERITY_LEVELS];
+	bool			ignore_card_bkops_status;
+};
+
+/**
+ * struct mmc_bkops_info - BKOPS data
+ * @dw:	Idle time bkops delayed work
+ * @host_delay_ms:	The host controller time to start bkops
+ * @delay_ms:	The time to start the BKOPS
+ *        delayed work once MMC thread is idle
+ * @min_sectors_to_queue_delayed_work: the changed
+ *        number of sectors that should issue check for BKOPS
+ *        need
+ * @size_percentage_to_queue_delayed_work: the changed
+ *        percentage of sectors that should issue check for
+ *        BKOPS need
+ * @bkops_stats: BKOPS statistics
+ * @poll_for_completion:	Poll on BKOPS completion
+ * @cancel_delayed_work: A flag to indicate if the delayed work
+ *        should be cancelled
+ * @sectors_changed:  number of  sectors written or
+ *       discard since the last idle BKOPS were scheduled
+ */
+struct mmc_bkops_info {
+	struct delayed_work	dw;
+	unsigned int		host_delay_ms;
+	unsigned int		delay_ms;
+	unsigned int		min_sectors_to_queue_delayed_work;
+	unsigned int		size_percentage_to_queue_delayed_work;
+	struct mmc_bkops_stats  bkops_stats;
+/*
+ * A default time for checking the need for non urgent BKOPS once mmcqd
+ * is idle.
+ */
+#define MMC_IDLE_BKOPS_TIME_MS 200
+	struct work_struct	poll_for_completion;
+/* Polling timeout and interval for waiting on non-blocking BKOPs completion */
+#define BKOPS_COMPLETION_POLLING_TIMEOUT_MS (4 * 60 * 1000) /* in ms */
+#define BKOPS_COMPLETION_POLLING_INTERVAL_MS 1000 /* in ms */
+	bool			cancel_delayed_work;
+	unsigned int		sectors_changed;
+/*
+ * Since canceling the delayed work might have significant effect on the
+ * performance of small requests we won't queue the delayed work every time
+ * mmcqd thread is idle.
+ * The delayed work for idle BKOPS will be scheduled only after a significant
+ * amount of write or discard data.
+ */
+#define BKOPS_SIZE_PERCENTAGE_TO_QUEUE_DELAYED_WORK 1 /* 1% */
+};
+
 /*
  * MMC device
  */
@@ -249,6 +336,7 @@ struct mmc_card {
 #define MMC_CARD_REMOVED	(1<<7)		/* card has been removed */
 #define MMC_STATE_HIGHSPEED_200	(1<<8)		/* card is in HS200 mode */
 #define MMC_STATE_DOING_BKOPS	(1<<10)		/* card is doing BKOPS */
+#define MMC_STATE_NEED_BKOPS	(1<<11)		/* card needs to do BKOPS */
 	unsigned int		quirks; 	/* card quirks */
 #define MMC_QUIRK_LENIENT_FN0	(1<<0)		/* allow SDIO FN0 writes outside of the VS CCCR range */
 #define MMC_QUIRK_BLKSZ_FOR_BYTE_MODE (1<<1)	/* use func->cur_blksize */
@@ -264,7 +352,7 @@ struct mmc_card {
 #define MMC_QUIRK_LONG_READ_TIME (1<<9)		/* Data read time > CSD says */
 #define MMC_QUIRK_SEC_ERASE_TRIM_BROKEN (1<<10)	/* Skip secure for erase/trim */
 						/* byte mode */
-#define MMC_QUIRK_INAND_DATA_TIMEOUT  (1<<11)    /* For incorrect data timeout */
+#define MMC_QUIRK_INAND_DATA_TIMEOUT  (1<<11)   /* For incorrect data timeout */
 
 	unsigned int		erase_size;	/* erase size in sectors */
  	unsigned int		erase_shift;	/* if erase unit is power 2 */
@@ -295,6 +383,11 @@ struct mmc_card {
 	struct dentry		*debugfs_root;
 	struct mmc_part	part[MMC_NUM_PHY_PARTITION]; /* physical partitions */
 	unsigned int    nr_parts;
+	unsigned int	part_curr;
+
+	struct mmc_wr_pack_stats wr_pack_stats; /* packed commands stats*/
+
+	struct mmc_bkops_info	bkops_info;
 };
 
 /*
@@ -417,6 +510,7 @@ static inline void __maybe_unused remove_quirk(struct mmc_card *card, int data)
 #define mmc_card_ext_capacity(c) ((c)->state & MMC_CARD_SDXC)
 #define mmc_card_removed(c)	((c) && ((c)->state & MMC_CARD_REMOVED))
 #define mmc_card_doing_bkops(c)	((c)->state & MMC_STATE_DOING_BKOPS)
+#define mmc_card_need_bkops(c)	((c)->state & MMC_STATE_NEED_BKOPS)
 
 #define mmc_card_set_present(c)	((c)->state |= MMC_STATE_PRESENT)
 #define mmc_card_set_readonly(c) ((c)->state |= MMC_STATE_READONLY)
@@ -430,7 +524,8 @@ static inline void __maybe_unused remove_quirk(struct mmc_card *card, int data)
 #define mmc_card_set_removed(c) ((c)->state |= MMC_CARD_REMOVED)
 #define mmc_card_set_doing_bkops(c)	((c)->state |= MMC_STATE_DOING_BKOPS)
 #define mmc_card_clr_doing_bkops(c)	((c)->state &= ~MMC_STATE_DOING_BKOPS)
-
+#define mmc_card_set_need_bkops(c)	((c)->state |= MMC_STATE_NEED_BKOPS)
+#define mmc_card_clr_need_bkops(c)	((c)->state &= ~MMC_STATE_NEED_BKOPS)
 /*
  * Quirk add/remove for MMC products.
  */
@@ -521,5 +616,8 @@ extern void mmc_unregister_driver(struct mmc_driver *);
 
 extern void mmc_fixup_device(struct mmc_card *card,
 			     const struct mmc_fixup *table);
-
+extern struct mmc_wr_pack_stats *mmc_blk_get_packed_statistics(
+			struct mmc_card *card);
+extern void mmc_blk_init_packed_statistics(struct mmc_card *card);
+extern void mmc_blk_disable_wr_packing(struct mmc_queue *mq);
 #endif /* LINUX_MMC_CARD_H */

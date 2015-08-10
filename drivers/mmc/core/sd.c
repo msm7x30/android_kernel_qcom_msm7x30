@@ -650,9 +650,12 @@ static int mmc_sd_change_bus_speed(struct mmc_host *host, unsigned long *freq)
 				MMC_SEND_TUNING_BLOCK);
 		mmc_host_clk_release(card->host);
 
-		if (err)
-			pr_warn("%s: %s: tuning execution failed %d\n",
-				   mmc_hostname(card->host), __func__, err);
+		if (err) {
+			pr_warn("%s: %s: tuning execution failed %d. Restoring to previous clock %lu\n",
+				   mmc_hostname(card->host), __func__, err,
+				   host->clk_scaling.curr_freq);
+			mmc_set_clock(host, host->clk_scaling.curr_freq);
+		}
 	}
 
 out:
@@ -1103,10 +1106,12 @@ static void mmc_sd_remove(struct mmc_host *host)
 	BUG_ON(!host);
 	BUG_ON(!host->card);
 
-	mmc_exit_clk_scaling(host);
-
 	mmc_remove_card(host->card);
+
+	mmc_claim_host(host);
 	host->card = NULL;
+	mmc_exit_clk_scaling(host);
+	mmc_release_host(host);
 }
 
 /*
@@ -1148,6 +1153,7 @@ static void mmc_sd_detect(struct mmc_host *host)
 	if (!retries) {
 		printk(KERN_ERR "%s(%s): Unable to re-detect card (%d)\n",
 		       __func__, mmc_hostname(host), err);
+		err = _mmc_detect_card_removed(host);
 	}
 #else
 	err = _mmc_detect_card_removed(host);
@@ -1215,8 +1221,11 @@ static int mmc_sd_resume(struct mmc_host *host)
 		if (err) {
 			printk(KERN_ERR "%s: Re-init card rc = %d (retries = %d)\n",
 			       mmc_hostname(host), err, retries);
-			mdelay(5);
 			retries--;
+			mmc_power_off(host);
+			usleep_range(5000, 5500);
+			mmc_power_up(host);
+			mmc_select_voltage(host, host->ocr);
 			continue;
 		}
 		break;
@@ -1261,8 +1270,8 @@ static const struct mmc_bus_ops mmc_sd_ops = {
 	.resume = NULL,
 	.power_restore = mmc_sd_power_restore,
 	.alive = mmc_sd_alive,
-	.change_bus_speed = mmc_sd_change_bus_speed,
 	.shutdown = mmc_sd_suspend,
+	.change_bus_speed = mmc_sd_change_bus_speed,
 };
 
 static const struct mmc_bus_ops mmc_sd_ops_unsafe = {
@@ -1272,8 +1281,8 @@ static const struct mmc_bus_ops mmc_sd_ops_unsafe = {
 	.resume = mmc_sd_resume,
 	.power_restore = mmc_sd_power_restore,
 	.alive = mmc_sd_alive,
-	.change_bus_speed = mmc_sd_change_bus_speed,
 	.shutdown = mmc_sd_suspend,
+	.change_bus_speed = mmc_sd_change_bus_speed,
 };
 
 static void mmc_sd_attach_bus_ops(struct mmc_host *host)
@@ -1358,6 +1367,10 @@ int mmc_attach_sd(struct mmc_host *host)
 		err = mmc_sd_init_card(host, host->ocr, NULL);
 		if (err) {
 			retries--;
+			mmc_power_off(host);
+			usleep_range(5000, 5500);
+			mmc_power_up(host);
+			mmc_select_voltage(host, host->ocr);
 			continue;
 		}
 		break;

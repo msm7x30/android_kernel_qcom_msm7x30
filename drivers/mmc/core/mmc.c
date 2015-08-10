@@ -293,7 +293,7 @@ static int mmc_read_ext_csd(struct mmc_card *card, u8 *ext_csd)
 	}
 
 	card->ext_csd.rev = ext_csd[EXT_CSD_REV];
-	if (card->ext_csd.rev > 6) {
+	if (card->ext_csd.rev > 7) {
 		pr_err("%s: unrecognised EXT_CSD revision %d\n",
 			mmc_hostname(card->host), card->ext_csd.rev);
 		err = -EINVAL;
@@ -480,10 +480,10 @@ static int mmc_read_ext_csd(struct mmc_card *card, u8 *ext_csd)
 				else
 					card->ext_csd.bkops_en = 1;
 			}
-			if (!card->ext_csd.bkops_en)
-				pr_info("%s: BKOPS_EN bit is not set\n",
-					mmc_hostname(card->host));
 		}
+
+		pr_info("%s: BKOPS_EN bit = %d\n",
+			mmc_hostname(card->host), card->ext_csd.bkops_en);
 
 		/* check whether the eMMC card supports HPI */
 		if (ext_csd[EXT_CSD_HPI_FEATURES] & 0x1) {
@@ -893,9 +893,12 @@ static int mmc_change_bus_speed(struct mmc_host *host, unsigned long *freq)
 				MMC_SEND_TUNING_BLOCK_HS200);
 		mmc_host_clk_release(card->host);
 
-		if (err)
-			pr_warn("%s: %s: tuning execution failed %d\n",
-				   mmc_hostname(card->host), __func__, err);
+		if (err) {
+			pr_warn("%s: %s: tuning execution failed %d. Restoring to previous clock %lu\n",
+				   mmc_hostname(card->host), __func__, err,
+				   host->clk_scaling.curr_freq);
+			mmc_set_clock(host, host->clk_scaling.curr_freq);
+		}
 	}
 out:
 	mmc_release_host(host);
@@ -1038,6 +1041,9 @@ static int mmc_init_card(struct mmc_host *host, u32 ocr,
 
 		/* Erase size depends on CSD and Extended CSD */
 		mmc_set_erase_size(card);
+
+		if (card->ext_csd.sectors && (rocr & MMC_CARD_SECTOR_ADDR))
+			mmc_card_set_blockaddr(card);
 	}
 
 	/*
@@ -1083,6 +1089,8 @@ static int mmc_init_card(struct mmc_host *host, u32 ocr,
 				 card->ext_csd.part_time);
 		if (err && err != -EBADMSG)
 			goto free_card;
+		card->part_curr = card->ext_csd.part_config &
+				  EXT_CSD_PART_CONFIG_ACC_MASK;
 	}
 
 	/*
@@ -1375,6 +1383,44 @@ static int mmc_init_card(struct mmc_host *host, u32 ocr,
 		} else {
 			card->ext_csd.packed_event_en = 1;
 		}
+
+	}
+
+	if (!oldcard) {
+		if ((host->caps2 & MMC_CAP2_PACKED_CMD) &&
+		    (card->ext_csd.max_packed_writes > 0)) {
+			/*
+			 * We would like to keep the statistics in an index
+			 * that equals the num of packed requests
+			 * (1 to max_packed_writes)
+			 */
+			card->wr_pack_stats.packing_events = kzalloc(
+				(card->ext_csd.max_packed_writes + 1) *
+				sizeof(*card->wr_pack_stats.packing_events),
+				GFP_KERNEL);
+			if (!card->wr_pack_stats.packing_events)
+				goto free_card;
+		}
+
+		if (card->ext_csd.bkops_en) {
+			INIT_DELAYED_WORK(&card->bkops_info.dw,
+					  mmc_start_idle_time_bkops);
+			INIT_WORK(&card->bkops_info.poll_for_completion,
+				  mmc_bkops_completion_polling);
+
+			/*
+			 * Calculate the time to start the BKOPs checking.
+			 * The host controller can set this time in order to
+			 * prevent a race condition before starting BKOPs
+			 * and going into suspend.
+			 * If the host controller didn't set this time,
+			 * a default value is used.
+			 */
+			card->bkops_info.delay_ms = MMC_IDLE_BKOPS_TIME_MS;
+			if (card->bkops_info.host_delay_ms)
+				card->bkops_info.delay_ms =
+					card->bkops_info.host_delay_ms;
+		}
 	}
 
 	if (!oldcard)
@@ -1429,10 +1475,12 @@ static void mmc_remove(struct mmc_host *host)
 	BUG_ON(!host);
 	BUG_ON(!host->card);
 
-	mmc_exit_clk_scaling(host);
-
 	mmc_remove_card(host->card);
+
+	mmc_claim_host(host);
 	host->card = NULL;
+	mmc_exit_clk_scaling(host);
+	mmc_release_host(host);
 }
 
 /*
@@ -1481,13 +1529,14 @@ static int _mmc_suspend(struct mmc_host *host, bool is_suspend)
 	BUG_ON(!host);
 	BUG_ON(!host->card);
 
+	if (!mmc_try_claim_host(host))
+		return -EBUSY;
+
 	/*
 	 * Disable clock scaling before suspend and enable it after resume so
 	 * as to avoid clock scaling decisions kicking in during this window.
 	 */
 	mmc_disable_clk_scaling(host);
-
-	mmc_claim_host(host);
 
 	err = mmc_flush_cache(host->card);
 	if (err)
@@ -1576,7 +1625,7 @@ static int mmc_sleep(struct mmc_host *host)
 	if (card && card->ext_csd.rev >= 3) {
 		err = mmc_card_sleepawake(host, 1);
 		if (err < 0)
-			pr_debug("%s: Error %d while putting card into sleep",
+			pr_warn("%s: Error %d while putting card into sleep",
 				 mmc_hostname(host), err);
 	}
 
@@ -1607,8 +1656,8 @@ static const struct mmc_bus_ops mmc_ops = {
 	.resume = NULL,
 	.power_restore = mmc_power_restore,
 	.alive = mmc_alive,
-	.change_bus_speed = mmc_change_bus_speed,
 	.shutdown = mmc_shutdown,
+	.change_bus_speed = mmc_change_bus_speed,
 };
 
 static const struct mmc_bus_ops mmc_ops_unsafe = {
@@ -1620,8 +1669,8 @@ static const struct mmc_bus_ops mmc_ops_unsafe = {
 	.resume = mmc_resume,
 	.power_restore = mmc_power_restore,
 	.alive = mmc_alive,
-	.change_bus_speed = mmc_change_bus_speed,
 	.shutdown = mmc_shutdown,
+	.change_bus_speed = mmc_change_bus_speed,
 };
 
 static void mmc_attach_bus_ops(struct mmc_host *host)
