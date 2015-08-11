@@ -763,7 +763,7 @@ static int pm8xxx_pwm_set_dtest(struct pm8xxx_pwm_chip *chip, int enable)
  * @pwm_chip: the PWM chip
  * @pwm: the PWM device
  */
-void pm8xxx_pwm_free(struct pwm_chip *pwm_chip, struct pwm_device *pwm)
+static void pm8xxx_pwm_free(struct pwm_chip *pwm_chip, struct pwm_device *pwm)
 {
 	struct pm8xxx_pwm_chip	*chip = pm8xxx_pwm_from_pwm_chip(pwm_chip);
 
@@ -791,8 +791,8 @@ void pm8xxx_pwm_free(struct pwm_chip *pwm_chip, struct pwm_device *pwm)
  * @period_us: period in microseconds
  * @duty_us: duty cycle in microseconds
  */
-int pm8xxx_pwm_config(struct pwm_chip *pwm_chip, struct pwm_device *pwm,
-				int duty_us, int period_us)
+static int pm8xxx_pwm_config(struct pwm_chip *pwm_chip, struct pwm_device *pwm,
+			     int duty_us, int period_us)
 {
 	struct pm8xxx_pwm_chip *chip = pm8xxx_pwm_from_pwm_chip(pwm_chip);
 	struct pm8xxx_pwm_period *period;
@@ -843,7 +843,7 @@ int pm8xxx_pwm_config(struct pwm_chip *pwm_chip, struct pwm_device *pwm,
  * @pwm_chip: the PWM chip
  * @pwm: the PWM device
  */
-int pm8xxx_pwm_enable(struct pwm_chip *pwm_chip, struct pwm_device *pwm)
+static int pm8xxx_pwm_enable(struct pwm_chip *pwm_chip, struct pwm_device *pwm)
 {
 	int	rc = 0;
 	struct pm8xxx_pwm_chip *chip = pm8xxx_pwm_from_pwm_chip(pwm_chip);
@@ -880,7 +880,8 @@ int pm8xxx_pwm_enable(struct pwm_chip *pwm_chip, struct pwm_device *pwm)
  * @pwm_chip: the PWM chip
  * @pwm: the PWM device
  */
-void pm8xxx_pwm_disable(struct pwm_chip *pwm_chip, struct pwm_device *pwm)
+static void pm8xxx_pwm_disable(struct pwm_chip *pwm_chip,
+			       struct pwm_device *pwm)
 {
 	struct pm8xxx_pwm_chip *chip = pm8xxx_pwm_from_pwm_chip(pwm_chip);
 	chip->current_channel = pwm->hwpwm;
