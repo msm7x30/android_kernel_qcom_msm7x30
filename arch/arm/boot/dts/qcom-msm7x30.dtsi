@@ -1,0 +1,8 @@
+/dts-v1/;
+
+/include/ "skeleton.dtsi"
+
+/ {
+	model = "Qualcomm MSM7x30";
+	compatible = "qcom,msm7x30";
+};

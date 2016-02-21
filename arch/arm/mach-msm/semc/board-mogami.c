@@ -248,12 +248,7 @@ static struct platform_device ion_dev;
 #define PM8058_MPP_BASE			   PM8058_GPIO_PM_TO_SYS(PM8058_GPIOS)
 #define PM8058_MPP_PM_TO_SYS(pm_gpio)	   (pm_gpio + PM8058_MPP_BASE)
 
-#define DDR0_BANK_BASE PHYS_OFFSET
-#define DDR0_BANK_SIZE 0X03C00000
-#define DDR1_BANK_BASE 0x07000000
-#define DDR1_BANK_SIZE 0x09000000
 #define DDR2_BANK_BASE 0X40000000
-#define DDR2_BANK_SIZE 0X10000000
 
 unsigned long ebi1_phys_offset = DDR2_BANK_BASE;
 EXPORT_SYMBOL(ebi1_phys_offset);
@@ -3952,19 +3947,12 @@ static void __init msm7x30_init_early(void)
 	msm7x30_allocate_memory_regions();
 }
 
-static void __init msm7x30_fixup(struct tag *tags, char **cmdline,
-				 struct meminfo *mi)
-{
-	mi->nr_banks = 3;
-	mi->bank[0].start = DDR0_BANK_BASE;
-	mi->bank[0].size = DDR0_BANK_SIZE;
-	mi->bank[1].start = DDR1_BANK_BASE;
-	mi->bank[1].size = DDR1_BANK_SIZE;
-	mi->bank[2].start = DDR2_BANK_BASE;
-	mi->bank[2].size = DDR2_BANK_SIZE;
-}
+static const char *msm7x30_dt_compat[] __initdata = {
+	"qcom,msm7x30",
+	NULL
+};
 
-MACHINE_START(SEMC_MOGAMI, "mogami")
+DT_MACHINE_START(SEMC_MOGAMI, "Qualcomm MSM7x30 (FDT)")
 	.atag_offset = 0x100,
 	.map_io = msm7x30_map_io,
 	.reserve = msm7x30_reserve,
@@ -3973,5 +3961,5 @@ MACHINE_START(SEMC_MOGAMI, "mogami")
 	.init_time = msm_timer_init,
 	.init_early = msm7x30_init_early,
 	.handle_irq = vic_handle_irq,
-	.fixup = msm7x30_fixup,
+	.dt_compat = msm7x30_dt_compat,
 MACHINE_END
