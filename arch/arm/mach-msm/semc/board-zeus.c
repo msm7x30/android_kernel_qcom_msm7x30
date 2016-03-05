@@ -32,6 +32,7 @@
 #include <linux/dma-contiguous.h>
 #include <linux/dma-mapping.h>
 #include <linux/regulator/consumer.h>
+#include <linux/irqchip.h>
 
 #include <asm/system_info.h>
 #include <asm/mach-types.h>
@@ -2866,11 +2867,6 @@ static struct msm_i2c_ssbi_platform_data msm_i2c_ssbi7_pdata = {
 };
 #endif
 
-static void __init msm7x30_init_irq(void)
-{
-	msm_init_irq();
-}
-
 static struct msm_gpio msm_nand_ebi2_cfg_data[] = {
 	{GPIO_CFG(86, 1, GPIO_CFG_OUTPUT, GPIO_CFG_PULL_UP, GPIO_CFG_8MA), "ebi2_cs1"},
 	{GPIO_CFG(115, 2, GPIO_CFG_OUTPUT, GPIO_CFG_PULL_UP, GPIO_CFG_8MA), "ebi2_busy1"},
@@ -3616,10 +3612,9 @@ DT_MACHINE_START(SEMC_ZEUS, "Qualcomm MSM7x30 (FDT)")
 	.atag_offset = 0x100,
 	.map_io = msm7x30_map_io,
 	.reserve = msm7x30_reserve,
-	.init_irq = msm7x30_init_irq,
+	.init_irq = irqchip_init,
 	.init_machine = msm7x30_init,
 	.init_time = msm_timer_init,
 	.init_early = msm7x30_init_early,
-	.handle_irq = vic_handle_irq,
 	.dt_compat = msm7x30_dt_compat,
 MACHINE_END

@@ -5,6 +5,15 @@
 / {
 	model = "Qualcomm MSM7x30";
 	compatible = "qcom,msm7x30";
+	interrupt-parent = <&intc>;
+
+	intc: interrupt-controller@C0080000 {
+		compatible = "qcom,msm-vic";
+		interrupt-controller;
+		#interrupt-cells = <2>;
+		reg = <0xC0080000 0x1000>;
+		num-irqs = <128>;
+	};
 
 	msmhandset {
 		compatible = "qcom,msm-handset";

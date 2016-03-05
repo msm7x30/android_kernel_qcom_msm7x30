@@ -29,6 +29,7 @@
 #include <linux/dma-contiguous.h>
 #include <linux/dma-mapping.h>
 #include <linux/regulator/consumer.h>
+#include <linux/irqchip.h>
 
 #include <asm/mach-types.h>
 #include <asm/mach/arch.h>
@@ -2781,11 +2782,6 @@ static struct msm_i2c_ssbi_platform_data msm_i2c_ssbi7_pdata = {
 };
 #endif
 
-static void __init msm7x30_init_irq(void)
-{
-	msm_init_irq();
-}
-
 struct sdcc_gpio {
 	struct msm_gpio *cfg_data;
 	uint32_t size;
@@ -3397,11 +3393,10 @@ DT_MACHINE_START(HUAWEI_U8860, "Qualcomm MSM7x30 (FDT)")
 	.atag_offset = 0x100,
 	.map_io = msm7x30_map_io,
 	.reserve = msm7x30_reserve,
-	.init_irq = msm7x30_init_irq,
+	.init_irq = irqchip_init,
 	.init_machine = msm7x30_init,
 	.init_time = msm_timer_init,
 	.init_early = msm7x30_init_early,
-	.handle_irq = vic_handle_irq,
 	.dt_compat = msm7x30_dt_compat,
 MACHINE_END
 
@@ -3409,11 +3404,10 @@ DT_MACHINE_START(HUAWEI_U8860LP, "Qualcomm MSM7x30 (FDT)")
 	.atag_offset = 0x100,
 	.map_io = msm7x30_map_io,
 	.reserve = msm7x30_reserve,
-	.init_irq = msm7x30_init_irq,
+	.init_irq = irqchip_init,
 	.init_machine = msm7x30_init,
 	.init_time = msm_timer_init,
 	.init_early = msm7x30_init_early,
-	.handle_irq = vic_handle_irq,
 	.dt_compat = msm7x30_dt_compat,
 MACHINE_END
 
@@ -3421,11 +3415,10 @@ DT_MACHINE_START(HUAWEI_U8860_51, "Qualcomm MSM7x30 (FDT)")
 	.atag_offset = 0x100,
 	.map_io = msm7x30_map_io,
 	.reserve = msm7x30_reserve,
-	.init_irq = msm7x30_init_irq,
+	.init_irq = irqchip_init,
 	.init_machine = msm7x30_init,
 	.init_time = msm_timer_init,
 	.init_early = msm7x30_init_early,
-	.handle_irq = vic_handle_irq,
 	.dt_compat = msm7x30_dt_compat,
 MACHINE_END
 
@@ -3433,11 +3426,10 @@ DT_MACHINE_START(HUAWEI_U8860_92, "Qualcomm MSM7x30 (FDT)")
 	.atag_offset = 0x100,
 	.map_io = msm7x30_map_io,
 	.reserve = msm7x30_reserve,
-	.init_irq = msm7x30_init_irq,
+	.init_irq = irqchip_init,
 	.init_machine = msm7x30_init,
 	.init_time = msm_timer_init,
 	.init_early = msm7x30_init_early,
-	.handle_irq = vic_handle_irq,
 	.dt_compat = msm7x30_dt_compat,
 MACHINE_END
 
@@ -3445,11 +3437,10 @@ DT_MACHINE_START(HUAWEI_U8860_R, "Qualcomm MSM7x30 (FDT)")
 	.atag_offset = 0x100,
 	.map_io = msm7x30_map_io,
 	.reserve = msm7x30_reserve,
-	.init_irq = msm7x30_init_irq,
+	.init_irq = irqchip_init,
 	.init_machine = msm7x30_init,
 	.init_time = msm_timer_init,
 	.init_early = msm7x30_init_early,
-	.handle_irq = vic_handle_irq,
 	.dt_compat = msm7x30_dt_compat,
 MACHINE_END
 
@@ -3457,10 +3448,9 @@ DT_MACHINE_START(HUAWEI_C8860, "Qualcomm MSM7x30 (FDT)")
 	.atag_offset = 0x100,
 	.map_io = msm7x30_map_io,
 	.reserve = msm7x30_reserve,
-	.init_irq = msm7x30_init_irq,
+	.init_irq = irqchip_init,
 	.init_machine = msm7x30_init,
 	.init_time = msm_timer_init,
 	.init_early = msm7x30_init_early,
-	.handle_irq = vic_handle_irq,
 	.dt_compat = msm7x30_dt_compat,
 MACHINE_END
