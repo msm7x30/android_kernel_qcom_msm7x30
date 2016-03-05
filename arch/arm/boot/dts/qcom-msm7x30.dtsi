@@ -15,6 +15,15 @@
 		num-irqs = <128>;
 	};
 
+	msmgpio: gpio-controller {
+		compatible = "qcom,msm-gpio-v1";
+		gpio-controller;
+		#gpio-cells = <2>;
+		interrupt-controller;
+		#interrupt-cells = <2>;
+		interrupts = <50 0>, <51 0>;
+	};
+
 	msmhandset {
 		compatible = "qcom,msm-handset";
 		hs-name = "7k_handset";
