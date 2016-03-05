@@ -69,7 +69,6 @@
 #include <mach/qdsp5v2/mi2s.h>
 #include <mach/qdsp5v2/audio_dev_ctl.h>
 #include "smd_private.h"
-#include "proccomm-regulator.h"
 
 #include "board-hw7x30.h"
 #include "pm.h"
@@ -222,18 +221,6 @@ static int pm8058_gpios_init(void)
 
 	return 0;
 }
-
-/* Regulator API support */
-
-#ifdef CONFIG_MSM_PROC_COMM_REGULATOR
-static struct platform_device msm_proccomm_regulator_dev = {
-	.name	= PROCCOMM_REGULATOR_DEV_NAME,
-	.id	= -1,
-	.dev	= {
-		.platform_data = &msm7x30_proccomm_regulator_data
-	}
-};
-#endif
 
 static const unsigned int pm8xxx_keymap[] = {
 	KEY(0, 0, KEY_VOLUMEUP),
@@ -2853,9 +2840,6 @@ static struct platform_device msm_adc_device = {
 static struct platform_device *devices[] __initdata = {
 #if defined(CONFIG_SERIAL_MSM) || defined(CONFIG_MSM_SERIAL_DEBUGGER)
 	&msm_device_uart2,
-#endif
-#ifdef CONFIG_MSM_PROC_COMM_REGULATOR
-	&msm_proccomm_regulator_dev,
 #endif
 	&asoc_msm_pcm,
 	&asoc_msm_dai0,

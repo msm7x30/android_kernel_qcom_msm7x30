@@ -80,7 +80,6 @@
 #include <linux/msm_ion.h>
 #endif
 
-#include "board-semc7x30-regulator.h"
 #include "pm.h"
 
 #include "gpio-semc.h"
@@ -475,18 +474,6 @@ static int pm8058_gpios_init(void)
 	return 0;
 }
 
-/* Regulator API support */
-
-#ifdef CONFIG_MSM_PROC_COMM_REGULATOR
-static struct platform_device msm_proccomm_regulator_dev = {
-	.name = PROCCOMM_REGULATOR_DEV_NAME,
-	.id   = -1,
-	.dev  = {
-		.platform_data = &msm7x30_proccomm_regulator_data
-	}
-};
-#endif
-
 static struct pm8xxx_irq_platform_data pm8xxx_irq_pdata = {
 	.irq_base		= PMIC8058_IRQ_BASE,
 	.devirq			= MSM_GPIO_TO_INT(PMIC_GPIO_INT),
@@ -763,25 +750,25 @@ static struct regulator *qup_vreg;
 static void msm_camera_vreg_enable(void)
 {
 	int rc;
-	vreg_helper("gp15", 1200000, 1);  /* ldo22 */
+	vreg_helper("ldo22", 1200000, 1);
 	rc = regulator_enable(qup_vreg);
 	if (rc) {
 		pr_err("%s: regulator_enable failed: %d\n",
 		__func__, rc);
 	}
-	vreg_helper("gp2", 2800000, 1);   /* ldo11 */
+	vreg_helper("ldo11", 2800000, 1);
 }
 
 static void msm_camera_vreg_disable(void)
 {
 	int rc;
-	vreg_helper("gp2", 2800000, 0);
+	vreg_helper("ldo11", 2800000, 0);
 	rc = regulator_disable(qup_vreg);
 	if (rc) {
 		pr_err("%s: could not disable regulator: %d\n",
 				__func__, rc);
 	}
-	vreg_helper("gp15", 1200000, 0);
+	vreg_helper("ldo22", 1200000, 0);
 }
 
 static void config_gpio_table(uint32_t *table, int len)
@@ -1103,7 +1090,7 @@ void msm_snddev_poweramp_off(void)
 }
 
 static struct regulator_bulk_data snddev_regs[] = {
-	{ .supply = "gp4", .min_uV = 2600000, .max_uV = 2600000 },
+	{ .supply = "ldo10", .min_uV = 2600000, .max_uV = 2600000 },
 	{ .supply = "ncp", .min_uV = 1800000, .max_uV = 1800000 },
 };
 
@@ -1429,9 +1416,9 @@ static void __init msm7x30_init_marimba(void)
 	int rc;
 
 	struct regulator_bulk_data regs[] = {
-		{ .supply = "s3",   .min_uV = 1800000, .max_uV = 1800000 },
-		{ .supply = "gp16", .min_uV = 1200000, .max_uV = 1200000 },
-		{ .supply = "usb2", .min_uV = 1800000, .max_uV = 1800000 },
+		{ .supply = "smps3",   .min_uV = 1800000, .max_uV = 1800000 },
+		{ .supply = "ldo24", .min_uV = 1200000, .max_uV = 1200000 },
+		{ .supply = "ldo7", .min_uV = 1800000, .max_uV = 1800000 },
 	};
 
 	rc = msm_marimba_codec_init();
@@ -1769,12 +1756,12 @@ static int novatek_power(int on)
 
 	if (on) {
 		if (!enabled_once) {
-			rc = vreg_helper("gp6", 2850000, 1);  /* ldo15 */
+			rc = vreg_helper("ldo15", 2850000, 1);
 			if (rc)
 				goto out;
-			rc = vreg_helper("gp9", 1800000, 1);  /* ldo12 */
+			rc = vreg_helper("ldo12", 1800000, 1);
 			if (rc) {
-				vreg_helper("gp6", 2850000, 0);
+				vreg_helper("ldo15", 2850000, 0);
 				goto out;
 			}
 			hr_usleep(21); /* spec says > 20us */
@@ -1837,7 +1824,7 @@ void charger_connected(int on)
 
 static void cypress_touch_gpio_init(void)
 {
-	vreg_helper("gp13", 3000000, 1); /* ldo20 */
+	vreg_helper("ldo20", 3000000, 1);
 
 	/* Avoid writing firmward on SP3 */
 	if (BOARD_HWID_SP3 == board_hwid)
@@ -2180,7 +2167,7 @@ static struct regulator *vreg_3p3;
 static int msm_hsusb_ldo_init(int init)
 {
 	if (init) {
-		vreg_3p3 = regulator_get(NULL, "usb");
+		vreg_3p3 = regulator_get(NULL, "ldo6");
 		if (IS_ERR(vreg_3p3))
 			return PTR_ERR(vreg_3p3);
 		regulator_set_voltage(vreg_3p3, USB_VREG_MV * 1000, USB_VREG_MV * 1000);
@@ -2437,10 +2424,10 @@ static struct simple_remote_platform_regulators regs[] =  {
 		.name = "ncp",
 	},
 	{
-		.name = "s3",
+		.name = "smps3",
 	},
 	{
-		.name = "s2",
+		.name = "smps2",
 	},
 
 };
@@ -2670,9 +2657,6 @@ static struct platform_device *devices[] __initdata = {
 #endif
 #ifdef CONFIG_PSTORE_RAM
 	&ramoops_dev,
-#endif
-#ifdef CONFIG_MSM_PROC_COMM_REGULATOR
-	&msm_proccomm_regulator_dev,
 #endif
 	&asoc_msm_pcm,
 	&asoc_msm_dai0,
@@ -3171,7 +3155,7 @@ out:
 static void __init msm7x30_init_mmc(void)
 {
 #ifdef CONFIG_MMC_MSM_SDC3_SUPPORT
-	if (mmc_regulator_init(3, "s3", 1800000))
+	if (mmc_regulator_init(3, "smps3", 1800000))
 		goto out3;
 
 	msm_sdcc_setup_gpio(3, 1);
@@ -3179,7 +3163,7 @@ static void __init msm7x30_init_mmc(void)
 out3:
 #endif
 #ifdef CONFIG_MMC_MSM_SDC4_SUPPORT
-	if (mmc_regulator_init(4, "mmc", 2850000))
+	if (mmc_regulator_init(4, "ldo5", 2850000))
 		return;
 
 	msm_add_sdcc(4, &msm7x30_sdc4_data);
@@ -3203,11 +3187,11 @@ static void __init zeus_temp_fixups(void)
 				GPIO_CFG_2MA), GPIO_CFG_ENABLE);
 
 	/* The sequencing for AKM & BMA needs to be L10 -> L8 */
-	vreg_helper("gp4", 2600000, 1);  /* ldo10 - BMA150, AK8975B */
-	vreg_helper("gp7", 1800000, 1);  /* ldo08 - BMA150, AK8975B */
+	vreg_helper("ldo10", 2600000, 1); /* BMA150, AK8975B */
+	vreg_helper("ldo8", 1800000, 1);  /* BMA150, AK8975B */
 
-	vreg_helper("wlan", 1800000, 1); /* ldo13 - touchpad VDIO */
-	vreg_helper("gp10", 2800000, 1); /* ldo16 - touchpad */
+	vreg_helper("ldo13", 1800000, 1); /* touchpad VDIO */
+	vreg_helper("ldo16", 2800000, 1); /* touchpad */
 }
 
 static void __init msm7x30_init_nand(void)

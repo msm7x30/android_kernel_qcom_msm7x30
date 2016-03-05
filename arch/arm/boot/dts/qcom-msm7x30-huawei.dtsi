@@ -15,4 +15,22 @@
 	msmhandset {
 		pwr-key-delay-ms = <0>; /* 0 will disable end key */
 	};
+
+	ldo8: regulator-ldo8 {
+		regulator-max-microvolt = <2850000>;
+	};
+
+	ldo10: regulator-ldo10 {
+		regulator-min-microvolt = <2700000>;
+		regulator-max-microvolt = <2700000>;
+	};
+
+	ldo11: regulator-ldo11 {
+		regulator-min-microvolt = <1800000>;
+	};
+
+	ldo20: regulator-ldo20 {
+		regulator-min-microvolt = <1800000>;
+		regulator-always-on;
+	};
 };

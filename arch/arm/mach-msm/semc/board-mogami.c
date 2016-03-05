@@ -80,7 +80,6 @@
 #include <linux/msm_ion.h>
 #endif
 
-#include "board-semc7x30-regulator.h"
 #include "pm.h"
 
 #include "gpio-semc.h"
@@ -492,18 +491,6 @@ static int pm8058_gpios_init(void)
 	return 0;
 }
 
-/* Regulator API support */
-
-#ifdef CONFIG_MSM_PROC_COMM_REGULATOR
-static struct platform_device msm_proccomm_regulator_dev = {
-	.name = PROCCOMM_REGULATOR_DEV_NAME,
-	.id   = -1,
-	.dev  = {
-		.platform_data = &msm7x30_proccomm_regulator_data
-	}
-};
-#endif
-
 static struct pm8xxx_irq_platform_data pm8xxx_irq_pdata = {
 	.irq_base		= PMIC8058_IRQ_BASE,
 	.devirq			= MSM_GPIO_TO_INT(PMIC_GPIO_INT),
@@ -806,15 +793,15 @@ static struct msm_camera_sensor_info msm_camera_sensor_semc_camera_data = {
 	},
 	.vcam_sd       = {
 		.type = MSM_CAMERA_SENSOR_PWR_VREG,
-		.resource.name = "gp15"
+		.resource.name = "ldo22"
 	},
 	.vcam_sa       = {
 		.type = MSM_CAMERA_SENSOR_PWR_VREG,
-		.resource.name = "gp2"
+		.resource.name = "ldo11"
 	},
 	.vcam_af       = {
 		.type = MSM_CAMERA_SENSOR_PWR_VREG,
-		.resource.name = "gp10"
+		.resource.name = "ldo16"
 	},
 };
 
@@ -854,15 +841,15 @@ static struct msm_camera_sensor_info msm_camera_sensor_semc_sub_camera_data = {
 	},
 	.vcam_sd       = {
 		.type = MSM_CAMERA_SENSOR_PWR_VREG,
-		.resource.name = "gp15"
+		.resource.name = "ldo22"
 	},
 	.vcam_sa       = {
 		.type = MSM_CAMERA_SENSOR_PWR_VREG,
-		.resource.name = "gp2"
+		.resource.name = "ldo11"
 	},
 	.vcam_af       = {
 		.type = MSM_CAMERA_SENSOR_PWR_VREG,
-		.resource.name = "gp10"
+		.resource.name = "ldo16"
 	},
 };
 
@@ -984,7 +971,7 @@ void msm_snddev_poweramp_off(void)
 }
 
 static struct regulator_bulk_data snddev_regs[] = {
-	{ .supply = "gp4", .min_uV = 2600000, .max_uV = 2600000 },
+	{ .supply = "ldo10", .min_uV = 2600000, .max_uV = 2600000 },
 	{ .supply = "ncp", .min_uV = 1800000, .max_uV = 1800000 },
 };
 
@@ -1245,7 +1232,7 @@ static void msm_marimba_shutdown_power(void)
 #define MARIMBA_SLAVE_ID_QMEMBIST_ADDR	0X66
 
 static struct regulator_bulk_data codec_regs[] = {
-	{ .supply = "s4", .min_uV = 2200000, .max_uV = 2200000 },
+	{ .supply = "smps4", .min_uV = 2200000, .max_uV = 2200000 },
 };
 
 static int __init msm_marimba_codec_init(void)
@@ -1309,9 +1296,9 @@ static void __init msm7x30_init_marimba(void)
 	int rc;
 
 	struct regulator_bulk_data regs[] = {
-		{ .supply = "s3",   .min_uV = 1800000, .max_uV = 1800000 },
-		{ .supply = "gp16", .min_uV = 1200000, .max_uV = 1200000 },
-		{ .supply = "usb2", .min_uV = 1800000, .max_uV = 1800000 },
+		{ .supply = "smps3",   .min_uV = 1800000, .max_uV = 1800000 },
+		{ .supply = "ldo24", .min_uV = 1200000, .max_uV = 1200000 },
+		{ .supply = "ldo7", .min_uV = 1800000, .max_uV = 1800000 },
 	};
 
 	rc = msm_marimba_codec_init();
@@ -1655,8 +1642,8 @@ static struct platform_device novatek_device = {
 /*  Generic LCD Regulators On function for SEMC mogami displays */
 static void semc_mogami_lcd_regulators_on(void)
 {
-	vreg_helper("gp7", 1800000, 1);  /* L8 */
-	vreg_helper("gp6", LCD_VDD_VOLTAGE, 1);  /* L15 */
+	vreg_helper("ldo8", 1800000, 1);
+	vreg_helper("ldo15", LCD_VDD_VOLTAGE, 1);
 }
 
 /* Generic Power On function for SEMC mogami displays */
@@ -1697,8 +1684,8 @@ static void sony_hvga_lcd_power_off(void)
 {
 	gpio_set_value(GPIO_MSM_MDDI_XRES, 0);
 	msleep(121);    /* spec: > 120ms */
-	vreg_helper("gp7", 1800000, 0);  /* L8 */
-	vreg_helper("gp6", LCD_VDD_VOLTAGE, 0);  /* L15 */
+	vreg_helper("ldo8", 1800000, 0);
+	vreg_helper("ldo15", LCD_VDD_VOLTAGE, 0);
 }
 
 static void sony_hvga_lcd_exit_deep_standby(void)
@@ -1738,8 +1725,8 @@ static void hitachi_hvga_lcd_power_off(void)
 {
 	gpio_set_value(GPIO_MSM_MDDI_XRES, 0);
 	msleep(121);    /* spec: > 120ms */
-	vreg_helper("gp7", 1800000, 0);  /* L8 */
-	vreg_helper("gp6", LCD_VDD_VOLTAGE, 0);  /* L15 */
+	vreg_helper("ldo8", 1800000, 0);
+	vreg_helper("ldo15", LCD_VDD_VOLTAGE, 0);
 }
 
 static void hitachi_hvga_lcd_exit_deep_standby(void)
@@ -1779,8 +1766,8 @@ static void sii_hvga_lcd_power_off(void)
 {
 	gpio_set_value(GPIO_MSM_MDDI_XRES, 0);
 	msleep(121);    /* spec: > 120ms */
-	vreg_helper("gp7", 1800000, 0);  /* L8 */
-	vreg_helper("gp6", LCD_VDD_VOLTAGE, 0);  /* L15 */
+	vreg_helper("ldo8", 1800000, 0);
+	vreg_helper("ldo15", LCD_VDD_VOLTAGE, 0);
 }
 
 static void sii_hvga_lcd_exit_deep_standby(void)
@@ -1820,8 +1807,8 @@ static void auo_hvga_lcd_power_off(void)
 {
 	gpio_set_value(GPIO_MSM_MDDI_XRES, 0);
 	msleep(121);    /* spec: > 120ms */
-	vreg_helper("gp7", 1800000, 0);  /* L8 */
-	vreg_helper("gp6", LCD_VDD_VOLTAGE, 0);  /* L15 */
+	vreg_helper("ldo8", 1800000, 0);
+	vreg_helper("ldo15", LCD_VDD_VOLTAGE, 0);
 }
 
 static void auo_hvga_lcd_exit_deep_standby(void)
@@ -2047,7 +2034,7 @@ static int clearpad_vreg_configure(int enable)
 {
 	int rc = 0;
 
-	rc = vreg_helper("gp13", TOUCH_VDD_VOLTAGE, enable);
+	rc = vreg_helper("ldo20", TOUCH_VDD_VOLTAGE, enable);
 
 	return rc;
 }
@@ -2370,7 +2357,7 @@ static void apds9702_hw_config(int enable)
 
 static void apds9702_power_mode(int enable)
 {
-	vreg_helper("wlan", APDS9702_VDD_VOLTAGE, enable);
+	vreg_helper("ldo13", APDS9702_VDD_VOLTAGE, enable);
 
 	usleep_range(APDS9702_WAIT_TIME, APDS9702_WAIT_TIME);
 }
@@ -2720,7 +2707,7 @@ static int msm_hsusb_ldo_init(int init)
 	int def_vol = 3400000;
 
 	if (init) {
-		vreg_3p3 = regulator_get(NULL, "usb");
+		vreg_3p3 = regulator_get(NULL, "ldo6");
 		if (IS_ERR(vreg_3p3))
 			return PTR_ERR(vreg_3p3);
 		regulator_set_voltage(vreg_3p3, def_vol, def_vol);
@@ -2976,10 +2963,10 @@ static struct simple_remote_platform_regulators regs[] =  {
 		.name = "ncp",
 	},
 	{
-		.name = "s3",
+		.name = "smps3",
 	},
 	{
-		.name = "s2",
+		.name = "smps2",
 	},
 
 };
@@ -3040,9 +3027,6 @@ static struct platform_device *devices[] __initdata = {
 #endif
 #ifdef CONFIG_PSTORE_RAM
 	&ramoops_dev,
-#endif
-#ifdef CONFIG_MSM_PROC_COMM_REGULATOR
-	&msm_proccomm_regulator_dev,
 #endif
 	&asoc_msm_pcm,
 	&asoc_msm_dai0,
@@ -3585,7 +3569,7 @@ out:
 static void __init msm7x30_init_mmc(void)
 {
 #ifdef CONFIG_MMC_MSM_SDC3_SUPPORT
-	if (mmc_regulator_init(3, "s3", 1800000))
+	if (mmc_regulator_init(3, "smps3", 1800000))
 		goto out3;
 
 	msm_sdcc_setup_gpio(3, 1);
@@ -3593,7 +3577,7 @@ static void __init msm7x30_init_mmc(void)
 out3:
 #endif
 #ifdef CONFIG_MMC_MSM_SDC4_SUPPORT
-	if (mmc_regulator_init(4, "mmc", 2850000))
+	if (mmc_regulator_init(4, "ldo5", 2850000))
 		return;
 
 	msm_add_sdcc(4, &msm7x30_sdc4_data);
@@ -3604,13 +3588,13 @@ out3:
 static void __init shared_vreg_on(void)
 {
 #ifndef CONFIG_TOUCHSCREEN_CLEARPAD
-	vreg_helper("gp13", TOUCH_VDD_VOLTAGE, 1); /* ldo20 - Touch */
+	vreg_helper("ldo20", TOUCH_VDD_VOLTAGE, 1); /* Touch */
 #endif
-	vreg_helper("gp4", 2600000, 1);  /* ldo10 - BMA150, AK8975B */
+	vreg_helper("ldo10", 2600000, 1);  /* BMA150, AK8975B */
 #ifdef CONFIG_FB_MSM_MDDI_NOVATEK_FWVGA
-	vreg_helper("gp6", LCD_VDD_VOLTAGE, 1);  /* ldo15 - LCD */
+	vreg_helper("ldo15", LCD_VDD_VOLTAGE, 1);  /* LCD */
 #endif
-	vreg_helper("gp7", 1800000, 1);  /* ldo08 - BMA150, AK8975B, LCD, Touch, HDMI */
+	vreg_helper("ldo8", 1800000, 1);  /* BMA150, AK8975B, LCD, Touch, HDMI */
 }
 
 static void __init msm7x30_init_nand(void)

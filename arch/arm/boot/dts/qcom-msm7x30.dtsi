@@ -29,4 +29,363 @@
 		hs-name = "7k_handset";
 		pwr-key-delay-ms = <500>; /* 0 will disable end key */
 	};
+
+	smps0: regulator-smps0 {
+		compatible = "qcom,proccomm-regulator";
+		regulator-name = "smps0";
+		regulator-min-microvolt = <500000>;
+		regulator-max-microvolt = <1500000>;
+		id = <3>;
+		rise-time = <0>;
+		pulldown = <0>;
+		negative = <0>;
+	};
+
+	smps1: regulator-smps1 {
+		compatible = "qcom,proccomm-regulator";
+		regulator-name = "smps1";
+		regulator-min-microvolt = <500000>;
+		regulator-max-microvolt = <1500000>;
+		id = <4>;
+		rise-time = <0>;
+		pulldown = <0>;
+		negative = <0>;
+	};
+
+	smps2: regulator-smps2 {
+		compatible = "qcom,proccomm-regulator";
+		regulator-name = "smps2";
+		regulator-min-microvolt = <1300000>;
+		regulator-max-microvolt = <1300000>;
+		id = <28>;
+		rise-time = <0>;
+		pulldown = <0>;
+		negative = <0>;
+	};
+
+	smps3: regulator-smps3 {
+		compatible = "qcom,proccomm-regulator";
+		regulator-name = "smps3";
+		regulator-min-microvolt = <1800000>;
+		regulator-max-microvolt = <1800000>;
+		id = <29>;
+		rise-time = <0>;
+		pulldown = <0>;
+		negative = <0>;
+	};
+
+	smps4: regulator-smps4 {
+		compatible = "qcom,proccomm-regulator";
+		regulator-name = "smps4";
+		regulator-min-microvolt = <2200000>;
+		regulator-max-microvolt = <2200000>;
+		id = <43>;
+		rise-time = <0>;
+		pulldown = <0>;
+		negative = <0>;
+	};
+
+	ldo0: regulator-ldo0 {
+		compatible = "qcom,proccomm-regulator";
+		regulator-name = "ldo0";
+		regulator-min-microvolt = <1200000>;
+		regulator-max-microvolt = <1200000>;
+		id = <5>;
+		rise-time = <0>;
+		pulldown = <0>;
+		negative = <0>;
+	};
+
+	ldo2: regulator-ldo2 {
+		compatible = "qcom,proccomm-regulator";
+		regulator-name = "ldo2";
+		regulator-min-microvolt = <2600000>;
+		regulator-max-microvolt = <2600000>;
+		id = <46>;
+		rise-time = <0>;
+		pulldown = <0>;
+		negative = <0>;
+	};
+
+	ldo3: regulator-ldo3 {
+		compatible = "qcom,proccomm-regulator";
+		regulator-name = "ldo3";
+		regulator-min-microvolt = <1800000>;
+		regulator-max-microvolt = <3000000>;
+		id = <19>;
+		rise-time = <0>;
+		pulldown = <0>;
+		negative = <0>;
+	};
+
+	ldo4: regulator-ldo4 {
+		compatible = "qcom,proccomm-regulator";
+		regulator-name = "ldo4";
+		regulator-min-microvolt = <2850000>;
+		regulator-max-microvolt = <2850000>;
+		id = <9>;
+		rise-time = <0>;
+		pulldown = <0>;
+		negative = <0>;
+	};
+
+	ldo5: regulator-ldo5 {
+		compatible = "qcom,proccomm-regulator";
+		regulator-name = "ldo5";
+		regulator-min-microvolt = <2850000>;
+		regulator-max-microvolt = <2850000>;
+		id = <18>;
+		rise-time = <0>;
+		pulldown = <0>;
+		negative = <0>;
+	};
+
+	ldo6: regulator-ldo6 {
+		compatible = "qcom,proccomm-regulator";
+		regulator-name = "ldo6";
+		regulator-min-microvolt = <3075000>;
+		regulator-max-microvolt = <3400000>;
+		id = <16>;
+		rise-time = <0>;
+		pulldown = <0>;
+		negative = <0>;
+	};
+
+	ldo7: regulator-ldo7 {
+		compatible = "qcom,proccomm-regulator";
+		regulator-name = "ldo7";
+		regulator-min-microvolt = <1800000>;
+		regulator-max-microvolt = <1800000>;
+		id = <44>;
+		rise-time = <0>;
+		pulldown = <0>;
+		negative = <0>;
+	};
+
+	ldo8: regulator-ldo8 {
+		compatible = "qcom,proccomm-regulator";
+		regulator-name = "ldo8";
+		regulator-min-microvolt = <1800000>;
+		regulator-max-microvolt = <1800000>;
+		id = <32>;
+		rise-time = <0>;
+		pulldown = <0>;
+		negative = <0>;
+	};
+
+	ldo9: regulator-ldo9 {
+		compatible = "qcom,proccomm-regulator";
+		regulator-name = "ldo9";
+		regulator-min-microvolt = <2050000>;
+		regulator-max-microvolt = <2050000>;
+		id = <8>;
+		rise-time = <0>;
+		pulldown = <0>;
+		negative = <0>;
+	};
+
+	ldo10: regulator-ldo10 {
+		compatible = "qcom,proccomm-regulator";
+		regulator-name = "ldo10";
+		regulator-min-microvolt = <2600000>;
+		regulator-max-microvolt = <2600000>;
+		id = <7>;
+		rise-time = <0>;
+		pulldown = <0>;
+		negative = <0>;
+	};
+
+	ldo11: regulator-ldo11 {
+		compatible = "qcom,proccomm-regulator";
+		regulator-name = "ldo11";
+		regulator-min-microvolt = <2600000>;
+		regulator-max-microvolt = <2600000>;
+		id = <21>;
+		rise-time = <0>;
+		pulldown = <0>;
+		negative = <0>;
+	};
+
+	ldo12: regulator-ldo12 {
+		compatible = "qcom,proccomm-regulator";
+		regulator-name = "ldo12";
+		regulator-min-microvolt = <1800000>;
+		regulator-max-microvolt = <1800000>;
+		id = <34>;
+		rise-time = <0>;
+		pulldown = <0>;
+		negative = <0>;
+	};
+
+	ldo13: regulator-ldo13 {
+		compatible = "qcom,proccomm-regulator";
+		regulator-name = "ldo13";
+		regulator-min-microvolt = <2900000>;
+		regulator-max-microvolt = <3050000>;
+		id = <15>;
+		rise-time = <0>;
+		pulldown = <0>;
+		negative = <0>;
+	};
+
+	ldo14: regulator-ldo14 {
+		compatible = "qcom,proccomm-regulator";
+		regulator-name = "ldo14";
+		regulator-min-microvolt = <2850000>;
+		regulator-max-microvolt = <2850000>;
+		id = <24>;
+		rise-time = <0>;
+		pulldown = <0>;
+		negative = <0>;
+	};
+
+	ldo15: regulator-ldo15 {
+		compatible = "qcom,proccomm-regulator";
+		regulator-name = "ldo15";
+		regulator-min-microvolt = <3050000>;
+		regulator-max-microvolt = <3100000>;
+		id = <23>;
+		rise-time = <0>;
+		pulldown = <0>;
+		negative = <0>;
+	};
+
+	ldo16: regulator-ldo16 {
+		compatible = "qcom,proccomm-regulator";
+		regulator-name = "ldo16";
+		regulator-min-microvolt = <2600000>;
+		regulator-max-microvolt = <2600000>;
+		id = <35>;
+		rise-time = <0>;
+		pulldown = <0>;
+		negative = <0>;
+	};
+
+	ldo17: regulator-ldo17 {
+		compatible = "qcom,proccomm-regulator";
+		regulator-name = "ldo17";
+		regulator-min-microvolt = <2600000>;
+		regulator-max-microvolt = <2600000>;
+		id = <36>;
+		rise-time = <0>;
+		pulldown = <0>;
+		negative = <0>;
+	};
+
+	ldo18: regulator-ldo18 {
+		compatible = "qcom,proccomm-regulator";
+		regulator-name = "ldo18";
+		regulator-min-microvolt = <2200000>;
+		regulator-max-microvolt = <2200000>;
+		id = <37>;
+		rise-time = <0>;
+		pulldown = <0>;
+		negative = <0>;
+	};
+
+	ldo19: regulator-ldo19 {
+		compatible = "qcom,proccomm-regulator";
+		regulator-name = "ldo19";
+		regulator-min-microvolt = <2400000>;
+		regulator-max-microvolt = <2500000>;
+		id = <45>;
+		rise-time = <0>;
+		pulldown = <0>;
+		negative = <0>;
+	};
+
+	ldo20: regulator-ldo20 {
+		compatible = "qcom,proccomm-regulator";
+		regulator-name = "ldo20";
+		regulator-min-microvolt = <1500000>;
+		regulator-max-microvolt = <1800000>;
+		id = <38>;
+		rise-time = <0>;
+		pulldown = <0>;
+		negative = <0>;
+	};
+
+	ldo21: regulator-ldo21 {
+		compatible = "qcom,proccomm-regulator";
+		regulator-name = "ldo21";
+		regulator-min-microvolt = <1100000>;
+		regulator-max-microvolt = <1100000>;
+		id = <39>;
+		rise-time = <0>;
+		pulldown = <0>;
+		negative = <0>;
+	};
+
+	ldo22: regulator-ldo22 {
+		compatible = "qcom,proccomm-regulator";
+		regulator-name = "ldo22";
+		regulator-min-microvolt = <1200000>;
+		regulator-max-microvolt = <1300000>;
+		id = <40>;
+		rise-time = <0>;
+		pulldown = <0>;
+		negative = <0>;
+	};
+
+	ldo23: regulator-ldo23 {
+		compatible = "qcom,proccomm-regulator";
+		regulator-name = "ldo23";
+		regulator-min-microvolt = <1350000>;
+		regulator-max-microvolt = <1350000>;
+		id = <22>;
+		rise-time = <0>;
+		pulldown = <0>;
+		negative = <0>;
+	};
+
+	ldo24: regulator-ldo24 {
+		compatible = "qcom,proccomm-regulator";
+		regulator-name = "ldo24";
+		regulator-min-microvolt = <1200000>;
+		regulator-max-microvolt = <1200000>;
+		id = <41>;
+		rise-time = <0>;
+		pulldown = <0>;
+		negative = <0>;
+	};
+
+	ldo25: regulator-ldo25 {
+		compatible = "qcom,proccomm-regulator";
+		regulator-name = "ldo25";
+		regulator-min-microvolt = <1200000>;
+		regulator-max-microvolt = <1200000>;
+		id = <42>;
+		rise-time = <0>;
+		pulldown = <0>;
+		negative = <0>;
+	};
+
+	lvsw0: regulator-lvsw0 {
+		compatible = "qcom,proccomm-regulator";
+		regulator-name = "lvsw0";
+		id = <47>;
+		rise-time = <0>;
+		pulldown = <0>;
+		negative = <0>;
+	};
+
+	lvsw1: regulator-lvsw1 {
+		compatible = "qcom,proccomm-regulator";
+		regulator-name = "lvsw1";
+		id = <48>;
+		rise-time = <0>;
+		pulldown = <0>;
+		negative = <0>;
+	};
+
+	ncp: regulator-ncp {
+		compatible = "qcom,proccomm-regulator";
+		regulator-name = "ncp";
+		regulator-min-microvolt = <1800000>;
+		regulator-max-microvolt = <1800000>;
+		id = <31>;
+		rise-time = <0>;
+		pulldown = <0>;
+		negative = <1>;
+	};
 };

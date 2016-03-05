@@ -12,11 +12,6 @@ obj-$(CONFIG_BOARD_SEMC_ZEUS) += board-zeus.o board-semc7x30-devices.o board-sem
 obj-$(CONFIG_MACH_SEMC_PHOENIX)  += keypad-phoenix.o
 obj-$(CONFIG_MACH_SEMC_ZEUS)     += keypad-zeus.o
 
-ifdef CONFIG_MSM_PROC_COMM_REGULATOR
-obj-$(CONFIG_BOARD_SEMC_MOGAMI) += board-semc7x30-regulator.o
-obj-$(CONFIG_BOARD_SEMC_ZEUS) += board-semc7x30-regulator.o
-endif
-
 ifeq ($(CONFIG_MARIMBA_CODEC), y)
 obj-$(CONFIG_MACH_SEMC) += snddev_data_marimba_semc.o
 endif
