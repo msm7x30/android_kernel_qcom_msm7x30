@@ -1985,20 +1985,6 @@ static struct i2c_board_info msm_marimba_board_info[] = {
 	}
 };
 
-
-static struct msm_handset_platform_data hs_platform_data = {
-	.hs_name = "7k_handset",
-	.pwr_key_delay_ms = 500, /* 0 will disable end key */
-};
-
-static struct platform_device hs_device = {
-	.name   = "msm-handset",
-	.id     = -1,
-	.dev    = {
-		.platform_data = &hs_platform_data,
-	},
-};
-
 static struct msm_pm_platform_data msm_pm_data[MSM_PM_SLEEP_MODE_NR] = {
 	[MSM_PM_MODE(0, MSM_PM_SLEEP_MODE_POWER_COLLAPSE)] = {
 		.idle_supported = 1,
@@ -2729,7 +2715,6 @@ static struct platform_device *devices[] __initdata = {
 #ifdef CONFIG_SEMC_RPC_SERVER_HANDSET
 	&semc_rpc_handset_device,
 #endif
-	&hs_device,
 #ifdef CONFIG_MSM7KV2_AUDIO
 	&msm_aictl_device,
 	&msm_mi2s_device,

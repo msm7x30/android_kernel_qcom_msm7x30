@@ -7,4 +7,8 @@
 		voltage-max-design = <4200>;
 		technology = "LIPO";
 	};
+
+	msmhandset {
+		pwr-key-delay-ms = <0>; /* 0 will disable end key */
+	};
 };

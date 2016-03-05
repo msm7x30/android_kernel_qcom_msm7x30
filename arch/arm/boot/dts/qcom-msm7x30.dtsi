@@ -5,4 +5,10 @@
 / {
 	model = "Qualcomm MSM7x30";
 	compatible = "qcom,msm7x30";
+
+	msmhandset {
+		compatible = "qcom,msm-handset";
+		hs-name = "7k_handset";
+		pwr-key-delay-ms = <500>; /* 0 will disable end key */
+	};
 };
