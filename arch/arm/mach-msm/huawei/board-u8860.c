@@ -3424,12 +3424,6 @@ static void __init msm7x30_init_early(void)
 	msm7x30_allocate_memory_regions();
 }
 
-static void __init msm7x30_fixup(struct tag *tags, char **cmdline,
-				 struct meminfo *mi)
-{
-
-}
-
 #define ATAG_MEM_OSBL	0x5441000C
 static int __init parse_tag_memosbl(const struct tag *tag)
 {
@@ -3437,7 +3431,12 @@ static int __init parse_tag_memosbl(const struct tag *tag)
 }
 __tagtable(ATAG_MEM_OSBL, parse_tag_memosbl);
 
-MACHINE_START(HUAWEI_U8860, "HUAWEI U8860")
+static const char *msm7x30_dt_compat[] __initdata = {
+	"qcom,msm7x30",
+	NULL
+};
+
+DT_MACHINE_START(HUAWEI_U8860, "Qualcomm MSM7x30 (FDT)")
 	.atag_offset = 0x100,
 	.map_io = msm7x30_map_io,
 	.reserve = msm7x30_reserve,
@@ -3446,10 +3445,10 @@ MACHINE_START(HUAWEI_U8860, "HUAWEI U8860")
 	.init_time = msm_timer_init,
 	.init_early = msm7x30_init_early,
 	.handle_irq = vic_handle_irq,
-	.fixup = msm7x30_fixup,
+	.dt_compat = msm7x30_dt_compat,
 MACHINE_END
 
-MACHINE_START(HUAWEI_U8860LP, "HUAWEI U8860LP")
+DT_MACHINE_START(HUAWEI_U8860LP, "Qualcomm MSM7x30 (FDT)")
 	.atag_offset = 0x100,
 	.map_io = msm7x30_map_io,
 	.reserve = msm7x30_reserve,
@@ -3458,10 +3457,10 @@ MACHINE_START(HUAWEI_U8860LP, "HUAWEI U8860LP")
 	.init_time = msm_timer_init,
 	.init_early = msm7x30_init_early,
 	.handle_irq = vic_handle_irq,
-	.fixup = msm7x30_fixup,
+	.dt_compat = msm7x30_dt_compat,
 MACHINE_END
 
-MACHINE_START(HUAWEI_U8860_51, "HUAWEI U8860-51")
+DT_MACHINE_START(HUAWEI_U8860_51, "Qualcomm MSM7x30 (FDT)")
 	.atag_offset = 0x100,
 	.map_io = msm7x30_map_io,
 	.reserve = msm7x30_reserve,
@@ -3470,10 +3469,10 @@ MACHINE_START(HUAWEI_U8860_51, "HUAWEI U8860-51")
 	.init_time = msm_timer_init,
 	.init_early = msm7x30_init_early,
 	.handle_irq = vic_handle_irq,
-	.fixup = msm7x30_fixup,
+	.dt_compat = msm7x30_dt_compat,
 MACHINE_END
 
-MACHINE_START(HUAWEI_U8860_92, "HUAWEI U8860-92")
+DT_MACHINE_START(HUAWEI_U8860_92, "Qualcomm MSM7x30 (FDT)")
 	.atag_offset = 0x100,
 	.map_io = msm7x30_map_io,
 	.reserve = msm7x30_reserve,
@@ -3482,10 +3481,10 @@ MACHINE_START(HUAWEI_U8860_92, "HUAWEI U8860-92")
 	.init_time = msm_timer_init,
 	.init_early = msm7x30_init_early,
 	.handle_irq = vic_handle_irq,
-	.fixup = msm7x30_fixup,
+	.dt_compat = msm7x30_dt_compat,
 MACHINE_END
 
-MACHINE_START(HUAWEI_U8860_R, "HUAWEI U8860-R")
+DT_MACHINE_START(HUAWEI_U8860_R, "Qualcomm MSM7x30 (FDT)")
 	.atag_offset = 0x100,
 	.map_io = msm7x30_map_io,
 	.reserve = msm7x30_reserve,
@@ -3494,10 +3493,10 @@ MACHINE_START(HUAWEI_U8860_R, "HUAWEI U8860-R")
 	.init_time = msm_timer_init,
 	.init_early = msm7x30_init_early,
 	.handle_irq = vic_handle_irq,
-	.fixup = msm7x30_fixup,
+	.dt_compat = msm7x30_dt_compat,
 MACHINE_END
 
-MACHINE_START(HUAWEI_C8860, "HUAWEI C8860")
+DT_MACHINE_START(HUAWEI_C8860, "Qualcomm MSM7x30 (FDT)")
 	.atag_offset = 0x100,
 	.map_io = msm7x30_map_io,
 	.reserve = msm7x30_reserve,
@@ -3506,5 +3505,5 @@ MACHINE_START(HUAWEI_C8860, "HUAWEI C8860")
 	.init_time = msm_timer_init,
 	.init_early = msm7x30_init_early,
 	.handle_irq = vic_handle_irq,
-	.fixup = msm7x30_fixup,
+	.dt_compat = msm7x30_dt_compat,
 MACHINE_END

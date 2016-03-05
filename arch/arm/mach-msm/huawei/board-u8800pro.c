@@ -3678,12 +3678,6 @@ static void __init msm7x30_init_early(void)
 	msm7x30_allocate_memory_regions();
 }
 
-static void __init msm7x30_fixup(struct tag *tags, char **cmdline,
-				 struct meminfo *mi)
-{
-
-}
-
 #define ATAG_MEM_OSBL	0x5441000C
 static int __init parse_tag_memosbl(const struct tag *tag)
 {
@@ -3691,7 +3685,12 @@ static int __init parse_tag_memosbl(const struct tag *tag)
 }
 __tagtable(ATAG_MEM_OSBL, parse_tag_memosbl);
 
-MACHINE_START(HUAWEI_U8800PRO, "HUAWEI U8800PRO")
+static const char *msm7x30_dt_compat[] __initdata = {
+	"qcom,msm7x30",
+	NULL
+};
+
+DT_MACHINE_START(HUAWEI_U8800PRO, "Qualcomm MSM7x30 (FDT)")
 	.atag_offset = 0x100,
 	.map_io = msm7x30_map_io,
 	.reserve = msm7x30_reserve,
@@ -3700,5 +3699,5 @@ MACHINE_START(HUAWEI_U8800PRO, "HUAWEI U8800PRO")
 	.init_time = msm_timer_init,
 	.init_early = msm7x30_init_early,
 	.handle_irq = vic_handle_irq,
-	.fixup = msm7x30_fixup,
+	.dt_compat = msm7x30_dt_compat,
 MACHINE_END
