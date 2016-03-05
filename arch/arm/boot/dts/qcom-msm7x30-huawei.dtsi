@@ -1,6 +1,10 @@
 #include "qcom-msm7x30.dtsi"
 
 / {
+	rmt-oeminfo {
+		compatible = "huawei,rmt-oeminfo";
+	};
+
 	battery {
 		compatible = "huawei,battery";
 		voltage-min-design = <3200>;
