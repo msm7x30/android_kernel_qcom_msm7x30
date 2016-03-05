@@ -2577,22 +2577,6 @@ static struct platform_device msm_adc_device = {
 	},
 };
 
-#ifdef CONFIG_BATTERY_HUAWEI
-static struct huawei_bat_platform_data huawei_bat_pdata = {
-	.technology = POWER_SUPPLY_TECHNOLOGY_LIPO,
-	.voltage_min_design = 3200,
-	.voltage_max_design = 4200,
-};
-
-static struct platform_device huawei_bat_device = {
-	.name = "huawei_battery",
-	.id = -1,
-	.dev = {
-		.platform_data = &huawei_bat_pdata,
-	}
-};
-#endif
-
 #ifdef CONFIG_MSM_HUAWEI_RMT_OEMINFO
 static struct platform_device huawei_rmt_oeminfo_device = {
 	.name		= "rmt_oeminfo",
@@ -2693,9 +2677,6 @@ static struct platform_device *devices[] __initdata = {
 	&msm_adsp_device,
 #ifdef CONFIG_ION_MSM
 	&ion_dev,
-#endif
-#ifdef CONFIG_BATTERY_HUAWEI
-	&huawei_bat_device,
 #endif
 #ifdef CONFIG_MSM_HUAWEI_RMT_OEMINFO
 	&huawei_rmt_oeminfo_device,

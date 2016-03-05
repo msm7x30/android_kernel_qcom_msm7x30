@@ -1,0 +1,10 @@
+#include "qcom-msm7x30.dtsi"
+
+/ {
+	battery {
+		compatible = "huawei,battery";
+		voltage-min-design = <3200>;
+		voltage-max-design = <4200>;
+		technology = "LIPO";
+	};
+};
