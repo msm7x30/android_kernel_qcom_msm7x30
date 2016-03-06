@@ -30,6 +30,11 @@
 		pwr-key-delay-ms = <500>; /* 0 will disable end key */
 	};
 
+	qdsp5v2-adsp {
+		compatible = "qcom,qdsp5v2-adsp";
+		interrupts = <20 0>;
+	};
+
 	smps0: regulator-smps0 {
 		compatible = "qcom,proccomm-regulator";
 		regulator-name = "smps0";

@@ -27,7 +27,6 @@ extern struct platform_device asoc_mvs_dai1;
 extern struct platform_device asoc_msm_mvs;
 #endif
 extern struct platform_device msm7x30_device_acpuclk;
-extern struct platform_device msm_adsp_device;
 extern struct platform_device msm_device_dmov;
 extern struct platform_device msm_device_gadget_peripheral;
 extern struct platform_device msm_device_i2c;
