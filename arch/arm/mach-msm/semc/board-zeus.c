@@ -2241,9 +2241,9 @@ static struct msm_hsusb_gadget_platform_data msm_gadget_pdata = {
 #endif
 
 static struct msm_serial_hs_platform_data msm_uart_dm1_pdata = {
-       .inject_rx_on_wakeup = 1,
-       .rx_to_inject = 0xFD,
-       .uartdm_rx_buf_size = 1024,
+	.inject_rx_on_wakeup = 1,
+	.rx_to_inject = 0xFD,
+	.uartdm_rx_buf_size = 1024,
 };
 
 static struct resource msm_fb_resources[] = {
@@ -2652,7 +2652,7 @@ static struct platform_device msm_adc_device = {
 };
 
 static struct platform_device *devices[] __initdata = {
-#if defined(CONFIG_SERIAL_MSM) || defined(CONFIG_MSM_SERIAL_DEBUGGER)
+#ifdef CONFIG_SERIAL_MSM_CONSOLE
 	&msm_device_uart3,
 #endif
 #ifdef CONFIG_PSTORE_RAM
@@ -3224,7 +3224,6 @@ static void msm7x30_init_uart3(void)
 {
 	msm_gpios_request_enable(uart3_config_data,
 			ARRAY_SIZE(uart3_config_data));
-
 }
 #endif
 

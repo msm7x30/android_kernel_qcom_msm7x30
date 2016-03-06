@@ -84,32 +84,6 @@ struct platform_device msm_ebi1_thermal = {
 	.resource       = msm_ebi1_thermal_resources
 };
 
-static struct resource resources_uart1[] = {
-	{
-		.start	= INT_UART1,
-		.end	= INT_UART1,
-		.flags	= IORESOURCE_IRQ,
-	},
-	{
-		.start	= MSM7X30_UART1_PHYS,
-		.end	= MSM7X30_UART1_PHYS + MSM7X30_UART1_SIZE - 1,
-		.flags	= IORESOURCE_MEM,
-	},
-};
-
-static struct resource resources_uart2[] = {
-	{
-		.start	= INT_UART2,
-		.end	= INT_UART2,
-		.flags	= IORESOURCE_IRQ,
-	},
-	{
-		.start	= MSM7X30_UART2_PHYS,
-		.end	= MSM7X30_UART2_PHYS + MSM7X30_UART2_SIZE - 1,
-		.flags	= IORESOURCE_MEM,
-	},
-};
-
 static struct resource resources_uart3[] = {
 	{
 		.start	= INT_UART3,
@@ -124,29 +98,14 @@ static struct resource resources_uart3[] = {
 	},
 };
 
-struct platform_device msm_device_uart1 = {
-	.name	= "msm_serial",
-	.id	= 0,
-	.num_resources	= ARRAY_SIZE(resources_uart1),
-	.resource	= resources_uart1,
-};
-
-struct platform_device msm_device_uart2 = {
-	.name	= "msm_serial",
-	.id	= 1,
-	.num_resources	= ARRAY_SIZE(resources_uart2),
-	.resource	= resources_uart2,
-};
-
 struct platform_device msm_device_uart3 = {
 	.name	= "msm_serial",
-	.id	= 2,
+	.id	= 0,
 	.num_resources	= ARRAY_SIZE(resources_uart3),
 	.resource	= resources_uart3,
 };
 
 #define MSM_UART1DM_PHYS      0xA3300000
-#define MSM_UART2DM_PHYS      0xA3200000
 static struct resource msm_uart1_dm_resources[] = {
 	{
 		.start = MSM_UART1DM_PHYS,
@@ -186,49 +145,6 @@ struct platform_device msm_device_uart_dm1 = {
 	.resource = msm_uart1_dm_resources,
 	.dev		= {
 		.dma_mask = &msm_uart_dm1_dma_mask,
-		.coherent_dma_mask = DMA_BIT_MASK(32),
-	},
-};
-
-static struct resource msm_uart2_dm_resources[] = {
-	{
-		.start = MSM_UART2DM_PHYS,
-		.end   = MSM_UART2DM_PHYS + PAGE_SIZE - 1,
-		.flags = IORESOURCE_MEM,
-	},
-	{
-		.start = INT_UART2DM_IRQ,
-		.end   = INT_UART2DM_IRQ,
-		.flags = IORESOURCE_IRQ,
-	},
-	{
-		.start = INT_UART2DM_RX,
-		.end   = INT_UART2DM_RX,
-		.flags = IORESOURCE_IRQ,
-	},
-	{
-		.start = DMOV_HSUART2_TX_CHAN,
-		.end   = DMOV_HSUART2_RX_CHAN,
-		.name  = "uartdm_channels",
-		.flags = IORESOURCE_DMA,
-	},
-	{
-		.start = DMOV_HSUART2_TX_CRCI,
-		.end   = DMOV_HSUART2_RX_CRCI,
-		.name  = "uartdm_crci",
-		.flags = IORESOURCE_DMA,
-	},
-};
-
-static u64 msm_uart_dm2_dma_mask = DMA_BIT_MASK(32);
-
-struct platform_device msm_device_uart_dm2 = {
-	.name = "msm_serial_hs",
-	.id = 1,
-	.num_resources = ARRAY_SIZE(msm_uart2_dm_resources),
-	.resource = msm_uart2_dm_resources,
-	.dev		= {
-		.dma_mask = &msm_uart_dm2_dma_mask,
 		.coherent_dma_mask = DMA_BIT_MASK(32),
 	},
 };
