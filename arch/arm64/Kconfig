@@ -1,6 +1,7 @@
 config ARM64
 	def_bool y
 	select ARCH_HAS_ATOMIC64_DEC_IF_POSITIVE
+	select ARCH_SUPPORTS_ATOMIC_RMW
 	select ARCH_WANT_OPTIONAL_GPIOLIB
 	select ARCH_WANT_COMPAT_IPC_PARSE_VERSION
 	select ARCH_WANT_FRAME_POINTERS
@@ -82,6 +83,10 @@ config ILLEGAL_POINTER_VALUE
 
 config STACKTRACE_SUPPORT
 	def_bool y
+
+config ILLEGAL_POINTER_VALUE
+	hex
+	default 0xdead000000000000
 
 config LOCKDEP_SUPPORT
 	def_bool y
@@ -243,16 +248,6 @@ config ARMV7_COMPAT
 
 	 If you want to execute ARMv7 applications, say Y
 
-config ARMV7_COMPAT_CPUINFO
-	bool "Report backwards compatible cpu features in /proc/cpuinfo"
-	depends on ARMV7_COMPAT
-	default y
-	help
-	 This option makes /proc/cpuinfo list CPU features that an ARMv7 or
-	 earlier kernel would report, but are not optional on an ARMv8 or later
-	 processor.
-
-	 If you want to execute ARMv7 applications, say Y
 
 source "mm/Kconfig"
 

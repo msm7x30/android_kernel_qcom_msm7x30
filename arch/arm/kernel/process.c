@@ -535,6 +535,7 @@ EXPORT_SYMBOL(dump_fpu);
 unsigned long get_wchan(struct task_struct *p)
 {
 	struct stackframe frame;
+	unsigned long stack_page;
 	int count = 0;
 	if (!p || p == current || p->state == TASK_RUNNING)
 		return 0;
@@ -543,9 +544,11 @@ unsigned long get_wchan(struct task_struct *p)
 	frame.sp = thread_saved_sp(p);
 	frame.lr = 0;			/* recovered from the stack */
 	frame.pc = thread_saved_pc(p);
+	stack_page = (unsigned long)task_stack_page(p);
 	do {
-		int ret = unwind_frame(&frame);
-		if (ret < 0)
+		if (frame.sp < stack_page ||
+		    frame.sp >= stack_page + THREAD_SIZE ||
+		    unwind_frame(&frame) < 0)
 			return 0;
 		if (!in_sched_functions(frame.pc))
 			return frame.pc;
@@ -605,17 +608,18 @@ const char *arch_vma_name(struct vm_area_struct *vma)
 		 "[sigpage]" : NULL;
 }
 
+static struct page *signal_page;
 extern struct page *get_signal_page(void);
 
 int arch_setup_additional_pages(struct linux_binprm *bprm, int uses_interp)
 {
 	struct mm_struct *mm = current->mm;
-	struct page *page;
 	unsigned long addr;
 	int ret;
 
-	page = get_signal_page();
-	if (!page)
+	if (!signal_page)
+		signal_page = get_signal_page();
+	if (!signal_page)
 		return -ENOMEM;
 
 	down_write(&mm->mmap_sem);
@@ -627,7 +631,7 @@ int arch_setup_additional_pages(struct linux_binprm *bprm, int uses_interp)
 
 	ret = install_special_mapping(mm, addr, PAGE_SIZE,
 		VM_READ | VM_EXEC | VM_MAYREAD | VM_MAYWRITE | VM_MAYEXEC,
-		&page);
+		&signal_page);
 
 	if (ret == 0)
 		mm->context.sigpage = addr;
